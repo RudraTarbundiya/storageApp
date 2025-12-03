@@ -39,6 +39,7 @@ storage/
 backend/storage/
 filesDb.json
 directoriesDb.json
+usersDb.json
 
 # Coverage
 coverage/
