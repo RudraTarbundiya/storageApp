@@ -1,15 +1,26 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Home from "./components/home";
+import DirectoryView from "./DirectoryView";
+import Register from "./Register";
+import "./App.css";
+import Login from "./Login";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Home />,
+    element: <DirectoryView />,
   },
   {
-    path:'/directory/:id',
-    element:<Home/>
-  }
+    path: "/register",
+    element: <Register />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/directory/:dirId",
+    element: <DirectoryView />,
+  },
 ]);
 
 function App() {

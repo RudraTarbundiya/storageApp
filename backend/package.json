@@ -1,11 +1,12 @@
 {
     "type": "module",
     "dependencies": {
+        "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
         "mime-types": "^3.0.1",
         "path": "^0.12.7"
     },
-    "scripts":{
-        "start" : "node --watch server-express.js"
+    "scripts": {
+        "start": "node --watch server-express.js"
     }
 }

@@ -6,40 +6,53 @@ import crypto from 'crypto'
 
 import dirdata from '../directoriesDb.json' with { type: 'json' };
 import filedata from '../filesDb.json' with { type: 'json' };
-
+import usersData from '../usersDb.json' with { type: 'json' };
+import idCheck from '../middleware/idCheckMIddleware.js'
 const router = express.Router()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+router.param('id',idCheck)
+router.param('parentId',idCheck)
+
 //send list of files 
 router.get(['/', '/:id'], async (req, res, next) => {
-    const id = req.params.id
 
-    const dirObj = id ? dirdata.find((dir) => dir.id === id) : dirdata[0]
-    if (!dirObj) return res.status(404).json({ message: 'Directory not found' })
+    const rootOfUser = req.user.rootDirId
+    const id = req.params.id || rootOfUser
 
-    const files = (dirObj.files || []).map((fileId) => {
+    // Find the directory and verify ownership
+    const directoryData = dirdata.find((directory) => directory.id === id && directory.userId === req.user.id);
+    if (!directoryData) {
+        return res.status(404).json({ error: "Directory not found or you do not have access to it!" });
+    }
+
+
+    const files = (directoryData.files || []).map((fileId) => {
         return filedata.find((file) => file.id === fileId)
     })
 
-    const directories = dirObj.directories.map((dirId) => {
+    const directories = directoryData.directories.map((dirId) => {
         return dirdata.find((dir) => dir.id === dirId)
     }).map(({ id, name }) => ({ id, name }))
 
-    return res.status(200).json({ ...dirObj, files, directories })
+    return res.status(200).json({ ...directoryData, files, directories })
 
 })
 
 
 //make directory
 router.post(['/', '/:parentId'], async (req, res, next) => {
-    const parentId = req.params.parentId || (dirdata[0] && dirdata[0].id)
+
+    const rootOfUser = req.user.rootDirId
+    const parentId = req.params.parentId || rootOfUser
     const name = req.headers.dirname || "new folder"
     if (!name) return res.status(400).json({ message: 'Missing directory name (send in header "dirname" or JSON body)' })
 
     const newDir = {
         id: crypto.randomUUID(),
         name: name,
+        userId: req.user.id,
         parentId: parentId || null,
         files: [],
         directories: []
@@ -60,14 +73,22 @@ router.post(['/', '/:parentId'], async (req, res, next) => {
 // rename directory
 router.patch('/:id', async (req, res, next) => {
     const id = req.params.id
-    const dirObj = dirdata.find((d) => d.id === id)
-    if (!dirObj) return res.status(404).json({ message: 'Directory not found' })
-    const newName = req.body.newname
+    const directoryData = dirdata.find((d) => d.id === id)
+
+    if (!directoryData) return res.status(404).json({ message: 'Directory not found' })
+
+    // Check if the directory belongs to the user
+    if (directoryData.userId !== req.user.id) {
+        return res.status(403).json({ message: "You are not authorized to rename this directory!" });
+    }
+
+    const newName = req.body.newDirName
     if (!newName) return res.status(400).json({ message: 'Missing newname in body or dirname header' })
-    dirObj.name = newName
+    directoryData.name = newName
+
     try {
         await writeFile(path.join(__dirname, '..', 'directoriesDb.json'), JSON.stringify(dirdata, null, 2))
-        return res.status(200).json({ message: 'Directory renamed', directory: dirObj })
+        return res.status(200).json({ message: 'Directory renamed', directory: directoryData })
     } catch (err) {
         next(err)
     }
@@ -78,7 +99,10 @@ router.delete('/:id', async (req, res, next) => {
     const id = req.params.id
     const dirIndex = dirdata.findIndex(d => d.id === id)
     if (dirIndex === -1) return res.status(404).json({ message: 'Directory not found' })
-
+    // Check if the directory belongs to the user
+    if (dirdata[dirIndex].userId !== req.user.id) {
+        return res.status(403).json({ message: "You are not authorized to delete this directory!" });
+    }
     // collect directories and files to delete
     const dirsToDelete = new Set()
     const filesToDelete = new Set()
@@ -127,7 +151,7 @@ router.delete('/:id', async (req, res, next) => {
 
         return res.status(200).json({ message: 'Directory and its contents deleted' })
     } catch (err) {
-       next(err)
+        next(err)
     }
 })
 
