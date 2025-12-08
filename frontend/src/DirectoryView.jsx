@@ -334,7 +334,7 @@ function DirectoryView() {
         },
         body: JSON.stringify(
           renameType === "file"
-            ? { newFilename: renameValue }
+            ? { newFileName: renameValue }
             : { newDirName: renameValue }
         ),
         credentials: "include",

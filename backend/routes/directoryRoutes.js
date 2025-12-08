@@ -1,70 +1,50 @@
 import express from 'express'
-import { rm, writeFile } from 'fs/promises'
+import { rm} from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import crypto from 'crypto'
+import { Db, ObjectId } from 'mongodb'
 
-import dirdata from '../directoriesDb.json' with { type: 'json' };
-import filedata from '../filesDb.json' with { type: 'json' };
-import usersData from '../usersDb.json' with { type: 'json' };
 import idCheck from '../middleware/idCheckMIddleware.js'
 const router = express.Router()
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-router.param('id',idCheck)
-router.param('parentId',idCheck)
+router.param('id', idCheck)
+router.param('parentId', idCheck)
 
 //send list of files 
 router.get(['/', '/:id'], async (req, res, next) => {
 
-    const rootOfUser = req.user.rootDirId
-    const id = req.params.id || rootOfUser
 
-    // Find the directory and verify ownership
-    const directoryData = dirdata.find((directory) => directory.id === id && directory.userId === req.user.id);
+    const _id = req.params.id ? new ObjectId(req.params.id) : req.user.rootDirId
+    const db = req.db
+    const dirCollection = db.collection('directories')
+    const directoryData = await dirCollection.findOne({ _id, userId: req.user._id })
     if (!directoryData) {
         return res.status(404).json({ error: "Directory not found or you do not have access to it!" });
     }
 
+    const files = await db.collection('files').find({ parentId: _id }).toArray()
+    const directories = await dirCollection.find({ parentId: _id }).toArray()
 
-    const files = (directoryData.files || []).map((fileId) => {
-        return filedata.find((file) => file.id === fileId)
-    })
-
-    const directories = directoryData.directories.map((dirId) => {
-        return dirdata.find((dir) => dir.id === dirId)
-    }).map(({ id, name }) => ({ id, name }))
-
-    return res.status(200).json({ ...directoryData, files, directories })
+    return res.status(200).json({ ...directoryData, files: files.map(f => ({ id: f._id, ...f })), directories: directories.map(d => ({ id: d._id, ...d })) })
 
 })
-
 
 //make directory
 router.post(['/', '/:parentId'], async (req, res, next) => {
 
-    const rootOfUser = req.user.rootDirId
-    const parentId = req.params.parentId || rootOfUser
+    const parentId = req.params.parentId ? new ObjectId(req.params.parentId) : req.user.rootDirId
     const name = req.headers.dirname || "new folder"
+    const db = req.db
+    const dirCollection = db.collection('directories')
     if (!name) return res.status(400).json({ message: 'Missing directory name (send in header "dirname" or JSON body)' })
 
-    const newDir = {
-        id: crypto.randomUUID(),
-        name: name,
-        userId: req.user.id,
-        parentId: parentId || null,
-        files: [],
-        directories: []
-    }
-    dirdata.push(newDir)//add new dierectory to dirdata
-
-    const parentDir = dirdata.find((dir) => dir.id === parentId)//add this directory to parent directory's directories array
-    parentDir.directories.push(newDir.id)
-
     try {
-        await writeFile(path.join(__dirname, '..', 'directoriesDb.json'), JSON.stringify(dirdata, null, 2))
-        res.status(201).json({ message: 'Directory created', directory: newDir })
+        await dirCollection.insertOne({
+            name: name,
+            userId: req.user._id,
+            parentId: parentId,
+        })
+        res.status(201).json({ message: 'Directory created' })
     } catch (err) {
         next(err)
     }
@@ -73,22 +53,14 @@ router.post(['/', '/:parentId'], async (req, res, next) => {
 // rename directory
 router.patch('/:id', async (req, res, next) => {
     const id = req.params.id
-    const directoryData = dirdata.find((d) => d.id === id)
-
-    if (!directoryData) return res.status(404).json({ message: 'Directory not found' })
-
-    // Check if the directory belongs to the user
-    if (directoryData.userId !== req.user.id) {
-        return res.status(403).json({ message: "You are not authorized to rename this directory!" });
-    }
+    const db = req.db
 
     const newName = req.body.newDirName
-    if (!newName) return res.status(400).json({ message: 'Missing newname in body or dirname header' })
-    directoryData.name = newName
 
     try {
-        await writeFile(path.join(__dirname, '..', 'directoriesDb.json'), JSON.stringify(dirdata, null, 2))
-        return res.status(200).json({ message: 'Directory renamed', directory: directoryData })
+        const result = await db.collection('directories').updateOne({ _id: new ObjectId(id), userId: req.user._id }, { $set: { name: newName } })
+        console.log(result)
+        return res.status(200).json({ message: 'Directory renamed' })
     } catch (err) {
         next(err)
     }
@@ -97,60 +69,40 @@ router.patch('/:id', async (req, res, next) => {
 // delete directory (recursive): removes directory and all child directories and files
 router.delete('/:id', async (req, res, next) => {
     const id = req.params.id
-    const dirIndex = dirdata.findIndex(d => d.id === id)
-    if (dirIndex === -1) return res.status(404).json({ message: 'Directory not found' })
-    // Check if the directory belongs to the user
-    if (dirdata[dirIndex].userId !== req.user.id) {
-        return res.status(403).json({ message: "You are not authorized to delete this directory!" });
-    }
-    // collect directories and files to delete
-    const dirsToDelete = new Set()
-    const filesToDelete = new Set()
+    const db = req.db
+    const _id = new ObjectId(id)
 
-    function collect(dirId) {
-        if (dirsToDelete.has(dirId)) return
-        dirsToDelete.add(dirId)
-        const dir = dirdata.find(d => d.id === dirId)
-        if (!dir) return
-            ; (dir.files || []).forEach(fId => filesToDelete.add(fId))
-            ; (dir.directories || []).forEach(childId => collect(childId))
-    }
+    async function collectContentDir(id) {
+        let files = await db.collection('files').find({ parentId: id }, { projection: { extension: 1 } }).toArray()
+        let directories = await db.collection('directories').find({ parentId: id }, { projection: { _id: 1 } }).toArray()
 
-    collect(id)
+        for (const dir of directories) {
+            const { files: childFiles, directories: chilDirs } = await collectContentDir(dir._id)
+            files.push(...childFiles)
+            directories.push(...chilDirs)
+        }
+        return { files, directories }
+    }
 
     try {
-        // delete files from storage
-        const deleteFilePromises = []
-        for (const fileId of filesToDelete) {
-            const f = filedata.find(x => x.id === fileId)
-            if (!f) continue
-            const filePath = path.join(__dirname, '..', 'storage', fileId + (f.extension || ''))
-            deleteFilePromises.push(rm(filePath, { force: true }))
+        const dirObj = await db.collection('directories').findOne({ _id, userId: req.user._id }, { projection: { _id: 1 } })
+        if (!dirObj) return res.status(404).json({ massage: 'dir is not found or you are not authorise' })
+
+        const { files, directories } = await collectContentDir(_id)
+        directories.push({ _id })
+        
+        //delete form actual storage folder
+        for (const file of files) {
+            await rm(path.join(import.meta.dirname, '../storage', file._id.toString() + file.extension))
         }
-        await Promise.all(deleteFilePromises)
+        //delete form filecollection 
+        await db.collection('files').deleteMany({ _id: { $in: files.map(f => f._id) } })
 
-        // remove file entries from filedata
-        const remainingFiles = filedata.filter(f => !filesToDelete.has(f.id))
-        filedata.length = 0
-        remainingFiles.forEach(f => filedata.push(f))
+        //delete form directory collection
+        await db.collection('directories').deleteMany({ _id: { $in: directories.map(d => d._id) } })
 
-        // remove directory references from remaining directories and remove the dirs
-        const remainingDirs = dirdata.filter(d => !dirsToDelete.has(d.id))
-        // ensure parent directories don't reference deleted dirs or files
-        remainingDirs.forEach(d => {
-            d.directories = (d.directories || []).filter(childId => !dirsToDelete.has(childId))
-            d.files = (d.files || []).filter(fileId => !filesToDelete.has(fileId))
-        })
-
-        dirdata.length = 0
-        remainingDirs.forEach(d => dirdata.push(d))
-
-        // persist changes
-        await writeFile(path.join(__dirname, '..', 'filesDb.json'), JSON.stringify(filedata, null, 2))
-        await writeFile(path.join(__dirname, '..', 'directoriesDb.json'), JSON.stringify(dirdata, null, 2))
-
-        return res.status(200).json({ message: 'Directory and its contents deleted' })
-    } catch (err) {
+        return res.status(200).json({ message: 'Directory and all its contents deleted' })
+    }catch(err){
         next(err)
     }
 })
