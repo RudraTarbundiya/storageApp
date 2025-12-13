@@ -275,6 +275,8 @@ function DirectoryView() {
   async function handleDeleteDirectory(id) {
     setErrorMessage("");
     try {
+      const ack = window.confirm("Are you sure you want to delete this directory?");
+      if (!ack) return;
       const response = await fetch(`${BASE_URL}/directory/${id}`, {
         method: "DELETE",
         credentials: "include",

@@ -35,6 +35,7 @@ desktop.ini
 *.sublime-workspace
 
 # Local storage / app DB (don't commit user or uploaded files)
+backend/test.js
 storage/
 backend/storage/
 filesDb.json
