@@ -1,3 +1,4 @@
+import 'dotenv/config.js'
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
@@ -12,7 +13,7 @@ await connectDB()
 
 const app = express()
 
-app.use(cookieParser())//for parsing cookies
+app.use(cookieParser(process.env.secretKey))//for parsing cookies
 
 app.use(express.json())//for json parsing newname in rename handler
 
@@ -28,7 +29,7 @@ app.use('/user', userRouteres)
 
 //this is global middleware for eroor handling
 app.use((err, req, res, next) => {
-    // console.log(err)
+    console.log(err)
     return res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
 })
 

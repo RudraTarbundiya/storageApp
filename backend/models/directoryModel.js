@@ -17,7 +17,6 @@ const directorySchema = new Schema({
     }
 },{
     strict : 'throw',
-    versionKey : false
 })
 
 const Directory = model('Directory', directorySchema)

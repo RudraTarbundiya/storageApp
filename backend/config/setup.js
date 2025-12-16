@@ -1,9 +1,11 @@
 import connectDB from "./db.js";
-import { Db } from "mongodb";
-const db = await connectDB();
+import mongoose from "mongoose";
+await connectDB()
+const clinet = mongoose.connection.getClient();
 
 try {
-  const command = 'collMod' // create OR MODIFY COLLECTION(collMod)
+  const db =  mongoose.connection.db
+  const command = 'create' // create OR MODIFY COLLECTION(collMod)
 
   await db.command({
     [command]: "users",//collecection modification
@@ -127,4 +129,6 @@ try {
   })
 } catch (err) {
   console.log('Error setting up schema validation:', err)
+}finally{
+  await clinet.close();
 }

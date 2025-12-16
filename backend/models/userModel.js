@@ -9,6 +9,7 @@ const userSchema = new Schema({
     email: {
         type: String,
         required: true,
+        unique : true,
         match: [
             /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
             'Please enter a valid email address'
@@ -25,8 +26,7 @@ const userSchema = new Schema({
         ref: 'Directory'
     }
 }, {
-    strict: 'throw',
-    versionKey: false
+    strict: 'throw'
 })
 
 const User = model('User', userSchema)

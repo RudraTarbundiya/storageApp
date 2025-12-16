@@ -23,8 +23,7 @@ const fileSchema = new Schema({
         ref : 'User'
     }
 },{
-   strict : 'throw',
-   versionKey : false
+   strict : 'throw'
 })
 
 const File = model('File',fileSchema)

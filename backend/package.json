@@ -1,6 +1,7 @@
 {
     "type": "module",
     "dependencies": {
+        "bcrypt": "^6.0.0",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
         "mime-types": "^3.0.1",
@@ -8,6 +9,6 @@
         "path": "^0.12.7"
     },
     "scripts": {
-        "start": "node --watch server-express.js"
+        "start": "node --watch server.js"
     }
 }
