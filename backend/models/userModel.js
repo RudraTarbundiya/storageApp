@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new Schema({
     name: {
@@ -9,7 +10,7 @@ const userSchema = new Schema({
     email: {
         type: String,
         required: true,
-        unique : true,
+        unique: true,
         match: [
             /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
             'Please enter a valid email address'
@@ -20,7 +21,7 @@ const userSchema = new Schema({
         required: true,
         trim: true
     },
-    rootDirId :{
+    rootDirId: {
         type: Schema.Types.ObjectId,
         required: true,
         ref: 'Directory'
@@ -28,6 +29,15 @@ const userSchema = new Schema({
 }, {
     strict: 'throw'
 })
+
+userSchema.pre("save",  function () {
+  if (!this.isModified("password")) return
+  this.password = bcrypt.hashSync(this.password, 12)
+});
+
+userSchema.methods.comparePassword = async function (candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password)
+}
 
 const User = model('User', userSchema)
 

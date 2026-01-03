@@ -7,7 +7,6 @@ import Session from "../models/sesssionModel.js";
 
 export const registerUser = async (req, res, next) => {
     const { name, email, password } = req.body;
-    const hash_pw = await bcrypt.hash(password, 12)
     const session = await mongoose.startSession()
     try {
         const rootDirId = new mongoose.Types.ObjectId()
@@ -24,7 +23,7 @@ export const registerUser = async (req, res, next) => {
             _id: userId,
             name,
             email,
-            password: hash_pw,
+            password,
             rootDirId: rootDirId,
         }, { session })
         await session.commitTransaction()
@@ -49,11 +48,11 @@ export const loginUser = async (req, res, next) => {
     const { email, password } = req.body
 
     try {
-        const user = await User.findOne({ email }).select('password').lean()
+        const user = await User.findOne({ email }).select('password')
         if (!user) {
             return res.status(401).json({ error: 'not registered!!' })
         }
-        const result = await bcrypt.compare(password, user.password)
+        const result = await user.comparePassword(password)
         if (!result) {
             return res.status(401).json({ error: 'Invalid email or password !' })
         }
