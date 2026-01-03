@@ -13,12 +13,12 @@ await connectDB()
 
 const app = express()
 
-app.use(cookieParser(process.env.secretKey))//for parsing cookies
+app.use(cookieParser('RudraSecret'))//for parsing cookies
 
 app.use(express.json())//for json parsing newname in rename handler
 
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: 'http://localhost:5173',
     credentials: true
 }
 ))//enable CORS

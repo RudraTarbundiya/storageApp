@@ -3,10 +3,11 @@ import Directory from "../models/directoryModel.js";
 import mongoose from "mongoose";
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
+import Session from "../models/sesssionModel.js";
 
 export const registerUser = async (req, res, next) => {
     const { name, email, password } = req.body;
-    const hash_pw = await bcrypt.hash(password,12)
+    const hash_pw = await bcrypt.hash(password, 12)
     const session = await mongoose.startSession()
     try {
         const rootDirId = new mongoose.Types.ObjectId()
@@ -46,26 +47,28 @@ export const registerUser = async (req, res, next) => {
 
 export const loginUser = async (req, res, next) => {
     const { email, password } = req.body
-    const user = await User.findOne({ email }).select('password').lean()
-    if (!user) {
-        return res.status(401).json({ error: 'not registered!!' })
-    }
-    const result  = await bcrypt.compare(password,user.password)
-    if(!result){
-        return res.status(401).json({ error: 'Invalid email or password !' })
-    }
 
-    const cookiePayLoad = JSON.stringify({
-        _id: user._id,
-        expiry: Math.round(Date.now() / 1000 + 1000 * 60 * 60 * 24) //1 day expiry
-    })
+    try {
+        const user = await User.findOne({ email }).select('password').lean()
+        if (!user) {
+            return res.status(401).json({ error: 'not registered!!' })
+        }
+        const result = await bcrypt.compare(password, user.password)
+        if (!result) {
+            return res.status(401).json({ error: 'Invalid email or password !' })
+        }
 
-    res.cookie('token', Buffer.from(cookiePayLoad).toString('base64'), {
-        httpOnly: true,
-        signed : true ,
-        maxAge: 60 * 60 * 1000 * 24 * 7//1 week
-    })
-    return res.status(200).json({ message: 'Login successful' })
+        const ssn = await Session.create({ userId: user._id })
+
+        res.cookie('sid', ssn._id, {
+            httpOnly: true,
+            signed: true,
+            maxAge: 60 * 60 * 1000 * 24 * 7//1 week
+        })
+        return res.status(200).json({ message: 'Login successful' })
+    } catch (error) {
+        next(error)
+    }
 }
 
 export const getUserProfile = (req, res) => {
@@ -76,6 +79,6 @@ export const getUserProfile = (req, res) => {
 }
 
 export const logoutUser = (req, res) => {
-    res.clearCookie('token')
+    res.clearCookie('sid')
     return res.status(204).json({ message: 'Logout successful' })
 }
