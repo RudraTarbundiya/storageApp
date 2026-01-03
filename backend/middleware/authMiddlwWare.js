@@ -10,6 +10,10 @@ export default async function checkAuth(req, res, next) {
     if (!ssn) {
         return res.status(401).json({ error: "Not logged!" });
     }
+    const allSessions  = await Session.find({ userId: ssn.userId })
+    if (allSessions.length >= 3 ){//max 2 sessions allowed
+        await allSessions[0].deleteOne()
+    }
     const user = await User.findOne({ _id : ssn.userId }).lean();
     if (!user) {
         return res.status(401).json({ error: "Not logged!" });

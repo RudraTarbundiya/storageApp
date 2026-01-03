@@ -78,7 +78,22 @@ export const getUserProfile = (req, res) => {
     })
 }
 
-export const logoutUser = (req, res) => {
+export const logoutUser = async (req, res) => {
     res.clearCookie('sid')
-    return res.status(204).json({ message: 'Logout successful' })
+    try {
+        await Session.findByIdAndDelete(req.signedCookies.sid)
+        return res.status(204).json({ message: 'Logout successful' })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const logoutAllUser = async (req,res,next)=>{
+    res.clearCookie('sid')
+    try {
+        await Session.deleteMany({ userId : req.user._id })
+        return res.status(204).json({ message: 'Logout from all devices successful' })
+    } catch (error) {
+        next(error)
+    }
 }

@@ -4,12 +4,12 @@ const sessionSchema = new Schema({
     userId : {
         type : Schema.Types.ObjectId,
         required : true,
-        ref : 'User'
+        ref : 'User' 
     },
     ceratedAt : {
         type : Date,
         default : Date.now,
-        expires : '30'
+        expires : 3600 //after each hour user must need login again
     }
 },{
     strict : 'throw',
