@@ -1,14 +1,29 @@
 import User from "../models/userModel.js";
 import Directory from "../models/directoryModel.js";
 import mongoose from "mongoose";
-import crypto from "node:crypto";
-import bcrypt from "bcrypt";
-import Session from "../models/sesssionModel.js";
+import Session from "../models/sesssionModel.js"
+import OTP from "../models/otpModel.js";
+import sendOtpService from "../services/sendOtp.service.js";
+
+export const generateOTP = async (req, res, next) => {
+    const { email } = req.body;
+    try {
+        const resData = await sendOtpService(email);
+        res.status(201).json(resData);
+    } catch (error) {
+        next(error)
+    }
+};
 
 export const registerUser = async (req, res, next) => {
-    const { name, email, password } = req.body;
+    const { name, otp, email, password } = req.body;
     const session = await mongoose.startSession()
     try {
+        const find = await OTP.findOne({ email, otp })
+        if (!find) {
+            return res.status(400).json({ error: 'Invalid OTP..' })
+        }
+        await find.deleteOne()
         const rootDirId = new mongoose.Types.ObjectId()
         const userId = new mongoose.Types.ObjectId()
 
@@ -87,10 +102,10 @@ export const logoutUser = async (req, res) => {
     }
 }
 
-export const logoutAllUser = async (req,res,next)=>{
+export const logoutAllUser = async (req, res, next) => {
     res.clearCookie('sid')
     try {
-        await Session.deleteMany({ userId : req.user._id })
+        await Session.deleteMany({ userId: req.user._id })
         return res.status(204).json({ message: 'Logout from all devices successful' })
     } catch (error) {
         next(error)

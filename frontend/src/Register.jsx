@@ -9,12 +9,15 @@ const Register = () => {
     name: "rudra",
     email: "rudra@gmail.com",
     password: "1234",
+    otp: "",
   });
 
   // serverError will hold the error message from the server
   const [serverError, setServerError] = useState("");
 
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -31,6 +34,40 @@ const Register = () => {
       ...prevFormData,
       [name]: value,
     }));
+  };
+
+  // Handler for requesting OTP
+  const handleRequestOtp = async () => {
+    if (!formData.email) {
+      setServerError("Please enter an email address first");
+      return;
+    }
+
+    setOtpLoading(true);
+    setServerError("");
+
+    try {
+      const response = await fetch(`${BASE_URL}/user/send-otp`, {
+        method: "POST",
+        body: JSON.stringify({ email: formData.email }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        setServerError(data.error);
+      } else {
+        setServerError(""); // Clear error on success
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setServerError("Failed to send OTP. Please try again.");
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
   // Handler for form submission
@@ -107,6 +144,35 @@ const Register = () => {
           {serverError && <span className="error-msg">{serverError}</span>}
         </div>
 
+        {/* Send OTP Button */}
+        {/* Request OTP Button */}
+        <div className="form-group">
+          <button
+            type="button"
+            className={`otp-button ${otpLoading ? "loading" : ""}`}
+            onClick={handleRequestOtp}
+            disabled={otpLoading}
+          >
+            {otpLoading ? "Sending OTP..." : "Send OTP to Email"}
+          </button>
+        </div>
+
+        {/* OTP Input */}
+        <div className="form-group">
+          <label htmlFor="otp" className="label">
+            OTP
+          </label>
+          <input
+            className="input"
+            type="text"
+            id="otp"
+            name="otp"
+            value={formData.otp}
+            onChange={handleChange}
+            placeholder="Enter OTP received in email"
+            required
+          />
+        </div>
         {/* Password */}
         <div className="form-group">
           <label htmlFor="password" className="label">

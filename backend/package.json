@@ -7,7 +7,8 @@
         "dotenv": "^17.2.3",
         "mime-types": "^3.0.1",
         "mongoose": "^9.0.1",
-        "path": "^0.12.7"
+        "path": "^0.12.7",
+        "resend": "^6.6.0"
     },
     "scripts": {
         "start": "node --watch server.js"
