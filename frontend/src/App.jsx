@@ -1,30 +1,23 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import DirectoryView from "./DirectoryView";
-import Register from "./Register";
-import "./App.css";
-import Login from "./Login";
+import { Routes, Route, Navigate } from "react-router-dom"
+import LoginPage from "./components/pages/LoginPage"
+import RegisterPage from "./components/pages/RegisterPage"
+import DashboardPage from "./components/pages/DashboardPage"
+import ProtectedRoute from "./components/ProtectedRoute"
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <DirectoryView />,
-  },
-  {
-    path: "/register",
-    element: <Register />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/directory/:dirId",
-    element: <DirectoryView />,
-  },
-]);
-
-function App() {
-  return <RouterProvider router={router} />;
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route
+        path="/dashboard/*"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  )
 }
-
-export default App;

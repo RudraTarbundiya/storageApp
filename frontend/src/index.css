@@ -1,1 +1,82 @@
 @import "tailwindcss";
+
+@theme {
+  /* Light mode colors (default) */
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-surface-hover: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+
+  /* Brand colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-light: #dbeafe;
+
+  /* Status colors */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+}
+
+/* Dark mode overrides */
+.dark {
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #334155;
+  --color-border: #334155;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #64748b;
+
+  --color-primary: #60a5fa;
+  --color-primary-hover: #3b82f6;
+  --color-primary-light: #1e3a5f;
+}
+
+/* Smooth theme transitions */
+* {
+  @apply transition-colors duration-200 ease-out;
+}
+
+html {
+  @apply bg-background text-text-primary;
+}
+
+body {
+  @apply bg-background text-text-primary;
+}
+
+/* Utility classes for semantic colors */
+.bg-background {
+  @apply bg-[var(--color-background)];
+}
+.bg-surface {
+  @apply bg-[var(--color-surface)];
+}
+.bg-surface-hover {
+  @apply bg-[var(--color-surface-hover)];
+}
+.text-primary {
+  @apply text-[var(--color-primary)];
+}
+.text-text-primary {
+  @apply text-[var(--color-text-primary)];
+}
+.text-text-secondary {
+  @apply text-[var(--color-text-secondary)];
+}
+.text-text-muted {
+  @apply text-[var(--color-text-muted)];
+}
+.border-border {
+  @apply border-[var(--color-border)];
+}
+.bg-error {
+  @apply bg-[var(--color-error)];
+}
+.text-error {
+  @apply text-[var(--color-error)];
+}

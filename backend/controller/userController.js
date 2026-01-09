@@ -86,6 +86,7 @@ export const loginUser = async (req, res, next) => {
 }
 
 export const getUserProfile = (req, res) => {
+    console.log('test server')
     res.status(200).json({
         name: req.user.name,
         email: req.user.email,
