@@ -1,5 +1,5 @@
 "use client"
-
+import { useGoogleLogin } from '@react-oauth/google'
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
@@ -18,12 +18,41 @@ export default function DashboardPage() {
   const [renameTarget, setRenameTarget] = useState(null)
   const [renameNewName, setRenameNewName] = useState("")
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
-  const { user, logout, logoutAll } = useAuth()
+  const [showGoogleDriveSection, setShowGoogleDriveSection] = useState(false)
+  const [googleDriveFiles, setGoogleDriveFiles] = useState([])
+  const [googleDriveBreadcrumbs, setGoogleDriveBreadcrumbs] = useState([{ id: 'root', name: 'My Drive' }])
+  const [currentGoogleDriveFolder, setCurrentGoogleDriveFolder] = useState('root')
+  const [loadingGoogleDrive, setLoadingGoogleDrive] = useState(false)
+  const { user, logout, logoutAll, googleLogin } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
     fetchDirectoryContents("root")
   }, [])
+
+  const gdLogin = useGoogleLogin({
+    flow: 'auth-code',
+    scope: 'openid email https://www.googleapis.com/auth/drive.readonly',
+    prompt: 'consent',   
+    onSuccess: async (code) => {
+      console.log(code)
+      const res = await fetch('http://localhost:4000/gd/auth-code', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code: code })
+      })
+      console.log(await res.json())
+      const filesRes = await fetch('http://localhost:4000/gd/list-files', {
+        method: 'GET',
+        credentials: 'include',
+      })
+      console.log(await filesRes.json())
+    }
+  });
+
 
   const fetchDirectoryContents = async (dirId) => {
     setLoading(true)
@@ -279,7 +308,7 @@ export default function DashboardPage() {
             className="px-4 py-2 border border-border hover:bg-surface-hover rounded-lg font-medium transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M3 16a2 2 0 002 2h10a2 2 0 002-2v-6a1 1 0 10-2 0v6H5v-6a1 1 0 10-2 0v6zm7-12a1 1 0 011 1v4h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H5a1 1 0 110-2h3V5a1 1 0 011-1z"/>
+              <path d="M3 16a2 2 0 002 2h10a2 2 0 002-2v-6a1 1 0 10-2 0v6H5v-6a1 1 0 10-2 0v6zm7-12a1 1 0 011 1v4h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H5a1 1 0 110-2h3V5a1 1 0 011-1z" />
             </svg>
             Upload
           </button>
@@ -291,6 +320,10 @@ export default function DashboardPage() {
             onChange={handleUploadFiles}
           />
         </div>
+
+        <button onClick={() => gdLogin()} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 mb-6">
+          Connect Google Drive
+        </button>
 
         {/* New Folder Modal */}
         {showNewFolderModal && (
@@ -391,7 +424,7 @@ export default function DashboardPage() {
                     item={folder}
                     onSelect={handleOpenFolder}
                     onDelete={handleDeleteFolder}
-                    onRename={() => {}}
+                    onRename={() => { }}
                     isFile={false}
                   />
                 ))}
@@ -399,7 +432,7 @@ export default function DashboardPage() {
                   <FileCard
                     key={file._id}
                     item={file}
-                    onSelect={() => {}}
+                    onSelect={() => { }}
                     onDelete={handleDeleteFile}
                     onRename={handleRenameFile}
                     isFile={true}

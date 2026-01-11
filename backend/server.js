@@ -8,6 +8,7 @@ import filesRoutes from './routes/filesRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import directoryRoutes from './routes/directoryRoutes.js'
 import userRouteres from './routes/userRoutes.js'
+import gdRoutes from './routes/gdRoutes.js'
 import checkAuth from './middleware/authMiddlwWare.js'
 
 await connectDB()
@@ -24,10 +25,11 @@ app.use(cors({
 }
 ))//enable CORS
 
+app.use('/user', userRouteres)
 app.use('/auth',authRoutes)
 app.use('/directory', checkAuth, directoryRoutes)
 app.use('/file', checkAuth, filesRoutes)
-app.use('/user', userRouteres)
+app.use('/gd', gdRoutes)
 
 //this is global middleware for eroor handling
 app.use((err, req, res, next) => {
