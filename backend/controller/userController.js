@@ -3,27 +3,17 @@ import Directory from "../models/directoryModel.js";
 import mongoose from "mongoose";
 import Session from "../models/sesssionModel.js"
 import OTP from "../models/otpModel.js";
-import sendOtpService from "../services/sendOtp.service.js";
 
-export const generateOTP = async (req, res, next) => {
-    const { email } = req.body;
-    try {
-        const resData = await sendOtpService(email);
-        res.status(201).json(resData);
-    } catch (error) {
-        next(error)
-    }
-};
 
 export const registerUser = async (req, res, next) => {
     const { name, otp, email, password } = req.body;
     const session = await mongoose.startSession()
     try {
-        const find = await OTP.findOne({ email, otp })
-        if (!find) {
+        const findOtp = await OTP.findOne({ email, otp })
+        if (!findOtp) {
             return res.status(400).json({ error: 'Invalid OTP..' })
         }
-        await find.deleteOne()
+        await findOtp.deleteOne()
         const rootDirId = new mongoose.Types.ObjectId()
         const userId = new mongoose.Types.ObjectId()
 
@@ -39,6 +29,7 @@ export const registerUser = async (req, res, next) => {
             name,
             email,
             password,
+            picture:null,
             rootDirId: rootDirId,
         }, { session })
         await session.commitTransaction()
@@ -46,6 +37,7 @@ export const registerUser = async (req, res, next) => {
 
         return res.status(201).json({ message: 'User registered successfully' })
     } catch (err) {
+        res.json(err)
         if (err.name === 'ValidationError') {
             const messages = Object.values(err.errors).map(val => val.message);
             return res.status(400).json({ error: messages.join(', ') });
@@ -55,7 +47,7 @@ export const registerUser = async (req, res, next) => {
             }
         }
         await session.abortTransaction()
-        next(err)
+        // next(err)
     }
 }
 
@@ -71,9 +63,12 @@ export const loginUser = async (req, res, next) => {
         if (!result) {
             return res.status(401).json({ error: 'Invalid email or password !' })
         }
-
+        
+        const allSessions = await Session.find({ userId: user._id })
+        if (allSessions.length >= 2) {//max 2 sessions allowed
+            await allSessions[0].deleteOne()
+        }
         const ssn = await Session.create({ userId: user._id })
-
         res.cookie('sid', ssn._id, {
             httpOnly: true,
             signed: true,
@@ -86,10 +81,10 @@ export const loginUser = async (req, res, next) => {
 }
 
 export const getUserProfile = (req, res) => {
-    console.log('test server')
     res.status(200).json({
         name: req.user.name,
         email: req.user.email,
+        picture: req.user.picture
     })
 }
 

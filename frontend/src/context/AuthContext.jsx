@@ -1,10 +1,12 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -20,8 +22,7 @@ export function AuthProvider({ children }) {
       })
       if (response.ok) {
         const data = await response.json()
-        console.log('data')
-        // backend returns { name, email } (not nested under `user`)
+        // backend returns { name, email, picture } (not nested under `user`)
         setUser(data)
       }
     } catch (error) {
@@ -47,6 +48,24 @@ export function AuthProvider({ children }) {
     await checkAuth()
     return data
   }
+  
+  const googleLogin = async (credentials) =>{
+    const response = await fetch("http://localhost:4000/auth/google-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(credentials),
+    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message)
+    }
+    const data = await response.json()
+    // Fetch profile to populate user context
+    await checkAuth()
+    navigate("/dashboard")
+    return data
+  }
 
   const register = async (name, email, password, otp) => {
     const response = await fetch("http://localhost:4000/user/register", {
@@ -62,7 +81,7 @@ export function AuthProvider({ children }) {
   }
 
   const sendOtp = async (email) => {
-    const response = await fetch("http://localhost:4000/user/send-otp", {
+    const response = await fetch("http://localhost:4000/auth/send-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -91,7 +110,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, sendOtp, logout, logoutAll }}>
+    <AuthContext.Provider value={{ user, loading, login,googleLogin, register, sendOtp, logout, logoutAll }}>
       {children}
     </AuthContext.Provider>
   )

@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser'
 import connectDB from './config/db.js'
 //importing routes
 import filesRoutes from './routes/filesRoutes.js'
+import authRoutes from './routes/authRoutes.js'
 import directoryRoutes from './routes/directoryRoutes.js'
 import userRouteres from './routes/userRoutes.js'
 import checkAuth from './middleware/authMiddlwWare.js'
@@ -18,11 +19,12 @@ app.use(cookieParser('RudraSecret'))//for parsing cookies
 app.use(express.json())//for json parsing newname in rename handler
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173'],
     credentials: true
 }
 ))//enable CORS
 
+app.use('/auth',authRoutes)
 app.use('/directory', checkAuth, directoryRoutes)
 app.use('/file', checkAuth, filesRoutes)
 app.use('/user', userRouteres)

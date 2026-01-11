@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
+import { GoogleLogin, googleLogout } from '@react-oauth/google'
 import { useAuth } from "../../context/AuthContext"
 import ThemeToggle from "../ThemeToggle"
 
@@ -9,13 +10,13 @@ export default function RegisterPage() {
   const [step, setStep] = useState("email") // 'email', 'details'
   const [email, setEmail] = useState("rudra@gmail.com")
   const [name, setName] = useState("Rudra Tarbundiya")
-  const [password, setPassword] = useState("1234")
-  const [confirmPassword, setConfirmPassword] = useState("1234")
+  const [password, setPassword] = useState("sjnipj9isjb")
+  const [confirmPassword, setConfirmPassword] = useState("sjnipj9isjb")
   const [otp, setOtp] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const { sendOtp, register } = useAuth()
+  const { sendOtp, register , googleLogin } = useAuth()
 
   const handleSendOtp = async (e) => {
     e.preventDefault()
@@ -97,6 +98,29 @@ export default function RegisterPage() {
               </form>
             )}
 
+            {step === "email" && (
+              <>
+                <div className="mt-6 flex items-center gap-4">
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="text-sm text-text-secondary">OR</span>
+                  <div className="flex-1 h-px bg-border"></div>
+                </div>
+
+                <div className="mt-6 flex justify-center">
+                  <GoogleLogin
+                    onSuccess={async (credentialResponse) => {
+                      console.log(credentialResponse);
+                      await googleLogin(credentialResponse)
+                    }}
+                    onError={() => {
+                      console.log('Login Failed');
+                    }}
+                    useOneTap
+                  />
+                </div>
+              </>
+            )}
+
             {step === "details" && (
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="p-4 bg-background border border-border rounded-lg">
@@ -110,8 +134,8 @@ export default function RegisterPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     className="w-full px-4 py-2 border border-border rounded-lg bg-background text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary text-center text-lg tracking-widest"
-                    placeholder="000000"
-                    maxLength="6"
+                    placeholder="0000"
+                    maxLength="4"
                     required
                   />
                 </div>

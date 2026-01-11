@@ -1,9 +1,8 @@
 import { Router } from "express";
 import checkAuth from "../middleware/authMiddlwWare.js";
-import { getUserProfile, loginUser, logoutAllUser, logoutUser, registerUser , generateOTP } from "../controller/userController.js";
+import { getUserProfile, loginUser, logoutAllUser, logoutUser, registerUser } from "../controller/userController.js";
 const router = Router();
 
-router.post('/send-otp', generateOTP)
 
 router.post('/register',registerUser)
 

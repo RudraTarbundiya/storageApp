@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [showRenameModal, setShowRenameModal] = useState(false)
   const [renameTarget, setRenameTarget] = useState(null)
   const [renameNewName, setRenameNewName] = useState("")
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const { user, logout, logoutAll } = useAuth()
   const navigate = useNavigate()
 
@@ -179,23 +180,77 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <div className="flex items-center gap-3 pl-4 border-l border-border">
-              <span className="text-sm text-text-secondary">{user?.name}</span>
+            <div className="flex items-center gap-3 pl-4 border-l border-border relative">
               <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-surface hover:bg-surface-hover border border-border rounded-lg transition-colors text-sm font-medium"
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-hover transition-colors"
               >
-                Logout
+                <img
+                  src={user?.picture || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user?.name || "User") + "&background=random"}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <span className="text-sm font-medium">{user?.name}</span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${showProfileDropdown ? "rotate-180" : ""}`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </button>
-              <button
-                onClick={async () => {
-                  await logoutAll()
-                  navigate("/login")
-                }}
-                className="px-4 py-2 bg-surface hover:bg-surface-hover border border-border rounded-lg transition-colors text-sm font-medium"
-              >
-                Logout All
-              </button>
+
+              {/* Profile Dropdown */}
+              {showProfileDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowProfileDropdown(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-surface border border-border rounded-lg shadow-lg z-20 overflow-hidden">
+                    <div className="p-4 border-b border-border">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={user?.picture || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user?.name || "User") + "&background=random&size=64"}
+                          alt="Profile"
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-text-primary truncate">{user?.name}</p>
+                          <p className="text-sm text-text-secondary truncate">{user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-2">
+                      <button
+                        onClick={() => {
+                          setShowProfileDropdown(false)
+                          handleLogout()
+                        }}
+                        className="w-full px-4 py-2 text-left hover:bg-surface-hover rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                        </svg>
+                        Logout
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setShowProfileDropdown(false)
+                          await logoutAll()
+                          navigate("/login")
+                        }}
+                        className="w-full px-4 py-2 text-left hover:bg-surface-hover rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                        </svg>
+                        Logout All Devices
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -2,16 +2,17 @@
 
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
+import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from "../../context/AuthContext"
 import ThemeToggle from "../ThemeToggle"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("rudra@gmail.com")
-  const [password, setPassword] = useState("1234")
+  const [password, setPassword] = useState("sjnipj9isjb")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, googleLogin } = useAuth()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -81,6 +82,25 @@ export default function LoginPage() {
                 {loading ? "Signing in..." : "Sign in"}
               </button>
             </form>
+
+            <div className="mt-6 flex items-center gap-4">
+              <div className="flex-1 h-px bg-border"></div>
+              <span className="text-sm text-text-secondary">OR</span>
+              <div className="flex-1 h-px bg-border"></div>
+            </div>
+
+            <div className="mt-6 flex justify-center">
+              <GoogleLogin
+                onSuccess={async (responceCredential) => {
+                  console.log(responceCredential)
+                  await googleLogin(responceCredential)
+                }}
+                onError={() => {
+                  console.log('Login Failed');
+                }}
+                useOneTap
+              />
+            </div>
 
             <div className="mt-6 pt-6 border-t border-border text-center">
               <p className="text-text-secondary">

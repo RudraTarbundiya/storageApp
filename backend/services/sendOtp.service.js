@@ -18,7 +18,7 @@ export default async function sendOtpService(email) {
         subject: "Storage App OTP",
         html,
     });
-    console.log(result)
+    console.log(`this is sendService log --> ${result}`)
 
     if (result.error !== null) {
         throw new Error('Failed to send OTP email');

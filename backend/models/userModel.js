@@ -18,8 +18,11 @@ const userSchema = new Schema({
     },
     password: {
         type: String,
-        required: true,
         trim: true
+    },
+    picture: {
+        type: String,
+        default: null
     },
     rootDirId: {
         type: Schema.Types.ObjectId,

@@ -5,7 +5,7 @@ const clinet = mongoose.connection.getClient();
 
 try {
   const db =  mongoose.connection.db
-  const command = 'create' // create OR MODIFY COLLECTION(collMod)
+  const command = 'collMod' // create OR MODIFY COLLECTION(collMod)
 
   await db.command({
     [command]: "users",//collecection modification
@@ -16,7 +16,6 @@ try {
           '_id',
           'email',
           'name',
-          'password',
           'rootDirId'
         ],
         properties: {
@@ -36,6 +35,9 @@ try {
           password: {
             bsonType: 'string',
             minLength: 4
+          },
+          picture : {
+            bsonType: ['string', 'null'],
           },
           rootDirId: {
             bsonType: 'objectId'
