@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { GoogleLogin, googleLogout } from '@react-oauth/google'
 import { useAuth } from "../../context/AuthContext"
@@ -15,8 +15,52 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
+  const [canResend, setCanResend] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(0)
   const navigate = useNavigate()
   const { sendOtp, register , googleLogin } = useAuth()
+
+  useEffect(() => {
+    // Check if there's a stored OTP timestamp
+    const storedTimestamp = localStorage.getItem('otpSentTimestamp')
+    if (storedTimestamp) {
+      const elapsed = Date.now() - parseInt(storedTimestamp)
+      const remaining = Math.max(0, 300000 - elapsed) // 5 minutes in ms
+      
+      if (remaining > 0) {
+        setTimeLeft(Math.ceil(remaining / 1000))
+        setCanResend(false)
+      } else {
+        setCanResend(true)
+        setTimeLeft(0)
+      }
+    } else {
+      setCanResend(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setCanResend(true)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [timeLeft])
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   const handleSendOtp = async (e) => {
     e.preventDefault()
@@ -25,11 +69,35 @@ export default function RegisterPage() {
 
     try {
       await sendOtp(email)
+      const timestamp = Date.now()
+      localStorage.setItem('otpSentTimestamp', timestamp.toString())
+      setTimeLeft(300) // 5 minutes
+      setCanResend(false)
       setStep("details")
     } catch (err) {
       setError(err.message || "Failed to send OTP")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    setError("")
+    setResendLoading(true)
+    setResendSuccess(false)
+
+    try {
+      await sendOtp(email)
+      const timestamp = Date.now()
+      localStorage.setItem('otpSentTimestamp', timestamp.toString())
+      setTimeLeft(300) // 5 minutes
+      setCanResend(false)
+      setResendSuccess(true)
+      setTimeout(() => setResendSuccess(false), 3000)
+    } catch (err) {
+      setError(err.message || "Failed to resend OTP")
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -127,8 +195,24 @@ export default function RegisterPage() {
                   <p className="text-sm text-text-secondary">Enter the OTP sent to <span className="font-medium text-text-primary">{email}</span> and create your password.</p>
                 </div>
 
+                {resendSuccess && (
+                  <div className="p-3 bg-success/10 border border-success rounded-lg">
+                    <p className="text-success text-sm">OTP sent successfully!</p>
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-2">OTP</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-text-primary">OTP</label>
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={!canResend || resendLoading}
+                      className="text-sm text-primary hover:text-primary-hover font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {resendLoading ? "Sending..." : canResend ? "Resend OTP" : `Resend in ${formatTime(timeLeft)}`}
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={otp}
