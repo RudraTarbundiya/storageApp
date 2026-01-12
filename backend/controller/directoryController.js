@@ -1,12 +1,11 @@
 import { rm } from 'fs/promises'
 import path from 'path'
-import { ObjectId } from 'mongodb'
 import Directory from '../models/directoryModel.js'
 import File from '../models/fileModel.js'
 
 export const getDirectoryById = async (req, res, next) => {
 
-    const _id =  req.params.id || req.user.rootDirId.toString()
+    const _id = req.params.id || req.user.rootDirId.toString()
     try {
         const directoryData = await Directory.findOne({ _id, userId: req.user._id }).lean()
         if (!directoryData) return res.status(404).json({ error: "Directory not found or you do not have access to it!" });
@@ -25,10 +24,10 @@ export const createDirectory = async (req, res, next) => {
     const name = req.headers.dirname || "new folder"
     if (!name) return res.status(400).json({ error: 'Missing directory name (send in header "dirname")' })
     console.log({
-            name: name,
-            userId: req.user._id,
-            parentDirId: parentId
-        })
+        name: name,
+        userId: req.user._id,
+        parentDirId: parentId
+    })
     try {
         await Directory.insertOne({
             name: name,
@@ -47,7 +46,7 @@ export const renameDirectorry = async (req, res, next) => {
     const newName = req.body.newDirName
     const user = req.user
     try {
-        await Directory.findOneAndUpdate({ _id: id, userId: user._id } , {name : newName} ).lean()
+        await Directory.findOneAndUpdate({ _id: id, userId: user._id }, { name: newName }).lean()
         return res.status(200).json({ message: 'Directory renamed' })
     } catch (err) {
         next(err)
@@ -72,11 +71,11 @@ export const deleteDirectory = async (req, res, next) => {
     }
 
     try {
-        const dirObj = await Directory.findOne({ _id : id, userId: req.user._id }, { projection: { _id: 1 } }).lean()
+        const dirObj = await Directory.findOne({ _id: id, userId: req.user._id }, { projection: { _id: 1 } }).lean()
         if (!dirObj) return res.status(404).json({ error: 'dir is not found or you are not authorise' })
 
         const { files, directories } = await collectContentDir(id)
-        directories.push({ _id : id }) //include the directory itself for deletion
+        directories.push({ _id: id }) //include the directory itself for deletion
 
         //delete form actual storage folder
         for (const file of files) {
