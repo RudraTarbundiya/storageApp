@@ -67,7 +67,7 @@ export const uploadFile = async (req, res, next) => {
 
     const parentDirId = req.params.parentDirId || req.user.rootDirId.toString() //if no parent id then upload to root
     const filename = req.headers.filename || "untitled" //if no filename in header then untitled
-    const extension = path.extname(filename)
+    const extension = path.extname(filename) || '' // Ensure extension is never undefined
     try {
         // Check if parent directory exists
         const parentDirData = await Directory.findOne({ _id: parentDirId, userId: req.user._id }).lean()

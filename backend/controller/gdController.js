@@ -6,6 +6,20 @@ import path from 'path'
 import { rm } from 'fs/promises'
 import mime from 'mime-types'
 
+// Google Drive special MIME types mapping to export MIME types and extensions
+// These are native Google formats that need to be exported (not downloaded directly)
+const GOOGLE_MIME_TYPE_MAP = {
+    'application/vnd.google-apps.document': { exportMimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: '.docx' },
+    'application/vnd.google-apps.spreadsheet': { exportMimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: '.xlsx' },
+    'application/vnd.google-apps.presentation': { exportMimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extension: '.pptx' },
+    'application/vnd.google-apps.drawing': { exportMimeType: 'image/png', extension: '.png' },
+    'application/vnd.google-apps.form': { exportMimeType: 'application/pdf', extension: '.pdf' },
+    'application/vnd.google-apps.script': { exportMimeType: 'application/vnd.google-apps.script+json', extension: '.json' },
+    'application/vnd.google-apps.site': { exportMimeType: 'text/plain', extension: '.txt' },
+    'application/vnd.google-apps.jam': { exportMimeType: 'application/pdf', extension: '.pdf' },
+    'application/vnd.google-apps.map': { exportMimeType: 'application/pdf', extension: '.pdf' },
+};
+
 export const codeToToken = async (req, res, next) => {
     const code = req.body.code
     try {
@@ -90,22 +104,55 @@ export const importFromGoogleDrive = async (req, res, next) => {
         }
 
         const originalFileName = fileMetadata.data.name;
-        const extension = mime.extension(fileMetadata.data.mimeType) ? '.' + mime.extension(fileMetadata.data.mimeType) : path.extname(originalFileName);
+        const fileMimeType = fileMetadata.data.mimeType;
+
+        // Check if this is a Google native format that needs export
+        const googleFormatInfo = GOOGLE_MIME_TYPE_MAP[fileMimeType];
+
+        // Determine the correct extension
+        let extension = '';
+        if (googleFormatInfo) {
+            // Use the mapped extension for Google native formats
+            extension = googleFormatInfo.extension;
+        } else if (fileMimeType) {
+            // Try to get extension from mime-types library
+            const mimeExt = mime.extension(fileMimeType);
+            if (mimeExt) {
+                extension = '.' + mimeExt;
+            }
+        }
+        // Fallback to file extension from name if mime type didn't work
+        if (!extension) {
+            const fileExt = path.extname(originalFileName);
+            if (fileExt) {
+                extension = fileExt;
+            }
+        }
 
         // Create file record in database
         const fileRecord = await File.create({
             name: originalFileName,
-            extension: extension || '',
+            extension: extension,
             parentDirId: existingGdFolder ? existingGdFolder._id : newGoogleDriveFolder._id,
             userId: userId
         });
 
         try {
-            // Download file from Google Drive
-            const response = await drive.files.get(
-                { fileId: fileId, alt: 'media' },
-                { responseType: 'stream' }
-            );
+            let response;
+
+            if (googleFormatInfo) {
+                // Export Google native formats (Docs, Sheets, Slides, etc.)
+                response = await drive.files.export(
+                    { fileId: fileId, mimeType: googleFormatInfo.exportMimeType },
+                    { responseType: 'stream' }
+                );
+            } else {
+                // Download regular files directly
+                response = await drive.files.get(
+                    { fileId: fileId, alt: 'media' },
+                    { responseType: 'stream' }
+                );
+            }
 
             // Save to storage
             const storagePath = path.join(import.meta.dirname, '../storage', fileRecord._id + extension);

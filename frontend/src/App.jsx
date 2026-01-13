@@ -1,26 +1,32 @@
-import { Routes, Route, Navigate } from "react-router-dom"
-import { GoogleOAuthProvider } from '@react-oauth/google'
-import LoginPage from "./components/pages/LoginPage"
-import RegisterPage from "./components/pages/RegisterPage"
-import DashboardPage from "./components/pages/DashboardPage"
-import ProtectedRoute from "./components/ProtectedRoute"
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import LoginPage from '@/pages/LoginPage'
+import RegisterPage from '@/pages/RegisterPage'
+import DashboardPage from '@/pages/DashboardPage'
+import GoogleDrivePage from '@/pages/GoogleDrivePage'
+import AuthCallbackPage from '@/pages/AuthCallbackPage'
+import AppLayout from '@/components/Layout/AppLayout'
 
-export default function App() {
+function App() {
   return (
-    <GoogleOAuthProvider clientId='63206782506-clugu9nar16huil5fcvg51e70fpd9m9v.apps.googleusercontent.com'>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route
-          path="/dashboard/*"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </GoogleOAuthProvider>
+    <ThemeProvider defaultTheme="light">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/files" element={<DashboardPage />} />
+            <Route path="/google-drive" element={<GoogleDrivePage />} />
+          </Route>
+          
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   )
 }
+
+export default App

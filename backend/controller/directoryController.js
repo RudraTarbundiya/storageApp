@@ -11,7 +11,39 @@ export const getDirectoryById = async (req, res, next) => {
         if (!directoryData) return res.status(404).json({ error: "Directory not found or you do not have access to it!" });
         const files = await File.find({ parentDirId: _id },{'__v' : 0}).lean()
         const directories = await Directory.find({ parentDirId: _id },{'__v': 0}).lean()
-        return res.status(200).json({ ...directoryData, files: files.map(f => ({ id: f._id, ...f })), directories: directories.map(d => ({ id: d._id, ...d })) })
+
+        // Compute child counts for each directory (files + subdirectories)
+        const dirIds = directories.map(d => d._id)
+        let fileCounts = []
+        let dirCounts = []
+
+        if (dirIds.length) {
+            fileCounts = await File.aggregate([
+                { $match: { parentDirId: { $in: dirIds } } },
+                { $group: { _id: '$parentDirId', count: { $sum: 1 } } }
+            ])
+
+            dirCounts = await Directory.aggregate([
+                { $match: { parentDirId: { $in: dirIds } } },
+                { $group: { _id: '$parentDirId', count: { $sum: 1 } } }
+            ])
+        }
+
+        const dirCountMap = new Map()
+        fileCounts.forEach(fc => dirCountMap.set(fc._id.toString(), (dirCountMap.get(fc._id.toString()) || 0) + fc.count))
+        dirCounts.forEach(dc => dirCountMap.set(dc._id.toString(), (dirCountMap.get(dc._id.toString()) || 0) + dc.count))
+
+        const directoriesWithCounts = directories.map(d => ({
+            id: d._id,
+            ...d,
+            itemCount: dirCountMap.get(d._id.toString()) || 0,
+        }))
+
+        return res.status(200).json({
+            ...directoryData,
+            files: files.map(f => ({ id: f._id, ...f })),
+            directories: directoriesWithCounts
+        })
     } catch (err) {
         next(err)
     }
@@ -21,7 +53,7 @@ export const getDirectoryById = async (req, res, next) => {
 export const createDirectory = async (req, res, next) => {
 
     const parentId = req.params.parentId || req.user.rootDirId.toString()
-    const name = req.headers.dirname || "new folder"
+    const name = req.body.dirname || "new folder"
     if (!name) return res.status(400).json({ error: 'Missing directory name (send in header "dirname")' })
     console.log({
         name: name,
