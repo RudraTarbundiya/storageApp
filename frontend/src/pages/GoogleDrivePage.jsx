@@ -4,23 +4,24 @@ import { motion } from 'framer-motion'
 import { Cloud, Download, FolderOpen, File, Home, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { googleDriveAPI } from '@/lib/api'
 import { googleLoginConfig } from '@/lib/googleAuth'
+import { useAlert } from '@/context'
 
 export default function GoogleDrivePage() {
+  const { showAlert } = useAlert()
+
   const [connected, setConnected] = useState(false)
   const [files, setFiles] = useState([])
   const [currentFolder, setCurrentFolder] = useState(null)
   const [breadcrumbs, setBreadcrumbs] = useState([])
   const [loading, setLoading] = useState(false)
-  const [initialLoading, setInitialLoading] = useState(true) // Loading on first mount
+  const [initialLoading, setInitialLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [alert, setAlert] = useState(null)
   const [nextPageToken, setNextPageToken] = useState(null)
-  const [importFile, setImportFile] = useState(null) // File to be imported
+  const [importFile, setImportFile] = useState(null)
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [importing, setImporting] = useState(false)
 
@@ -28,11 +29,6 @@ export default function GoogleDrivePage() {
   useEffect(() => {
     fetchFiles()
   }, [currentFolder])
-
-  const showAlert = (message, variant = 'default') => {
-    setAlert({ message, variant })
-    setTimeout(() => setAlert(null), 3000)
-  }
 
   // Initialize Google OAuth login
   const googleLogin = useGoogleLogin({
@@ -190,12 +186,6 @@ export default function GoogleDrivePage() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      {alert && (
-        <Alert variant={alert.variant} className="mb-4">
-          <AlertDescription>{alert.message}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>

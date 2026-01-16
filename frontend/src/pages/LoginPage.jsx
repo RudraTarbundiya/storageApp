@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { authAPI, userAPI } from '@/lib/api'
+import { useAuth } from '@/context'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
+  const { login, loginWithGoogle } = useAuth()
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -32,7 +33,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      await userAPI.login(formData.email, formData.password)
+      await login(formData.email, formData.password)
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed')
@@ -46,7 +47,7 @@ export default function LoginPage() {
     try {
       setLoading(true)
       setError('')
-      await authAPI.googleLogin(credentialResponse.credential)
+      await loginWithGoogle(credentialResponse.credential)
       navigate('/dashboard')
     } catch (error) {
       console.error('Google login error:', error)

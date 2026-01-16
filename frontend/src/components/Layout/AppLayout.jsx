@@ -1,42 +1,20 @@
 import { Outlet, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import AppSidebar from './AppSidebar'
 import Header from './Header'
-import { useState, useEffect } from 'react'
-import { userAPI } from '@/lib/api'
+import { useAuth } from '@/context'
 
 export default function AppLayout() {
   const navigate = useNavigate()
-  const [user, setUser] = useState({ name: 'User', email: 'Loading...', picture: null })
-  const [loading, setLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { user, isAuthenticated, loading } = useAuth()
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await userAPI.getCurrentUser()
-        setUser({
-          name: response.data.name || 'User',
-          email: response.data.email || 'user@example.com',
-          picture: response.data.picture || null,
-        })
-        setIsAuthenticated(true)
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error)
-        // Redirect to login if not authenticated
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          navigate('/login', { replace: true })
-          return
-        }
-        // For other errors, also redirect to login
-        navigate('/login', { replace: true })
-      } finally {
-        setLoading(false)
-      }
+    // Redirect to login if not authenticated and not loading
+    if (!loading && !isAuthenticated) {
+      navigate('/login', { replace: true })
     }
-
-    fetchUserProfile()
-  }, [navigate])
+  }, [loading, isAuthenticated, navigate])
 
   // Show loading state while checking authentication
   if (loading) {

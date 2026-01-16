@@ -29,7 +29,7 @@ export const registerUser = async (req, res, next) => {
             name,
             email,
             password,
-            picture:null,
+            picture: null,
             rootDirId: rootDirId,
         }, { session })
         await session.commitTransaction()
@@ -89,6 +89,32 @@ export const getUserProfile = (req, res) => {
         email: req.user.email,
         picture: req.user.picture
     })
+}
+
+export const getUsers = async (req, res, next) => {
+    try {
+        const users = await User.aggregate([
+            {
+                $lookup: {
+                    from: 'sessions', // MongoDB collection name (lowercase plural)
+                    localField: '_id',
+                    foreignField: 'userId',
+                    as: 'sessions'
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    email: 1,
+                    picture: 1,
+                    isLoggedIn: { $gt: [{ $size: '$sessions' }, 0] }
+                }
+            }
+        ]);
+        res.status(200).json(users);
+    } catch (error) {
+        next(error);
+    }
 }
 
 export const logoutUser = async (req, res) => {

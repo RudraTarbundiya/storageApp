@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
+import Session from "./sesssionModel.js";
 
 const userSchema = new Schema({
     name: {
@@ -33,14 +34,17 @@ const userSchema = new Schema({
     strict: 'throw'
 })
 
-userSchema.pre("save",  function () {
-  if (!this.isModified("password")) return
-  this.password = bcrypt.hashSync(this.password, 12)
+userSchema.pre("save", function () {
+    if (!this.isModified("password")) return
+    this.password = bcrypt.hashSync(this.password, 12)
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password)
 }
+
+userSchema.set('toJSON', { virtuals: true })
+userSchema.set('toObject', { virtuals: true })
 
 const User = model('User', userSchema)
 
