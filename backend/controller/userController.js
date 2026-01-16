@@ -37,17 +37,20 @@ export const registerUser = async (req, res, next) => {
 
         return res.status(201).json({ message: 'User registered successfully' })
     } catch (err) {
-        res.json(err)
+        await session.abortTransaction()
+
         if (err.name === 'ValidationError') {
             const messages = Object.values(err.errors).map(val => val.message);
             return res.status(400).json({ error: messages.join(', ') });
         } else if (err.code == 11000) {
-            if (err.keyPattern.email) {
-                return res.status(400).json({ error: 'User with this email already exists' })
+            if (err.keyPattern?.email) {
+                return res.status(400).json({ error: 'Email is already registered. Please login instead.' })
             }
+            return res.status(400).json({ error: 'Duplicate entry detected' })
         }
-        await session.abortTransaction()
-        // next(err)
+
+        console.error('Registration error:', err)
+        return res.status(500).json({ error: 'Registration failed. Please try again.' })
     }
 }
 
@@ -63,7 +66,7 @@ export const loginUser = async (req, res, next) => {
         if (!result) {
             return res.status(401).json({ error: 'Invalid email or password !' })
         }
-        
+
         const allSessions = await Session.find({ userId: user._id })
         if (allSessions.length >= 2) {//max 2 sessions allowed
             await allSessions[0].deleteOne()

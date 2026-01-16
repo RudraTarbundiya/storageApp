@@ -22,8 +22,7 @@ app.use(express.json())//for json parsing newname in rename handler
 app.use(cors({
     origin: ['http://localhost:5173','http://localhost:5174'],
     credentials: true
-}
-))//enable CORS
+}))//enable CORS
 
 app.use('/user', userRouteres)
 app.use('/auth',authRoutes)

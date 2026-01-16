@@ -16,7 +16,7 @@ export const authAPI = {
 
 // User API
 export const userAPI = {
-  register: (data) => api.post('/user', data),
+  register: (data) => api.post('/user/register', data),
   getCurrentUser: () => api.get('/user/profile'),
   login: (email, password) => api.post('/user/login', { email, password }),
   logout: () => api.post('/user/logout'),

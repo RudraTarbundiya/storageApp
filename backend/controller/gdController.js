@@ -56,7 +56,6 @@ export const listData = async (req, res, next) => {
             nextPageToken: nextPageToken || null
         });
     } catch (error) {
-        console.error('Error in listFiles:', error);
         next(error)
     }
 }

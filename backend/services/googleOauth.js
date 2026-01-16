@@ -54,14 +54,16 @@ export async function getDriveClient(userId) {
     const tokenDoc = await GoogleToken
         .findOne({ userId })
         .select("+refreshToken +accessToken");
+    
+    if (!tokenDoc) {
+        throw new Error("Google Drive not authorized");
+    }
 
     const client = new google.auth.OAuth2({
         clientId: process.env.client_id,
         clientSecret: process.env.client_secret,
         redirectUri: process.env.redirectUri
-    }
-
-    );
+    });
 
     client.setCredentials({
         refresh_token: tokenDoc.refreshToken,
