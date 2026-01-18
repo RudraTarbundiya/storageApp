@@ -4,6 +4,7 @@ import User from "../models/userModel.js";
 import Directory from "../models/directoryModel.js";
 import mongoose from "mongoose";
 import Session from "../models/sesssionModel.js";
+import OTP from "../models/otpModel.js";
 
 export const generateOTP = async (req, res, next) => {
     const { email } = req.body;
@@ -32,7 +33,7 @@ export const googlelogin = async (req, res, next) => {
             if (allSessions.length >= 2) {//max 2 sessions allowed
                 await allSessions[0].deleteOne()
             }
-            if(findUser.picture !== picture){
+            if (findUser.picture !== picture) {
                 await User.updateOne({ _id: findUser._id }, { picture })
             }
             //create session and set cookie
@@ -70,6 +71,37 @@ export const googlelogin = async (req, res, next) => {
         await session.endSession()
     } catch (error) {
         await session.abortTransaction()
+        next(error);
+    }
+}
+
+export const changeProfile = async (req, res, next) => {
+    const { otp, newPassword, picture } = req.body;
+    const { email } = req.user;
+    try {
+        const otpRecord = await OTP.findOne({ email }).sort({ createdAt: -1 });
+        //we can not use !== because otp is string and otpRecord.otp is number
+        if (!otp || !otpRecord || otpRecord.otp != otp) {
+            return res.status(400).json({ error: 'Invalid OTP.' });
+        }
+        await otpRecord.deleteOne();
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        // Update only provided fields
+        if (newPassword) {
+            user.password = newPassword; // Will be hashed by pre-save hook
+        }
+        if (picture !== undefined) {
+            user.picture = picture;
+        }
+
+        await user.save();
+        res.status(200).json({ message: 'Profile updated successfully.' });
+    } catch (error) {
         next(error);
     }
 }

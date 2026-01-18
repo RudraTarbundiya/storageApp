@@ -21,6 +21,7 @@ export const userAPI = {
   login: (email, password) => api.post('/user/login', { email, password }),
   logout: () => api.post('/user/logout'),
   logoutAll: () => api.post('/user/logoutall'),
+  updateProfile: (data) => api.post('/auth/change-profile', data),
 }
 
 // Admin API (admin-only endpoints)

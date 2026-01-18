@@ -1,4 +1,4 @@
-import { Home, Cloud, PanelRightClose, Globe, Users } from 'lucide-react'
+import { Home, Cloud, PanelRightClose, Globe, Users, UserCircle } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Sidebar,
@@ -32,6 +32,11 @@ const getMenuItems = (userRole) => {
       title: 'Google Drive',
       icon: Cloud,
       path: '/google-drive',
+    },
+    {
+      title: 'Profile',
+      icon: UserCircle,
+      path: '/profile',
     },
   ]
 

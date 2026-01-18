@@ -6,6 +6,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import GoogleDrivePage from '@/pages/GoogleDrivePage'
 import UsersPage from '@/pages/UsersPage'
+import ProfilePage from '@/pages/ProfilePage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import LandingPage from '@/pages/LandingPage'
 import AppLayout from '@/components/Layout/AppLayout'
@@ -27,6 +28,7 @@ function App() {
                 <Route path="/files" element={<DashboardPage />} />
                 <Route path="/google-drive" element={<GoogleDrivePage />} />
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Routes>
           </BrowserRouter>
