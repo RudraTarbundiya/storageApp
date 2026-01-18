@@ -21,7 +21,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useNavigate } from 'react-router-dom'
 import { userAPI } from '@/lib/api'
-import { SidebarTrigger } from '@/components/ui/sidebar'
+import { useSidebar } from '@/components/ui/sidebar'
 
 export default function Header({ user }) {
   const { theme, setTheme } = useTheme()
@@ -29,6 +29,7 @@ export default function Header({ user }) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const [logoutMode, setLogoutMode] = useState('current') // 'current' or 'all'
   const [loading, setLoading] = useState(false)
+  const { toggleSidebar, open, isMobile, setOpenMobile } = useSidebar()
 
   const handleLogout = async (logoutAll = false) => {
     setLoading(true)
@@ -47,12 +48,33 @@ export default function Header({ user }) {
     }
   }
 
+  const handleOpenSidebar = () => {
+    if (isMobile) {
+      setOpenMobile(true)
+    } else {
+      toggleSidebar()
+    }
+  }
+
+  // Show hamburger button when sidebar is closed (desktop) or always on mobile
+  const showMenuButton = isMobile || !open
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          {/* Mobile sidebar trigger */}
-          <SidebarTrigger className="md:hidden cursor-pointer hover:bg-accent" />
+        <div className="flex items-center gap-3">
+          {/* Hamburger menu button - shows when sidebar is closed */}
+          {showMenuButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleOpenSidebar}
+              className="h-10 w-10 cursor-pointer hover:bg-accent rounded-lg"
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Open Sidebar</span>
+            </Button>
+          )}
 
           <div className="flex items-center gap-2 font-semibold">
             <img src="/logo.png" alt="Cloud Storage" className="h-8 w-8 rounded-lg" />
