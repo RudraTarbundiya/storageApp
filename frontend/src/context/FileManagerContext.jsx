@@ -116,26 +116,52 @@ export function FileManagerProvider({ children }) {
         }
     }, [])
 
+    // Store cancel functions for uploads
+    const [uploadCancelFns, setUploadCancelFns] = useState({ cancelUpload: null, cancelAll: null })
+
     const handleUpload = useCallback(async () => {
         if (uploadFiles.length === 0) return
 
         setIsUploading(true)
-        setUploadProgress({})
+        // Initialize progress with status for each file
+        const initialProgress = {}
+        uploadFiles.forEach(file => {
+            initialProgress[file.name] = { percent: 0, status: 'pending' }
+        })
+        setUploadProgress(initialProgress)
 
         try {
-            const results = await fileAPI.uploadMultiple(
+            // Use parallel uploads for better performance (max 3 concurrent)
+            const uploadResult = await fileAPI.uploadMultipleParallel(
                 uploadFiles,
                 currentFolder,
-                (index, fileName, percent) => {
-                    setUploadProgress(prev => ({ ...prev, [fileName]: percent }))
+                (fileName, percent, status) => {
+                    setUploadProgress(prev => ({
+                        ...prev,
+                        [fileName]: { percent, status }
+                    }))
+                },
+                (completed, total) => {
+                    // Optional: track overall progress
+                },
+                // onStart callback - receive cancel functions immediately
+                (cancelFns) => {
+                    setUploadCancelFns({
+                        cancelUpload: cancelFns.cancelUpload,
+                        cancelAll: cancelFns.cancelAll
+                    })
                 }
             )
 
+            const { results } = uploadResult
             const successCount = results.filter(r => r.success).length
-            const failCount = results.filter(r => !r.success).length
+            const failCount = results.filter(r => !r.success && r.status !== 'cancelled').length
+            const cancelledCount = results.filter(r => r.status === 'cancelled').length
 
-            if (failCount === 0) {
+            if (failCount === 0 && cancelledCount === 0) {
                 showAlert(`${successCount} file(s) uploaded successfully`)
+            } else if (cancelledCount > 0) {
+                showAlert(`${successCount} uploaded, ${cancelledCount} cancelled`, 'warning')
             } else {
                 showAlert(`${successCount} succeeded, ${failCount} failed`, 'destructive')
             }
@@ -143,6 +169,7 @@ export function FileManagerProvider({ children }) {
             setShowUploadDialog(false)
             setUploadFiles([])
             setUploadProgress({})
+            setUploadCancelFns({ cancelUpload: null, cancelAll: null })
             fetchDirectory()
         } catch (error) {
             showAlert('Upload failed', 'destructive')
@@ -150,6 +177,24 @@ export function FileManagerProvider({ children }) {
             setIsUploading(false)
         }
     }, [uploadFiles, currentFolder, showAlert, fetchDirectory])
+
+    // Cancel a single file upload
+    const cancelFileUpload = useCallback((fileName) => {
+        if (uploadCancelFns.cancelUpload) {
+            uploadCancelFns.cancelUpload(fileName)
+            setUploadProgress(prev => ({
+                ...prev,
+                [fileName]: { percent: 0, status: 'cancelled' }
+            }))
+        }
+    }, [uploadCancelFns])
+
+    // Cancel all uploads
+    const cancelAllUploads = useCallback(() => {
+        if (uploadCancelFns.cancelAll) {
+            uploadCancelFns.cancelAll()
+        }
+    }, [uploadCancelFns])
 
     const handleCreateFolder = useCallback(async () => {
         if (!newFolderName.trim()) return
@@ -270,6 +315,9 @@ export function FileManagerProvider({ children }) {
         handleDelete,
         handleDownload,
         handleOpenFile,
+        // Upload cancel functions
+        cancelFileUpload,
+        cancelAllUploads,
     }
 
     return (

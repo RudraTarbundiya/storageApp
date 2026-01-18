@@ -66,8 +66,8 @@ const formatFileSize = (bytes) => {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
-// Preview Modal Component - Custom implementation without Dialog to avoid double X
-function PreviewModal({ open, onClose, file, fileUrl }) {
+// Preview Modal Component with loading state
+function PreviewModal({ open, onClose, file, fileUrl, isLoading }) {
     const fileType = getFileType(file?.extension)
 
     const handleDownload = async () => {
@@ -133,7 +133,15 @@ function PreviewModal({ open, onClose, file, fileUrl }) {
 
                 {/* Preview content */}
                 <div className="flex items-center justify-center bg-slate-950 min-h-[300px] md:min-h-[400px] max-h-[70vh] overflow-auto">
-                    {fileType === 'image' && fileUrl && (
+                    {/* Loading state */}
+                    {isLoading && (
+                        <div className="flex flex-col items-center justify-center p-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                            <p className="text-white text-sm">Loading preview...</p>
+                        </div>
+                    )}
+
+                    {!isLoading && fileType === 'image' && fileUrl && (
                         <img
                             src={fileUrl}
                             alt={file?.name}
@@ -141,28 +149,29 @@ function PreviewModal({ open, onClose, file, fileUrl }) {
                         />
                     )}
 
-                    {fileType === 'video' && fileUrl && (
+                    {!isLoading && fileType === 'video' && fileUrl && (
                         <video
                             src={fileUrl}
                             controls
                             autoPlay
+                            preload="metadata"
                             className="max-w-full max-h-[70vh]"
                         >
                             Your browser does not support the video tag.
                         </video>
                     )}
 
-                    {fileType === 'audio' && fileUrl && (
+                    {!isLoading && fileType === 'audio' && fileUrl && (
                         <div className="p-8 md:p-12 text-center w-full">
                             <div className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
                                 <Music className="h-10 w-10 md:h-12 md:w-12 text-white" />
                             </div>
                             <h4 className="text-white font-medium mb-4 truncate px-4">{file?.name}</h4>
-                            <audio src={fileUrl} controls autoPlay className="w-full max-w-md mx-auto" />
+                            <audio src={fileUrl} controls autoPlay preload="metadata" className="w-full max-w-md mx-auto" />
                         </div>
                     )}
 
-                    {fileType === 'pdf' && fileUrl && (
+                    {!isLoading && fileType === 'pdf' && fileUrl && (
                         <iframe
                             src={fileUrl}
                             className="w-full h-[70vh]"
@@ -170,7 +179,7 @@ function PreviewModal({ open, onClose, file, fileUrl }) {
                         />
                     )}
 
-                    {(fileType === 'other' || fileType === 'text') && (
+                    {!isLoading && (fileType === 'other' || fileType === 'text') && (
                         <div className="p-8 md:p-12 text-center text-white">
                             <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center mx-auto mb-6">
                                 <FileText className="h-8 w-8 md:h-10 md:w-10" />
@@ -280,9 +289,12 @@ function PublicFolderCard({ folder, onOpen }) {
                         <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
                             <Folder className="w-6 h-6 text-white" />
                         </div>
+                        <span className="text-xs text-muted-foreground font-medium">
+                            {formatFileSize(folder.totalSize)}
+                        </span>
                     </div>
 
-                    <div>
+                    <div className="mb-3">
                         <h3 className="font-medium text-sm truncate">{folder.name}</h3>
                         <p className="text-xs text-muted-foreground mt-1">
                             {folder.itemCount || 0} items
@@ -290,7 +302,7 @@ function PublicFolderCard({ folder, onOpen }) {
                     </div>
 
                     {/* Open button for consistency */}
-                    <div className="pt-3 mt-3 border-t">
+                    <div className="pt-2 border-t">
                         <Button variant="outline" size="sm" className="w-full h-8 text-xs">
                             <Folder className="h-3 w-3 mr-1" />
                             Open Folder
@@ -347,6 +359,7 @@ export default function PublicSharePage() {
     const [previewOpen, setPreviewOpen] = useState(false)
     const [previewFile, setPreviewFile] = useState(null)
     const [previewUrl, setPreviewUrl] = useState(null)
+    const [previewLoading, setPreviewLoading] = useState(false)
 
     // Single file data
     const [singleFileData, setSingleFileData] = useState(null)
@@ -456,31 +469,49 @@ export default function PublicSharePage() {
     }
 
     const handlePreviewFile = async (file) => {
+        const fileType = getFileType(file.extension)
+
+        // Show modal immediately with loading state
+        setPreviewFile(file)
+        setPreviewOpen(true)
+        setPreviewLoading(true)
+
         try {
-            // Revoke previous URL if exists
-            if (previewUrl && type !== 'file') {
+            // Revoke previous URL if exists (but not for streaming URLs)
+            if (previewUrl && type !== 'file' && !previewUrl.startsWith('http://localhost')) {
                 URL.revokeObjectURL(previewUrl)
+                setPreviewUrl(null)
             }
 
-            const response = await publicAPI.getPublicFile(file._id)
-            const blobUrl = URL.createObjectURL(response.data)
-            setPreviewUrl(blobUrl)
-            setPreviewFile(file)
-            setPreviewOpen(true)
+            // For video and audio, use direct streaming URL for better performance
+            if (fileType === 'video' || fileType === 'audio') {
+                // Use direct URL that streams instead of downloading entire file
+                const streamUrl = `http://localhost:4000/public/file/${file._id}`
+                setPreviewUrl(streamUrl)
+                setPreviewLoading(false)
+            } else {
+                // For other file types, download as blob
+                const response = await publicAPI.getPublicFile(file._id)
+                const blobUrl = URL.createObjectURL(response.data)
+                setPreviewUrl(blobUrl)
+                setPreviewLoading(false)
+            }
         } catch (err) {
             console.error('Preview failed:', err)
+            setPreviewLoading(false)
         }
     }
 
     const handleClosePreview = () => {
         setPreviewOpen(false)
+        setPreviewLoading(false)
         // Cleanup after a small delay to allow animation (but not for single file view)
         if (type !== 'file') {
             setTimeout(() => {
-                if (previewUrl) {
+                if (previewUrl && !previewUrl.startsWith('http://localhost')) {
                     URL.revokeObjectURL(previewUrl)
-                    setPreviewUrl(null)
                 }
+                setPreviewUrl(null)
                 setPreviewFile(null)
             }, 200)
         }
@@ -609,6 +640,7 @@ export default function PublicSharePage() {
                     onClose={handleClosePreview}
                     file={singleFileData}
                     fileUrl={previewUrl}
+                    isLoading={previewLoading}
                 />
             </div>
         )
@@ -726,6 +758,7 @@ export default function PublicSharePage() {
                 onClose={handleClosePreview}
                 file={previewFile}
                 fileUrl={previewUrl}
+                isLoading={previewLoading}
             />
         </div>
     )

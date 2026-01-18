@@ -1,18 +1,7 @@
 import path from "path";
-import { stat } from "fs/promises";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
-
-// Helper function to get file size from filesystem
-const getFileSize = async (fileId, extension) => {
-    try {
-        const filePath = path.join(import.meta.dirname, '..', 'storage', fileId + (extension || ''));
-        const stats = await stat(filePath);
-        return stats.size;
-    } catch (err) {
-        return 0;
-    }
-};
+import { calculateDirSize, getFileSize } from "./directoryController.js";
 
 export const getPublicDirData = async (req, res, next) => {
     const _id = req.params.id
@@ -53,11 +42,16 @@ export const getPublicDirData = async (req, res, next) => {
         fileCounts.forEach(fc => dirCountMap.set(fc._id.toString(), (dirCountMap.get(fc._id.toString()) || 0) + fc.count))
         dirCounts.forEach(dc => dirCountMap.set(dc._id.toString(), (dirCountMap.get(dc._id.toString()) || 0) + dc.count))
 
-        const directoriesWithCounts = directories.map(d => ({
-            id: d._id,
-            ...d,
-            itemCount: dirCountMap.get(d._id.toString()) || 0,
-        }))
+        // Calculate total size for each directory
+        const directoriesWithCounts = await Promise.all(directories.map(async (d) => {
+            const totalSize = await calculateDirSize(d._id);
+            return {
+                id: d._id,
+                ...d,
+                itemCount: dirCountMap.get(d._id.toString()) || 0,
+                totalSize
+            };
+        }));
 
         return res.status(200).json({
             ...directoryData,

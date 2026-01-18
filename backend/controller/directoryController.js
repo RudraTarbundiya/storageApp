@@ -4,7 +4,7 @@ import Directory from '../models/directoryModel.js'
 import File from '../models/fileModel.js'
 
 // Helper function to get file size from filesystem
-const getFileSize = async (fileId, extension) => {
+export const getFileSize = async (fileId, extension) => {
     try {
         const filePath = path.join(import.meta.dirname, '..', 'storage', fileId + (extension || ''));
         const stats = await stat(filePath);
@@ -12,6 +12,33 @@ const getFileSize = async (fileId, extension) => {
     } catch (err) {
         return 0;
     }
+};
+
+// Helper function to calculate total size of a directory recursively
+export const calculateDirSize = async (dirId) => {
+    let totalSize = 0;
+
+    // Get all files in this directory
+    const files = await File.find({ parentDirId: dirId }, { size: 1, extension: 1 }).lean();
+
+    // Sum file sizes
+    for (const file of files) {
+        let size = file.size || 0;
+        if (!size) {
+            size = await getFileSize(file._id.toString(), file.extension);
+        }
+        totalSize += size;
+    }
+
+    // Get all subdirectories
+    const subdirs = await Directory.find({ parentDirId: dirId }, { _id: 1 }).lean();
+
+    // Recursively calculate subdirectory sizes
+    for (const subdir of subdirs) {
+        totalSize += await calculateDirSize(subdir._id);
+    }
+
+    return totalSize;
 };
 
 export const getDirectoryById = async (req, res, next) => {
@@ -54,11 +81,16 @@ export const getDirectoryById = async (req, res, next) => {
         fileCounts.forEach(fc => dirCountMap.set(fc._id.toString(), (dirCountMap.get(fc._id.toString()) || 0) + fc.count))
         dirCounts.forEach(dc => dirCountMap.set(dc._id.toString(), (dirCountMap.get(dc._id.toString()) || 0) + dc.count))
 
-        const directoriesWithCounts = directories.map(d => ({
-            id: d._id,
-            ...d,
-            itemCount: dirCountMap.get(d._id.toString()) || 0,
-        }))
+        // Calculate total size for each directory (in parallel for better performance)
+        const directoriesWithCounts = await Promise.all(directories.map(async (d) => {
+            const totalSize = await calculateDirSize(d._id);
+            return {
+                id: d._id,
+                ...d,
+                itemCount: dirCountMap.get(d._id.toString()) || 0,
+                totalSize
+            };
+        }));
 
         return res.status(200).json({
             ...directoryData,

@@ -42,16 +42,16 @@ export const renameFile = async (req, res, next) => {
 
 export const deleteFile = async (req, res, next) => {
     const id = req.params.id
-    
+
     try {
         const fileObj = await File.findOne({_id : id, userId :req.user._id})
         const filename = id + fileObj.extension
-    
+
         // Check if file exists or user has access
         if (!fileObj) {
             return res.status(404).json({ error: "File not found! or you do not have access to it!" });
         }
-        
+
         //delete from filedata
         await fileObj.deleteOne()
         //delete from storage
@@ -71,7 +71,7 @@ export const uploadFile = async (req, res, next) => {
     
     // Get content-length header for file size
     const contentLength = parseInt(req.headers['content-length']) || 0
-    
+
     try {
         // Check if parent directory exists
         const parentDirData = await Directory.findOne({ _id: parentDirId, userId: req.user._id }).lean()
@@ -91,14 +91,17 @@ export const uploadFile = async (req, res, next) => {
         //actual file write in storage folder
         const filePath = path.join(import.meta.dirname, '../storage', result._id + extension)
         const ws = WriteStream(filePath)
-        let bytesWritten = 0
-        
-        req.on('data', (chunk) => {
-            bytesWritten += chunk.length
-        })
-        
-        req.pipe(ws)
-        req.on('end', async () => {
+    let bytesWritten = 0
+
+    req.on('data', (chunk) => {
+        bytesWritten += chunk.length
+    })
+
+    // Pipe request to file immediately
+    req.pipe(ws)
+
+    // Handle stream completion
+    req.on('end', async () => {
             // Update file size with actual bytes written if different from content-length
             if (bytesWritten > 0 && bytesWritten !== contentLength) {
                 await File.updateOne({ _id: result._id }, { size: bytesWritten })
@@ -108,8 +111,8 @@ export const uploadFile = async (req, res, next) => {
         req.on('error',async (err)=>{
             await rm(path.join(import.meta.dirname, '../storage', result._id + extension))
             await File.deleteOne({_id : result._id})
-            next(err)
-        })
+        next(err)
+    })
     } catch (err) {
         console.log(err);
         next(err)
