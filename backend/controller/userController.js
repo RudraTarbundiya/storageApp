@@ -1,8 +1,11 @@
 import User from "../models/userModel.js";
 import Directory from "../models/directoryModel.js";
+import File from "../models/fileModel.js";
 import mongoose from "mongoose";
 import Session from "../models/sesssionModel.js"
 import OTP from "../models/otpModel.js";
+import { rm } from "fs/promises";
+import path from "path";
 
 export const registerUser = async (req, res, next) => {
     const { name, otp, email, password, role, secretKey } = req.body;
@@ -125,7 +128,7 @@ export const getUserProfile = (req, res) => {
 export const getUsers = async (req, res, next) => {
     try {
         const users = await User.aggregate([
-            {$match: { isDelete: false } },
+            { $match: { isDelete: false } },
             {
                 $lookup: {
                     from: 'sessions', // MongoDB collection name (lowercase plural)
@@ -163,6 +166,14 @@ export const logoutUser = async (req, res) => {
 export const logOutByUserId = async (req, res, next) => {
     const { userId } = req.params;
     try {
+        // Check if target user is admin or owner - only owner can logout them
+        const targetUser = await User.findById(userId).select('role').lean();
+        if (!targetUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        if ((targetUser.role === 'admin' || targetUser.role === 'owner') && req.user.role !== 'owner') {
+            return res.status(403).json({ error: 'Only owner can logout admin or owner users.' });
+        }
         const userSessions = await Session.find({ userId: userId }).lean();
         if (userSessions.length === 0) {
             return res.status(404).json({ error: 'No active sessions found for this user.' });
@@ -185,10 +196,9 @@ export const deleteByUserId = async (req, res, next) => {
             return res.status(404).json({ error: 'User not found.' });
         }
 
-        // Find the user's root directory
-        const rootDir = await Directory.findOne({ userId, name: { $regex: 'root -' } }).select('_id').lean();
-        if (!rootDir) {
-            return res.status(404).json({ error: 'Root directory not found.' });
+        // Check if target user is admin or owner - only owner can delete them
+        if ((user.role === 'admin' || user.role === 'owner') && req.user.role !== 'owner') {
+            return res.status(403).json({ error: 'Only owner can delete admin or owner users.' });
         }
 
         // Soft delete the user
@@ -200,6 +210,74 @@ export const deleteByUserId = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
+}
+//owner only - get deleted users
+export const getDeletedUsers = async (req, res, next) => {
+    try {
+        const users = await User.aggregate([
+            { $match: { isDelete: true } },
+            {
+                $lookup: {
+                    from: 'sessions',
+                    localField: '_id',
+                    foreignField: 'userId',
+                    as: 'sessions'
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    email: 1,
+                    picture: 1,
+                    role: 1,
+                    isLoggedIn: { $gt: [{ $size: '$sessions' }, 0] }
+                }
+            }
+        ]);
+        res.status(200).json(users);
+    } catch (error) {
+        next(error);
+    }
+}
+
+//owner only hard delete any user
+export const deleteByUserIdOwner = async (req, res, next) => {
+    const { userId } = req.params;
+    if (req.user._id.toString() === userId) {
+        return res.status(400).json({ error: 'Cannot permanently delete your own account.' });
+    }
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        const files = await File.find({ userId }).select('_id extension').lean();
+        for (const file of files) {
+            try {
+                await rm(path.join(import.meta.dirname, '../storage', file._id.toString() + file.extension));
+            } catch (e) {
+                // File may already be deleted, continue
+            }
+        }
+        await File.deleteMany({ userId });
+        await Directory.deleteMany({ userId });
+        await Session.deleteMany({ userId });
+        await User.deleteOne({ _id: userId });
+
+        return res.status(200).json({ message: 'User and all associated data have been permanently deleted.' });
+    } catch (error) {
+        next(error)
+    }
+}
+//owner only recover user
+export const recoverUserByIdOwner = async (req, res, next) => {
+    const { userId } = req.params;
+    try {
+        await User.findOneAndUpdate({ _id: userId, isDelete: true }, { isDelete: false })
+    } catch (error) {
+        return res.status(error.code).json({ message: error.message });
+    }
+    return res.status(200).json({ message: 'User account recovered successfully.' });
 }
 
 export const logoutAllUser = async (req, res, next) => {

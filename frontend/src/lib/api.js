@@ -30,6 +30,13 @@ export const adminAPI = {
   deleteUser: (userId) => api.delete(`/users/${userId}/delete`),
 }
 
+// Owner API (owner-only endpoints)
+export const ownerAPI = {
+  getDeletedUsers: () => api.get('/users/deleted'),
+  hardDeleteUser: (userId) => api.delete(`/users/${userId}/delete/hard`),
+  recoverUser: (userId) => api.post(`/users/${userId}/recover`),
+}
+
 // Directory API
 export const directoryAPI = {
   getRoot: () => api.get('/directory'),

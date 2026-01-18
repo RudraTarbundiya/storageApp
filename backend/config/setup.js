@@ -43,7 +43,7 @@ try {
             bsonType: 'objectId'
           },
           role:{
-            enum : ["user", "admin" , "manager"],
+            enum : ["user", "admin" , "manager" , "owner"],
             bsonType : 'string'
           },
           isDelete : {

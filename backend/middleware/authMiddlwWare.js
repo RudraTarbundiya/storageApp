@@ -26,8 +26,15 @@ export default async function checkAuth(req, res, next) {
 }
 
 export const checkAdmin = (req,res,next)=>{
-    if(req.user.role !== 'admin'){
-        return res.status(403).json({ error: "Access denied!" });
+    if(req.user.role === 'admin' || req.user.role === 'owner'){
+        return next()
     }
-    next()
+    return res.status(403).json({ error: "Access denied!" });
+}
+
+export const checkOwner = (req,res,next)=>{
+    if(req.user.role === 'owner'){
+        return next()
+    }
+    return res.status(403).json({ error: "Access denied!" });
 }
