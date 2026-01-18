@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, FolderPlus, Search, Grid3x3, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -7,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import FileCard from '@/components/FileCard'
 import FolderCard from '@/components/FolderCard'
 import BreadcrumbNav from '@/components/BreadcrumbNav'
+import ShareDialog from '@/components/ShareDialog'
 import { FileManagerProvider, useFileManager } from '@/context'
 
 function DashboardContent() {
@@ -52,6 +54,17 @@ function DashboardContent() {
     handleDownload,
     handleOpenFile,
   } = useFileManager()
+
+  // Share dialog state
+  const [showShareDialog, setShowShareDialog] = useState(false)
+  const [shareItem, setShareItem] = useState(null)
+  const [shareType, setShareType] = useState('file')
+
+  const handleShare = (item, type) => {
+    setShareItem(item)
+    setShareType(type)
+    setShowShareDialog(true)
+  }
 
   const filteredFolders = folders.filter(f =>
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -126,6 +139,7 @@ function DashboardContent() {
                 onOpen={handleOpenFolder}
                 onRename={(f) => { setRenameItem({ ...f, type: 'folder' }); setNewName(f.name); setShowRenameDialog(true) }}
                 onDelete={(f) => { setDeleteItem({ ...f, type: 'folder' }); setShowDeleteDialog(true) }}
+                onShare={(f) => handleShare(f, 'folder')}
               />
             ))}
             {filteredFiles.map(file => (
@@ -136,6 +150,7 @@ function DashboardContent() {
                 onOpen={handleOpenFile}
                 onRename={(f) => { setRenameItem({ ...f, type: 'file' }); setNewName(f.name); setShowRenameDialog(true) }}
                 onDelete={(f) => { setDeleteItem({ ...f, type: 'file' }); setShowDeleteDialog(true) }}
+                onShare={(f) => handleShare(f, 'file')}
               />
             ))}
             {filteredFolders.length === 0 && filteredFiles.length === 0 && (
@@ -263,6 +278,14 @@ function DashboardContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        item={shareItem}
+        type={shareType}
+      />
     </div>
   )
 }

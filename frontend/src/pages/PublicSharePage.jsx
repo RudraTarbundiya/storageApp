@@ -1,0 +1,732 @@
+import { useState, useEffect, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+    Folder,
+    File,
+    Download,
+    ExternalLink,
+    ChevronRight,
+    Home,
+    AlertCircle,
+    Eye,
+    Grid3x3,
+    List,
+    Lock,
+    Search,
+    X,
+    Image as ImageIcon,
+    Video,
+    FileText,
+    Music
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { publicAPI } from '@/lib/api'
+
+// Helper function to determine file type
+const getFileType = (extension) => {
+    const ext = (extension || '').toLowerCase().replace('.', '')
+
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
+    const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']
+    const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a']
+    const textExts = ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'h']
+    const pdfExts = ['pdf']
+
+    if (imageExts.includes(ext)) return 'image'
+    if (videoExts.includes(ext)) return 'video'
+    if (audioExts.includes(ext)) return 'audio'
+    if (textExts.includes(ext)) return 'text'
+    if (pdfExts.includes(ext)) return 'pdf'
+    return 'other'
+}
+
+// Get file icon based on type
+const getFileIcon = (extension) => {
+    const type = getFileType(extension)
+    switch (type) {
+        case 'image': return ImageIcon
+        case 'video': return Video
+        case 'audio': return Music
+        case 'text':
+        case 'pdf': return FileText
+        default: return File
+    }
+}
+
+// Format file size helper
+const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return 'Unknown size'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+}
+
+// Preview Modal Component - Custom implementation without Dialog to avoid double X
+function PreviewModal({ open, onClose, file, fileUrl }) {
+    const fileType = getFileType(file?.extension)
+
+    const handleDownload = async () => {
+        if (!file) return
+        try {
+            const response = await publicAPI.downloadPublicFile(file._id)
+            const url = window.URL.createObjectURL(response.data)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = file.name
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error('Download failed:', err)
+        }
+    }
+
+    if (!open) return null
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Backdrop */}
+            <div
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                onClick={onClose}
+            />
+
+            {/* Modal Content */}
+            <div className="relative z-10 w-[95vw] max-w-4xl max-h-[90vh] bg-background rounded-xl overflow-hidden shadow-2xl border">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b bg-background">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
+                            {(() => {
+                                const IconComponent = getFileIcon(file?.extension)
+                                return <IconComponent className="h-5 w-5 text-white" />
+                            })()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <h3 className="font-medium truncate text-sm md:text-base">{file?.name || 'Preview'}</h3>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{file?.extension || 'File'}</span>
+                                <span>•</span>
+                                <span>{formatFileSize(file?.size)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Button variant="outline" size="sm" onClick={handleDownload} className="hidden sm:flex">
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                        </Button>
+                        <Button variant="outline" size="icon" onClick={handleDownload} className="sm:hidden">
+                            <Download className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={onClose}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Preview content */}
+                <div className="flex items-center justify-center bg-slate-950 min-h-[300px] md:min-h-[400px] max-h-[70vh] overflow-auto">
+                    {fileType === 'image' && fileUrl && (
+                        <img
+                            src={fileUrl}
+                            alt={file?.name}
+                            className="max-w-full max-h-[70vh] object-contain"
+                        />
+                    )}
+
+                    {fileType === 'video' && fileUrl && (
+                        <video
+                            src={fileUrl}
+                            controls
+                            autoPlay
+                            className="max-w-full max-h-[70vh]"
+                        >
+                            Your browser does not support the video tag.
+                        </video>
+                    )}
+
+                    {fileType === 'audio' && fileUrl && (
+                        <div className="p-8 md:p-12 text-center w-full">
+                            <div className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                                <Music className="h-10 w-10 md:h-12 md:w-12 text-white" />
+                            </div>
+                            <h4 className="text-white font-medium mb-4 truncate px-4">{file?.name}</h4>
+                            <audio src={fileUrl} controls autoPlay className="w-full max-w-md mx-auto" />
+                        </div>
+                    )}
+
+                    {fileType === 'pdf' && fileUrl && (
+                        <iframe
+                            src={fileUrl}
+                            className="w-full h-[70vh]"
+                            title={file?.name}
+                        />
+                    )}
+
+                    {(fileType === 'other' || fileType === 'text') && (
+                        <div className="p-8 md:p-12 text-center text-white">
+                            <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center mx-auto mb-6">
+                                <FileText className="h-8 w-8 md:h-10 md:w-10" />
+                            </div>
+                            <h4 className="font-medium mb-2 truncate px-4">{file?.name}</h4>
+                            <p className="text-slate-400 text-sm mb-6">Preview not available for this file type</p>
+                            <Button onClick={handleDownload}>
+                                <Download className="h-4 w-4 mr-2" />
+                                Download to View
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// File preview component for guest users - with always visible buttons
+function PublicFileCard({ file, onPreview, onDownload }) {
+    const IconComponent = getFileIcon(file.extension)
+    const fileType = getFileType(file.extension)
+    const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
+
+    // Get gradient colors based on file type
+    const getGradient = () => {
+        switch (fileType) {
+            case 'image': return 'from-pink-500 to-rose-600'
+            case 'video': return 'from-purple-500 to-indigo-600'
+            case 'audio': return 'from-green-500 to-emerald-600'
+            case 'pdf': return 'from-red-500 to-orange-600'
+            default: return 'from-blue-500 to-purple-600'
+        }
+    }
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
+        >
+            <Card className="group hover:shadow-lg transition-all border-slate-200 dark:border-slate-800">
+                <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                        <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${getGradient()} shadow-sm`}>
+                            <IconComponent className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-xs text-muted-foreground font-medium">
+                            {formatFileSize(file.size)}
+                        </span>
+                    </div>
+
+                    <div className="mb-3">
+                        <h3 className="font-medium text-sm truncate mb-1">{file.name}</h3>
+                        <Badge variant="secondary" className="text-xs">
+                            {file.extension || 'File'}
+                        </Badge>
+                    </div>
+
+                    {/* Always visible action buttons */}
+                    <div className="flex gap-2 pt-2 border-t">
+                        {isPreviewable && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 h-8 text-xs"
+                                onClick={() => onPreview?.(file)}
+                            >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Preview
+                            </Button>
+                        )}
+                        <Button
+                            variant={isPreviewable ? "secondary" : "outline"}
+                            size="sm"
+                            className={`${isPreviewable ? 'flex-1' : 'w-full'} h-8 text-xs`}
+                            onClick={() => onDownload?.(file)}
+                        >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </motion.div>
+    )
+}
+
+// Folder card for navigation in public view
+function PublicFolderCard({ folder, onOpen }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
+        >
+            <Card
+                className="group cursor-pointer hover:shadow-lg transition-all border-slate-200 dark:border-slate-800"
+                onClick={() => onOpen?.(folder)}
+            >
+                <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
+                            <Folder className="w-6 h-6 text-white" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="font-medium text-sm truncate">{folder.name}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {folder.itemCount || 0} items
+                        </p>
+                    </div>
+
+                    {/* Open button for consistency */}
+                    <div className="pt-3 mt-3 border-t">
+                        <Button variant="outline" size="sm" className="w-full h-8 text-xs">
+                            <Folder className="h-3 w-3 mr-1" />
+                            Open Folder
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </motion.div>
+    )
+}
+
+// Breadcrumb component for public view
+function PublicBreadcrumb({ items, onNavigate }) {
+    return (
+        <nav className="flex items-center gap-1 text-sm overflow-x-auto pb-2 scrollbar-hide">
+            <button
+                onClick={() => onNavigate(null)}
+                className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0 px-2 py-1 rounded-md hover:bg-muted"
+            >
+                <Home className="h-4 w-4" />
+                <span className="hidden sm:inline">Shared</span>
+            </button>
+            {items.map((item, index) => (
+                <div key={item.id} className="flex items-center gap-1 shrink-0">
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    <button
+                        onClick={() => onNavigate(item.id, index)}
+                        className={`hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted truncate max-w-[120px] sm:max-w-[200px] ${index === items.length - 1
+                            ? 'text-foreground font-medium'
+                            : 'text-muted-foreground'
+                            }`}
+                    >
+                        {item.name}
+                    </button>
+                </div>
+            ))}
+        </nav>
+    )
+}
+
+export default function PublicSharePage() {
+    const { type, id } = useParams()
+    const navigate = useNavigate()
+
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+    const [data, setData] = useState(null)
+    const [breadcrumbs, setBreadcrumbs] = useState([])
+    const [currentFolderId, setCurrentFolderId] = useState(null)
+    const [viewMode, setViewMode] = useState('grid')
+    const [searchQuery, setSearchQuery] = useState('')
+
+    // Preview modal state
+    const [previewOpen, setPreviewOpen] = useState(false)
+    const [previewFile, setPreviewFile] = useState(null)
+    const [previewUrl, setPreviewUrl] = useState(null)
+
+    // Single file data
+    const [singleFileData, setSingleFileData] = useState(null)
+
+    const fetchPublicContent = useCallback(async (folderId = null) => {
+        setLoading(true)
+        setError(null)
+
+        try {
+            if (type === 'file') {
+                // For single file, fetch file info and prepare for preview
+                const response = await publicAPI.getPublicFile(id)
+                const blobUrl = URL.createObjectURL(response.data)
+
+                // Extract file info from the response headers or use defaults
+                // We'll create a minimal file object for display
+                const contentType = response.headers?.['content-type'] || ''
+                const contentDisposition = response.headers?.['content-disposition'] || ''
+
+                // Try to extract filename from content-disposition
+                let fileName = `file_${id}`
+                let extension = ''
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+                if (filenameMatch) {
+                    fileName = filenameMatch[1].replace(/['"]/g, '')
+                }
+
+                // Get extension from content type or filename
+                if (fileName.includes('.')) {
+                    extension = '.' + fileName.split('.').pop()
+                } else if (contentType) {
+                    const extMap = {
+                        'image/jpeg': '.jpg',
+                        'image/png': '.png',
+                        'image/gif': '.gif',
+                        'image/webp': '.webp',
+                        'video/mp4': '.mp4',
+                        'video/webm': '.webm',
+                        'audio/mpeg': '.mp3',
+                        'audio/wav': '.wav',
+                        'application/pdf': '.pdf'
+                    }
+                    extension = extMap[contentType] || ''
+                }
+
+                const fileObj = {
+                    _id: id,
+                    name: fileName,
+                    extension: extension,
+                    size: response.data.size || 0
+                }
+
+                setSingleFileData(fileObj)
+                setPreviewUrl(blobUrl)
+                setPreviewFile(fileObj)
+                setData({ type: 'file', url: blobUrl, id, fileInfo: fileObj })
+            } else if (type === 'folder') {
+                // For folder, fetch the directory content
+                const targetId = folderId || id
+                const response = await publicAPI.getPublicDirectory(targetId)
+                setData({
+                    type: 'folder',
+                    ...response.data,
+                    directories: response.data.directories || [],
+                    files: response.data.files || []
+                })
+            }
+        } catch (err) {
+            console.error('Error fetching public content:', err)
+            if (err.response?.status === 404) {
+                setError('This content is not available. It may have been removed or made private.')
+            } else {
+                setError('Failed to load shared content. Please try again later.')
+            }
+        } finally {
+            setLoading(false)
+        }
+    }, [type, id])
+
+    useEffect(() => {
+        fetchPublicContent(currentFolderId)
+    }, [fetchPublicContent, currentFolderId])
+
+    // Cleanup preview URL on unmount
+    useEffect(() => {
+        return () => {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl)
+            }
+        }
+    }, [previewUrl])
+
+    const handleOpenFolder = (folder) => {
+        setBreadcrumbs(prev => [...prev, { id: folder._id, name: folder.name }])
+        setCurrentFolderId(folder._id)
+    }
+
+    const handleNavigateBreadcrumb = (folderId, index) => {
+        if (!folderId) {
+            // Navigate to root
+            setBreadcrumbs([])
+            setCurrentFolderId(null)
+        } else {
+            setBreadcrumbs(prev => prev.slice(0, index + 1))
+            setCurrentFolderId(folderId)
+        }
+    }
+
+    const handlePreviewFile = async (file) => {
+        try {
+            // Revoke previous URL if exists
+            if (previewUrl && type !== 'file') {
+                URL.revokeObjectURL(previewUrl)
+            }
+
+            const response = await publicAPI.getPublicFile(file._id)
+            const blobUrl = URL.createObjectURL(response.data)
+            setPreviewUrl(blobUrl)
+            setPreviewFile(file)
+            setPreviewOpen(true)
+        } catch (err) {
+            console.error('Preview failed:', err)
+        }
+    }
+
+    const handleClosePreview = () => {
+        setPreviewOpen(false)
+        // Cleanup after a small delay to allow animation (but not for single file view)
+        if (type !== 'file') {
+            setTimeout(() => {
+                if (previewUrl) {
+                    URL.revokeObjectURL(previewUrl)
+                    setPreviewUrl(null)
+                }
+                setPreviewFile(null)
+            }, 200)
+        }
+    }
+
+    const handleDownloadFile = async (file) => {
+        try {
+            const response = await publicAPI.downloadPublicFile(file._id)
+            const url = window.URL.createObjectURL(response.data)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = file.name
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error('Download failed:', err)
+        }
+    }
+
+    // Filter content based on search
+    const filteredFolders = data?.directories?.filter(f =>
+        f.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || []
+
+    const filteredFiles = data?.files?.filter(f =>
+        f.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || []
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading shared content...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+                <Card className="max-w-md w-full">
+                    <CardContent className="p-6 md:p-8 text-center">
+                        <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                            <AlertCircle className="h-8 w-8 text-red-500" />
+                        </div>
+                        <h2 className="text-xl font-semibold mb-2">Content Unavailable</h2>
+                        <p className="text-muted-foreground mb-6 text-sm">{error}</p>
+                        <Button onClick={() => navigate('/')} variant="outline">
+                            Go to Home
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    // Single file view - Same UI as folder but with one file card
+    if (type === 'file' && data?.type === 'file' && singleFileData) {
+        const fileType = getFileType(singleFileData.extension)
+        const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
+
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+                {/* Header */}
+                <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b">
+                    <div className="container mx-auto px-4 md:px-6 py-3 md:py-4">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm shrink-0">
+                                    <File className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                                </div>
+                                <div className="min-w-0">
+                                    <h1 className="font-semibold text-base md:text-lg truncate">Shared File</h1>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <Lock className="h-3 w-3" />
+                                        Read-only access
+                                    </p>
+                                </div>
+                            </div>
+                            <Badge variant="secondary" className="gap-1 shrink-0 text-xs">
+                                <ExternalLink className="h-3 w-3" />
+                                <span className="hidden sm:inline">Public Share</span>
+                            </Badge>
+                        </div>
+                    </div>
+                </header>
+
+                {/* Main content */}
+                <main className="container mx-auto px-4 md:px-6 py-4 md:py-8 max-w-7xl">
+                    {/* Breadcrumb for single file */}
+                    <div className="mb-4 md:mb-6">
+                        <nav className="flex items-center gap-1 text-sm">
+                            <div className="flex items-center gap-1 text-muted-foreground px-2 py-1">
+                                <Home className="h-4 w-4" />
+                                <span>Shared File</span>
+                            </div>
+                        </nav>
+                    </div>
+
+                    {/* Single file card in grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                        <PublicFileCard
+                            file={singleFileData}
+                            onPreview={() => setPreviewOpen(true)}
+                            onDownload={() => handleDownloadFile(singleFileData)}
+                        />
+                    </div>
+
+                    {/* Info footer */}
+                    <div className="mt-8 md:mt-12 p-4 md:p-6 rounded-xl bg-slate-100 dark:bg-slate-800/50 border text-center">
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                            This file has been shared publicly. You can preview and download it, but cannot modify it.
+                        </p>
+                    </div>
+                </main>
+
+                {/* Preview Modal for single file */}
+                <PreviewModal
+                    open={previewOpen}
+                    onClose={handleClosePreview}
+                    file={singleFileData}
+                    fileUrl={previewUrl}
+                />
+            </div>
+        )
+    }
+
+    // Folder view
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+            {/* Header */}
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b">
+                <div className="container mx-auto px-4 md:px-6 py-3 md:py-4">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm shrink-0">
+                                <Folder className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                            </div>
+                            <div className="min-w-0">
+                                <h1 className="font-semibold text-base md:text-lg truncate">{data?.name || 'Shared Folder'}</h1>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Lock className="h-3 w-3" />
+                                    Read-only access
+                                </p>
+                            </div>
+                        </div>
+                        <Badge variant="secondary" className="gap-1 shrink-0 text-xs">
+                            <ExternalLink className="h-3 w-3" />
+                            <span className="hidden sm:inline">Public Share</span>
+                        </Badge>
+                    </div>
+                </div>
+            </header>
+
+            {/* Main content */}
+            <main className="container mx-auto px-4 md:px-6 py-4 md:py-8 max-w-7xl">
+                {/* Breadcrumbs */}
+                <div className="mb-4 md:mb-6">
+                    <PublicBreadcrumb
+                        items={breadcrumbs}
+                        onNavigate={handleNavigateBreadcrumb}
+                    />
+                </div>
+
+                {/* Search and view toggle */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 mb-4 md:mb-6">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search files and folders..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    <div className="flex items-center gap-1 border rounded-lg p-1 bg-white dark:bg-slate-800 self-end sm:self-auto">
+                        <Button
+                            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setViewMode('grid')}
+                        >
+                            <Grid3x3 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setViewMode('list')}
+                        >
+                            <List className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Content grid - responsive */}
+                <AnimatePresence mode="wait">
+                    <div className={viewMode === 'grid'
+                        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4'
+                        : 'flex flex-col gap-2'
+                    }>
+                        {filteredFolders.map(folder => (
+                            <PublicFolderCard
+                                key={folder._id}
+                                folder={folder}
+                                onOpen={handleOpenFolder}
+                            />
+                        ))}
+                        {filteredFiles.map(file => (
+                            <PublicFileCard
+                                key={file._id}
+                                file={file}
+                                onPreview={handlePreviewFile}
+                                onDownload={handleDownloadFile}
+                            />
+                        ))}
+                        {filteredFolders.length === 0 && filteredFiles.length === 0 && (
+                            <div className="col-span-full flex flex-col items-center justify-center h-48 md:h-64 text-muted-foreground">
+                                <Folder className="h-10 w-10 md:h-12 md:w-12 mb-4 opacity-50" />
+                                <p className="text-sm">No files or folders found</p>
+                            </div>
+                        )}
+                    </div>
+                </AnimatePresence>
+
+                {/* Info footer */}
+                <div className="mt-8 md:mt-12 p-4 md:p-6 rounded-xl bg-slate-100 dark:bg-slate-800/50 border text-center">
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                        This content has been shared publicly. You can preview and download files, but cannot modify them.
+                    </p>
+                </div>
+            </main>
+
+            {/* Preview Modal */}
+            <PreviewModal
+                open={previewOpen}
+                onClose={handleClosePreview}
+                file={previewFile}
+                fileUrl={previewUrl}
+            />
+        </div>
+    )
+}

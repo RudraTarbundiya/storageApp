@@ -2,30 +2,38 @@ import { model, Schema } from "mongoose";
 
 
 const fileSchema = new Schema({
-    name :{
-        type : String,
-        required : true,
-        trim : true
+    name: {
+        type: String,
+        required: true,
+        trim: true
     },
-    extension : {
-        type : String,
-        required : true,
-        trim : true
+    extension: {
+        type: String,
+        required: true,
+        trim: true
     },
-    parentDirId : {
-        type : Schema.Types.ObjectId,
-        required : true,
-        ref : 'Directory'
+    size: {
+        type: Number,
+        default: 0
     },
-    userId : {
-        type : Schema.Types.ObjectId,
-        required : true,
-        ref : 'User'
+    parentDirId: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: 'Directory'
+    },
+    userId: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
+    },
+    isPublic: {
+        type: Boolean,
+        default: false
     }
-},{
-   strict : 'throw'
+}, {
+    strict: 'throw'
 })
 
-const File = model('File',fileSchema)
+const File = model('File', fileSchema)
 
 export default File

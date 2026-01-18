@@ -1,7 +1,18 @@
-import { rm } from 'fs/promises'
+import { rm, stat } from 'fs/promises'
 import path from 'path'
 import Directory from '../models/directoryModel.js'
 import File from '../models/fileModel.js'
+
+// Helper function to get file size from filesystem
+const getFileSize = async (fileId, extension) => {
+    try {
+        const filePath = path.join(import.meta.dirname, '..', 'storage', fileId + (extension || ''));
+        const stats = await stat(filePath);
+        return stats.size;
+    } catch (err) {
+        return 0;
+    }
+};
 
 export const getDirectoryById = async (req, res, next) => {
 
@@ -9,8 +20,18 @@ export const getDirectoryById = async (req, res, next) => {
     try {
         const directoryData = await Directory.findOne({ _id, userId: req.user._id }).lean()
         if (!directoryData) return res.status(404).json({ error: "Directory not found or you do not have access to it!" });
-        const files = await File.find({ parentDirId: _id },{'__v' : 0}).lean()
-        const directories = await Directory.find({ parentDirId: _id },{'__v': 0}).lean()
+        const files = await File.find({ parentDirId: _id }, { '__v': 0 }).lean()
+        const directories = await Directory.find({ parentDirId: _id }, { '__v': 0 }).lean()
+
+        // Get file sizes - either from DB or from filesystem
+        const filesWithSizes = await Promise.all(files.map(async (f) => {
+            let size = f.size || 0;
+            // If size is 0 or not stored, get it from filesystem
+            if (!size) {
+                size = await getFileSize(f._id.toString(), f.extension);
+            }
+            return { id: f._id, ...f, size };
+        }));
 
         // Compute child counts for each directory (files + subdirectories)
         const dirIds = directories.map(d => d._id)
@@ -41,7 +62,7 @@ export const getDirectoryById = async (req, res, next) => {
 
         return res.status(200).json({
             ...directoryData,
-            files: files.map(f => ({ id: f._id, ...f })),
+            files: filesWithSizes,
             directories: directoriesWithCounts
         })
     } catch (err) {

@@ -9,6 +9,7 @@ import UsersPage from '@/pages/UsersPage'
 import ProfilePage from '@/pages/ProfilePage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import LandingPage from '@/pages/LandingPage'
+import PublicSharePage from '@/pages/PublicSharePage'
 import AppLayout from '@/components/Layout/AppLayout'
 
 function App() {
@@ -22,6 +23,9 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
+              {/* Public share routes - accessible without login */}
+              <Route path="/share/:type/:id" element={<PublicSharePage />} />
 
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />

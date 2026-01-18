@@ -132,4 +132,16 @@ export const googleDriveAPI = {
     api.post('/gd/import', { fileId, fileName, parentDirId }),
 }
 
+// Public Sharing API
+export const publicAPI = {
+  // Toggle public status (requires auth)
+  toggleDirectoryPublic: (id, isPublic) => api.patch(`/public/dir/${id}/toggle`, { isPublic }),
+  toggleFilePublic: (id, isPublic) => api.patch(`/public/file/${id}/toggle`, { isPublic }),
+
+  // Access public content (no auth required)
+  getPublicDirectory: (id) => api.get(`/public/dir/${id}`),
+  getPublicFile: (id) => api.get(`/public/file/${id}`, { responseType: 'blob' }),
+  downloadPublicFile: (id) => api.get(`/public/file/${id}?action=download`, { responseType: 'blob' }),
+}
+
 export default api

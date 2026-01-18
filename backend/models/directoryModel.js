@@ -14,6 +14,10 @@ const directorySchema = new Schema({
         type : Schema.Types.ObjectId,
         default : null,
         ref : 'Directory'
+    },
+    isPublic : {
+        type : Boolean,
+        default : false
     }
 },{
     strict : 'throw',

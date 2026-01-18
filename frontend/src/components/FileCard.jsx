@@ -1,16 +1,17 @@
 import { motion } from 'framer-motion'
-import { File, MoreVertical, Download, Edit2, Trash2, ExternalLink } from 'lucide-react'
+import { File, MoreVertical, Download, Edit2, Trash2, ExternalLink, Link2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 
-export default function FileCard({ file, onRename, onDelete, onDownload, onOpen }) {
+export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare }) {
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -33,8 +34,15 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen 
       >
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 shadow-sm">
-              <File className="w-6 h-6 text-white" />
+            <div className="relative">
+              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 shadow-sm">
+                <File className="w-6 h-6 text-white" />
+              </div>
+              {file.isPublic && (
+                <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-white dark:border-slate-900 flex items-center justify-center" title="Public">
+                  <Link2 className="h-2 w-2 text-white" />
+                </div>
+              )}
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -55,6 +63,11 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen 
                   <Download className="mr-2 h-4 w-4" />
                   Download
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onShare?.(file)}>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Share
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onRename?.(file)}>
                   <Edit2 className="mr-2 h-4 w-4" />
                   Rename

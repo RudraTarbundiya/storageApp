@@ -68,6 +68,10 @@ export const uploadFile = async (req, res, next) => {
     const parentDirId = req.params.parentDirId || req.user.rootDirId.toString() //if no parent id then upload to root
     const filename = req.headers.filename || "untitled" //if no filename in header then untitled
     const extension = path.extname(filename) || '' // Ensure extension is never undefined
+    
+    // Get content-length header for file size
+    const contentLength = parseInt(req.headers['content-length']) || 0
+    
     try {
         // Check if parent directory exists
         const parentDirData = await Directory.findOne({ _id: parentDirId, userId: req.user._id }).lean()
@@ -79,14 +83,26 @@ export const uploadFile = async (req, res, next) => {
         const result = await File.create({
             name: filename,
             extension: extension,
+            size: contentLength,
             parentDirId,
             userId: req.user._id
         })
         
         //actual file write in storage folder
-        const ws = WriteStream(path.join(import.meta.dirname, '../storage', result._id + extension))
+        const filePath = path.join(import.meta.dirname, '../storage', result._id + extension)
+        const ws = WriteStream(filePath)
+        let bytesWritten = 0
+        
+        req.on('data', (chunk) => {
+            bytesWritten += chunk.length
+        })
+        
         req.pipe(ws)
-        req.on('end', () => {
+        req.on('end', async () => {
+            // Update file size with actual bytes written if different from content-length
+            if (bytesWritten > 0 && bytesWritten !== contentLength) {
+                await File.updateOne({ _id: result._id }, { size: bytesWritten })
+            }
             return res.status(201).json({ message: 'File uploaded successfully' })
         })
         req.on('error',async (err)=>{

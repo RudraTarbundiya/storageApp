@@ -87,6 +87,9 @@ try {
           userId: {
             bsonType: 'objectId'
           },
+          isPublic : {
+            bsonType : 'bool'
+          },
           __v: {
             bsonType: 'int'
           }
@@ -120,11 +123,17 @@ try {
           extension: {
             bsonType: 'string'
           },
+          size:{
+            bsonType: 'number'
+          },
           parentDirId: {
             bsonType: 'objectId'
           },
           userId: {
             bsonType: 'objectId'
+          },
+          isPublic : {
+            bsonType : 'bool'
           },
           __v: {
             bsonType: 'int'
