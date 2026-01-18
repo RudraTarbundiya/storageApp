@@ -1,4 +1,4 @@
-import { Home, Cloud, PanelRightClose } from 'lucide-react'
+import { Home, Cloud, PanelRightClose, Globe } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Sidebar,
@@ -17,6 +17,11 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context'
 
 const menuItems = [
+  {
+    title: 'Landing Page',
+    icon: Globe,
+    path: '/',
+  },
   {
     title: 'My Files',
     icon: Home,

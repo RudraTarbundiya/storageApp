@@ -1,5 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* Landing Page Custom Styles */
+@layer utilities {
+  .font-inter {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .bg-gradient-landing {
+    background: linear-gradient(135deg, #f8fafc 0%, #e8f4ff 50%, #f1f5f9 100%);
+  }
+
+  .bg-gradient-hero {
+    background: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(66, 133, 244, 0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 50%, rgba(52, 168, 83, 0.08) 0%, transparent 50%),
+      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #4285F4 0%, #1a73e8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #4285F4 0%, #1a73e8 100%);
+    box-shadow: 0 4px 14px 0 rgba(66, 133, 244, 0.39);
+  }
+
+  .btn-gradient-primary:hover {
+    background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+    box-shadow: 0 6px 20px 0 rgba(66, 133, 244, 0.5);
+    transform: translateY(-2px);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+
+  .floating-card {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .floating-card-delayed {
+    animation: float 6s ease-in-out infinite;
+    animation-delay: 1s;
+  }
+
+  .floating-card-slow {
+    animation: float 8s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-12px);
+    }
+  }
+
+  .hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+  }
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -117,6 +194,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

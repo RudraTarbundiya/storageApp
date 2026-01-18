@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AuthProvider, AlertProvider } from '@/context'
 import LoginPage from '@/pages/LoginPage'
@@ -6,6 +6,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import GoogleDrivePage from '@/pages/GoogleDrivePage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
+import LandingPage from '@/pages/LandingPage'
 import AppLayout from '@/components/Layout/AppLayout'
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <AlertProvider>
           <BrowserRouter>
             <Routes>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
@@ -24,8 +26,6 @@ function App() {
                 <Route path="/files" element={<DashboardPage />} />
                 <Route path="/google-drive" element={<GoogleDrivePage />} />
               </Route>
-
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </BrowserRouter>
         </AlertProvider>
