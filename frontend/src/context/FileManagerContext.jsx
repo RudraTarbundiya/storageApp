@@ -61,6 +61,7 @@ export function FileManagerProvider({ children }) {
     const [loading, setLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [viewMode, setViewMode] = useState('grid')
+    const [totalStorageUsed, setTotalStorageUsed] = useState(0)
 
     // Dialog states
     const [showUploadDialog, setShowUploadDialog] = useState(false)
@@ -86,6 +87,15 @@ export function FileManagerProvider({ children }) {
 
             setFolders(response.data.directories || [])
             setFiles(response.data.files || [])
+
+            // Calculate total storage when at root
+            if (!currentFolder) {
+                const dirs = response.data.directories || []
+                const filesData = response.data.files || []
+                const dirSizes = dirs.reduce((acc, d) => acc + (d.totalSize || 0), 0)
+                const fileSizes = filesData.reduce((acc, f) => acc + (f.size || 0), 0)
+                setTotalStorageUsed(dirSizes + fileSizes)
+            }
         } catch (error) {
             showAlert('Failed to load directory', 'destructive')
         } finally {
@@ -278,6 +288,7 @@ export function FileManagerProvider({ children }) {
         loading,
         searchQuery,
         viewMode,
+        totalStorageUsed,
         // Dialog states
         showUploadDialog,
         showCreateFolderDialog,

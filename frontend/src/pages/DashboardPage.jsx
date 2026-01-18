@@ -9,7 +9,7 @@ import FileCard from '@/components/FileCard'
 import FolderCard from '@/components/FolderCard'
 import BreadcrumbNav from '@/components/BreadcrumbNav'
 import ShareDialog from '@/components/ShareDialog'
-import { FileManagerProvider, useFileManager } from '@/context'
+import { useFileManager } from '@/context'
 import { fileAPI } from '@/lib/api'
 
 // Helper function to determine file type
@@ -565,9 +565,5 @@ function DashboardContent() {
 }
 
 export default function DashboardPage() {
-  return (
-    <FileManagerProvider>
-      <DashboardContent />
-    </FileManagerProvider>
-  )
+  return <DashboardContent />
 }

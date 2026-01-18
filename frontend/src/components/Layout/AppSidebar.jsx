@@ -1,4 +1,4 @@
-import { Home, Cloud, PanelRightClose, Globe, Users, UserCircle } from 'lucide-react'
+import { Home, Cloud, PanelRightClose, Globe, Users, UserCircle, HardDrive } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Sidebar,
@@ -14,7 +14,19 @@ import {
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/context'
+import { useAuth, useFileManager } from '@/context'
+
+// Storage limit in bytes (3 GB)
+const STORAGE_LIMIT = 3 * 1024 * 1024 * 1024
+
+// Format bytes to human readable
+const formatStorage = (bytes) => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
 
 const getMenuItems = (userRole) => {
   const items = [
@@ -57,6 +69,11 @@ export default function AppSidebar() {
   const location = useLocation()
   const { user } = useAuth()
   const { setOpenMobile, toggleSidebar, isMobile } = useSidebar()
+  
+  // Get storage info from FileManager context
+  const { totalStorageUsed } = useFileManager()
+
+  const storagePercentage = Math.min((totalStorageUsed / STORAGE_LIMIT) * 100, 100)
 
   const handleNavigation = (path) => {
     navigate(path)
@@ -121,6 +138,26 @@ export default function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* Storage Usage Widget */}
+      <div className="px-4 py-3 border-t border-sidebar-border">
+        <div className="flex items-center gap-2 mb-2">
+          <HardDrive className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Storage</span>
+        </div>
+        <div className="w-full bg-secondary rounded-full h-2 mb-2 overflow-hidden">
+          <div
+            className="h-2 rounded-full transition-all duration-500"
+            style={{ 
+              width: `${storagePercentage}%`,
+              backgroundColor: `hsl(${Math.max(0, 120 - (storagePercentage * 1.2))}, 70%, 50%)`
+            }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {formatStorage(totalStorageUsed)} of {formatStorage(STORAGE_LIMIT)} used
+        </p>
+      </div>
 
       {/* User Profile Footer */}
       <SidebarFooter className="px-4 py-4 border-t border-sidebar-border mt-auto">
