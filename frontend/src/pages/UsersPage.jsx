@@ -14,6 +14,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 import { adminAPI, ownerAPI } from '@/lib/api'
 import { useAuth, useAlert } from '@/context'
 
@@ -25,10 +32,13 @@ export default function UsersPage() {
     const [actionLoading, setActionLoading] = useState({})
     const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null, user: null })
     const [deleteChoiceDialog, setDeleteChoiceDialog] = useState({ open: false, user: null })
+    const [roleChangeDialog, setRoleChangeDialog] = useState({ open: false, user: null, newRole: null })
     const { user: currentUser } = useAuth()
     const { showAlert } = useAlert()
 
     const isOwner = currentUser?.role === 'owner'
+    const isAdmin = currentUser?.role === 'admin'
+    const isManager = currentUser?.role === 'manager'
 
     const fetchUsers = async () => {
         setLoading(true)
@@ -160,6 +170,33 @@ export default function UsersPage() {
         }
     }
 
+    const openRoleChangeDialog = (user, newRole) => {
+        if (user.role === newRole) return
+        setRoleChangeDialog({ open: true, user, newRole })
+    }
+
+    const closeRoleChangeDialog = () => {
+        setRoleChangeDialog({ open: false, user: null, newRole: null })
+    }
+
+    const handleRoleChangeConfirm = async () => {
+        const { user, newRole } = roleChangeDialog
+        if (!user || !newRole) return
+
+        closeRoleChangeDialog()
+
+        setActionLoading(prev => ({ ...prev, [`role-${user._id}`]: true }))
+        try {
+            await adminAPI.changeUserRole(user._id, newRole)
+            setUsers(prev => prev.map(u => u._id === user._id ? { ...u, role: newRole } : u))
+            showAlert(`${user.name}'s role changed to ${newRole}`, 'default')
+        } catch (err) {
+            showAlert(err.response?.data?.error || 'Failed to change role', 'destructive')
+        } finally {
+            setActionLoading(prev => ({ ...prev, [`role-${user._id}`]: false }))
+        }
+    }
+
     const handleDeleteChoice = (choice) => {
         const { user } = deleteChoiceDialog
         closeDeleteChoiceDialog()
@@ -188,11 +225,53 @@ export default function UsersPage() {
         return user?.email === currentUser?.email
     }
 
-    // Check if current user can modify target user (admin cannot modify admin/owner)
+    // Check if current user can modify target user based on role hierarchy
     const canModifyUser = (targetUser) => {
         if (isOwner) return true
-        if (targetUser.role === 'admin' || targetUser.role === 'owner') return false
-        return true
+        if (isAdmin) {
+            // Admin can modify user, manager, and other admin (not owner)
+            return targetUser.role !== 'owner'
+        }
+        if (isManager) {
+            // Manager can only modify regular users and managers
+            return targetUser.role === 'user' || targetUser.role === 'manager'
+        }
+        return false
+    }
+
+    // Check if current user can change target user's role
+    const canChangeRole = (targetUser) => {
+        if (isCurrentUser(targetUser._id)) return false
+        return canModifyUser(targetUser)
+    }
+
+    // Get available roles based on current user's role
+    const getAvailableRoles = (targetUser) => {
+        if (isOwner) {
+            return ['user', 'manager', 'admin', 'owner']
+        }
+        if (isAdmin) {
+            // Admin can set to user, manager, admin (but not owner)
+            return ['user', 'manager', 'admin']
+        }
+        if (isManager) {
+            // Manager can only set to user or manager
+            return ['user', 'manager']
+        }
+        return []
+    }
+
+    // Check if current user can delete
+    const canDelete = () => {
+        return isOwner || isAdmin
+    }
+
+    // Check if current user can logout target
+    const canLogoutUser = (targetUser) => {
+        if (isOwner) return true
+        if (isAdmin) return targetUser.role !== 'admin' && targetUser.role !== 'owner'
+        if (isManager) return targetUser.role === 'user'
+        return false
     }
 
     const renderUserCard = (user, isDeleted = false) => (
@@ -234,7 +313,37 @@ export default function UsersPage() {
             </div>
 
             <div className="flex items-center gap-3">
-                {getRoleBadge(user.role)}
+                {/* Role dropdown or badge */}
+                {!isDeleted && canChangeRole(user) ? (
+                    <Select
+                        value={user.role}
+                        onValueChange={(value) => openRoleChangeDialog(user, value)}
+                        disabled={actionLoading[`role-${user._id}`]}
+                    >
+                        <SelectTrigger className="w-[130px] h-8">
+                            {actionLoading[`role-${user._id}`] ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <SelectValue />
+                            )}
+                        </SelectTrigger>
+                        <SelectContent>
+                            {getAvailableRoles(user).map((role) => (
+                                <SelectItem key={role} value={role}>
+                                    <div className="flex items-center gap-2">
+                                        {role === 'owner' && <Crown className="w-3 h-3 text-yellow-600" />}
+                                        {role === 'admin' && <Shield className="w-3 h-3 text-red-600" />}
+                                        {role === 'manager' && <UserCog className="w-3 h-3 text-blue-600" />}
+                                        {role === 'user' && <UserCircle className="w-3 h-3 text-gray-600" />}
+                                        {role.charAt(0).toUpperCase() + role.slice(1)}
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    getRoleBadge(user.role)
+                )}
 
                 {isDeleted ? (
                     // Actions for deleted users (owner only)
@@ -274,8 +383,8 @@ export default function UsersPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => openConfirmDialog('logout', user)}
-                            disabled={!user.isLoggedIn || actionLoading[`logout-${user._id}`] || !canModifyUser(user)}
-                            title={!canModifyUser(user) ? 'Only owner can logout admin/owner users' : user.isLoggedIn ? 'Logout this user' : 'User is not logged in'}
+                            disabled={!user.isLoggedIn || actionLoading[`logout-${user._id}`] || !canLogoutUser(user)}
+                            title={!canLogoutUser(user) ? 'Cannot logout this user' : user.isLoggedIn ? 'Logout this user' : 'User is not logged in'}
                         >
                             {actionLoading[`logout-${user._id}`] ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -284,19 +393,21 @@ export default function UsersPage() {
                             )}
                         </Button>
 
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteClick(user)}
-                            disabled={isCurrentUser(user._id) || actionLoading[`delete-${user._id}`] || !canModifyUser(user)}
-                            title={isCurrentUser(user._id) ? 'Cannot delete yourself' : !canModifyUser(user) ? 'Only owner can delete admin/owner users' : 'Delete this user'}
-                        >
-                            {actionLoading[`delete-${user._id}`] ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <Trash2 className="w-4 h-4" />
-                            )}
-                        </Button>
+                        {canDelete() && (
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteClick(user)}
+                                disabled={isCurrentUser(user._id) || actionLoading[`delete-${user._id}`] || !canModifyUser(user)}
+                                title={isCurrentUser(user._id) ? 'Cannot delete yourself' : !canModifyUser(user) ? 'Cannot delete this user' : 'Delete this user'}
+                            >
+                                {actionLoading[`delete-${user._id}`] ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                )}
+                            </Button>
+                        )}
                     </>
                 )}
             </div>
@@ -482,6 +593,48 @@ export default function UsersPage() {
                             {confirmDialog.type === 'delete' && 'Soft Delete'}
                             {confirmDialog.type === 'hardDelete' && 'Permanently Delete'}
                             {confirmDialog.type === 'recover' && 'Recover'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Role Change Confirmation Dialog */}
+            <Dialog open={roleChangeDialog.open} onOpenChange={(open) => !open && closeRoleChangeDialog()}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <UserCog className="w-5 h-5 text-blue-500" />
+                            Confirm Role Change
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to change <strong>{roleChangeDialog.user?.name}</strong>'s role from{' '}
+                            <strong className="capitalize">{roleChangeDialog.user?.role}</strong> to{' '}
+                            <strong className="capitalize">{roleChangeDialog.newRole}</strong>?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex items-center justify-center gap-4 py-4">
+                        <div className="flex flex-col items-center p-3 rounded-lg border bg-muted/50">
+                            {roleChangeDialog.user?.role === 'owner' && <Crown className="w-8 h-8 text-yellow-600" />}
+                            {roleChangeDialog.user?.role === 'admin' && <Shield className="w-8 h-8 text-red-600" />}
+                            {roleChangeDialog.user?.role === 'manager' && <UserCog className="w-8 h-8 text-blue-600" />}
+                            {roleChangeDialog.user?.role === 'user' && <UserCircle className="w-8 h-8 text-gray-600" />}
+                            <span className="text-sm font-medium capitalize mt-1">{roleChangeDialog.user?.role}</span>
+                        </div>
+                        <span className="text-2xl text-muted-foreground">→</span>
+                        <div className="flex flex-col items-center p-3 rounded-lg border bg-primary/5 border-primary/20">
+                            {roleChangeDialog.newRole === 'owner' && <Crown className="w-8 h-8 text-yellow-600" />}
+                            {roleChangeDialog.newRole === 'admin' && <Shield className="w-8 h-8 text-red-600" />}
+                            {roleChangeDialog.newRole === 'manager' && <UserCog className="w-8 h-8 text-blue-600" />}
+                            {roleChangeDialog.newRole === 'user' && <UserCircle className="w-8 h-8 text-gray-600" />}
+                            <span className="text-sm font-medium capitalize mt-1">{roleChangeDialog.newRole}</span>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeRoleChangeDialog}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleRoleChangeConfirm}>
+                            Change Role
                         </Button>
                     </DialogFooter>
                 </DialogContent>

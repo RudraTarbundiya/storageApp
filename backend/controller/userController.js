@@ -162,18 +162,34 @@ export const logoutUser = async (req, res) => {
         next(error)
     }
 }
-//admin only logout by userId
+//manager and above - logout by userId with role hierarchy
 export const logOutByUserId = async (req, res, next) => {
     const { userId } = req.params;
+    const currentUserRole = req.user.role;
     try {
-        // Check if target user is admin or owner - only owner can logout them
         const targetUser = await User.findById(userId).select('role').lean();
         if (!targetUser) {
             return res.status(404).json({ error: 'User not found.' });
         }
-        if ((targetUser.role === 'admin' || targetUser.role === 'owner') && req.user.role !== 'owner') {
-            return res.status(403).json({ error: 'Only owner can logout admin or owner users.' });
+
+        // Role hierarchy for logout:
+        // Owner can logout anyone
+        // Admin can logout users and managers (not admin/owner)
+        // Manager can only logout users
+        if (currentUserRole === 'owner') {
+            // Owner can logout anyone
+        } else if (currentUserRole === 'admin') {
+            if (targetUser.role === 'admin' || targetUser.role === 'owner') {
+                return res.status(403).json({ error: 'Admins cannot logout admin or owner users.' });
+            }
+        } else if (currentUserRole === 'manager') {
+            if (targetUser.role !== 'user') {
+                return res.status(403).json({ error: 'Managers can only logout regular users.' });
+            }
+        } else {
+            return res.status(403).json({ error: 'Access denied.' });
         }
+
         const userSessions = await Session.find({ userId: userId }).lean();
         if (userSessions.length === 0) {
             return res.status(404).json({ error: 'No active sessions found for this user.' });
@@ -235,6 +251,60 @@ export const getDeletedUsers = async (req, res, next) => {
             }
         ]);
         res.status(200).json(users);
+    } catch (error) {
+        next(error);
+    }
+}
+//change role - role hierarchy: owner > admin > manager > user
+export const changeUserRole = async (req, res, next) => {
+    const { userId } = req.params;
+    const { newRole } = req.body;
+    const currentUserRole = req.user.role;
+
+    const validRoles = ['user', 'admin', 'manager', 'owner'];
+    if (!validRoles.includes(newRole)) {
+        return res.status(400).json({ error: 'Invalid role. Must be user, admin, manager, or owner.' });
+    }
+    if(userId === req.user._id.toString()){
+        return res.status(400).json({ error: 'Users cannot change their own role.' });
+    }
+
+    try {
+        const targetUser = await User.findById(userId);
+        if (!targetUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        // Role hierarchy checks
+        // Owner can change anyone's role
+        // Admin can change roles except owner
+        // Manager can change roles except owner and admin
+
+        if (currentUserRole === 'owner') {
+            // Owner can change any role
+        } else if (currentUserRole === 'admin') {
+            // Admin cannot change owner's role or set role to owner
+            if (targetUser.role === 'owner') {
+                return res.status(403).json({ error: 'Admins cannot change owner role.' });
+            }
+            if (newRole === 'owner') {
+                return res.status(403).json({ error: 'Admins cannot set role to owner.' });
+            }
+        } else if (currentUserRole === 'manager') {
+            // Manager cannot change owner/admin roles or set role to owner/admin
+            if (targetUser.role === 'owner' || targetUser.role === 'admin') {
+                return res.status(403).json({ error: 'Managers cannot change owner or admin roles.' });
+            }
+            if (newRole === 'owner' || newRole === 'admin') {
+                return res.status(403).json({ error: 'Managers cannot set role to owner or admin.' });
+            }
+        } else {
+            return res.status(403).json({ error: 'Access denied.' });
+        }
+
+        targetUser.role = newRole;
+        await targetUser.save();
+        return res.status(200).json({ message: 'User role updated successfully.' });
     } catch (error) {
         next(error);
     }

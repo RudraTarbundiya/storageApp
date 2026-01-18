@@ -35,8 +35,8 @@ const getMenuItems = (userRole) => {
     },
   ]
 
-  // Add Users menu item for admin and owner
-  if (userRole === 'admin' || userRole === 'owner') {
+  // Add Users menu item for manager, admin and owner
+  if (userRole === 'manager' || userRole === 'admin' || userRole === 'owner') {
     items.push({
       title: 'Users',
       icon: Users,

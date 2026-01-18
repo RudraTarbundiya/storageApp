@@ -25,15 +25,22 @@ export default async function checkAuth(req, res, next) {
     next()
 }
 
-export const checkAdmin = (req,res,next)=>{
-    if(req.user.role === 'admin' || req.user.role === 'owner'){
+export const checkAdmin = (req, res, next) => {
+    if (req.user.role === 'admin' || req.user.role === 'owner') {
         return next()
     }
     return res.status(403).json({ error: "Access denied!" });
 }
 
-export const checkOwner = (req,res,next)=>{
-    if(req.user.role === 'owner'){
+export const checkManager = (req, res, next) => {
+    if (req.user.role === 'manager' || req.user.role === 'admin' || req.user.role === 'owner') {
+        return next()
+    }
+    return res.status(403).json({ error: "Access denied!" });
+}
+
+export const checkOwner = (req, res, next) => {
+    if (req.user.role === 'owner') {
         return next()
     }
     return res.status(403).json({ error: "Access denied!" });

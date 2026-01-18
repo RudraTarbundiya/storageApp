@@ -28,6 +28,7 @@ export const adminAPI = {
   getUsers: () => api.get('/users'),
   logoutUser: (userId) => api.post(`/users/${userId}/logout`),
   deleteUser: (userId) => api.delete(`/users/${userId}/delete`),
+  changeUserRole: (userId, newRole) => api.post(`/users/${userId}/role`, { newRole }),
 }
 
 // Owner API (owner-only endpoints)
