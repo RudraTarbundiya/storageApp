@@ -55,11 +55,6 @@ export const createDirectory = async (req, res, next) => {
     const parentId = req.params.parentId || req.user.rootDirId.toString()
     const name = req.body.dirname || "new folder"
     if (!name) return res.status(400).json({ error: 'Missing directory name (send in header "dirname")' })
-    console.log({
-        name: name,
-        userId: req.user._id,
-        parentDirId: parentId
-    })
     try {
         await Directory.insertOne({
             name: name,
@@ -87,8 +82,6 @@ export const renameDirectorry = async (req, res, next) => {
 
 export const deleteDirectory = async (req, res, next) => {
     const id = req.params.id
-    const db = req.db
-
 
     async function collectContentDir(id) {
         let files = await File.find({ parentDirId: id }).select('extension').lean()

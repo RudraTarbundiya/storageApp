@@ -14,6 +14,20 @@ export default async function checkAuth(req, res, next) {
     if (!user) {
         return res.status(401).json({ error: "Not logged!" });
     }
+    // Check if user is soft-deleted
+    if (user.isDelete) {
+        // Clear the session for deleted user
+        await Session.findByIdAndDelete(sid);
+        res.clearCookie('sid');
+        return res.status(403).json({ error: "Your account has been deleted." });
+    }
     req.user = user
+    next()
+}
+
+export const checkAdmin = (req,res,next)=>{
+    if(req.user.role !== 'admin'){
+        return res.status(403).json({ error: "Access denied!" });
+    }
     next()
 }

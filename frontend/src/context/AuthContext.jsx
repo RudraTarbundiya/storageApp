@@ -6,10 +6,10 @@ const AuthContext = createContext({
   user: null,
   isAuthenticated: false,
   loading: true,
-  login: async () => {},
-  loginWithGoogle: async () => {},
-  logout: async () => {},
-  refreshUser: async () => {},
+  login: async () => { },
+  loginWithGoogle: async () => { },
+  logout: async () => { },
+  refreshUser: async () => { },
 })
 
 export function AuthProvider({ children }) {
@@ -24,6 +24,7 @@ export function AuthProvider({ children }) {
         name: response.data.name || 'User',
         email: response.data.email || 'user@example.com',
         picture: response.data.picture || null,
+        role: response.data.role || 'user',
       })
       setIsAuthenticated(true)
       return true

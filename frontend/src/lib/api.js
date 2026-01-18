@@ -23,6 +23,13 @@ export const userAPI = {
   logoutAll: () => api.post('/user/logoutall'),
 }
 
+// Admin API (admin-only endpoints)
+export const adminAPI = {
+  getUsers: () => api.get('/users'),
+  logoutUser: (userId) => api.post(`/users/${userId}/logout`),
+  deleteUser: (userId) => api.delete(`/users/${userId}/delete`),
+}
+
 // Directory API
 export const directoryAPI = {
   getRoot: () => api.get('/directory'),

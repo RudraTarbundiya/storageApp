@@ -24,6 +24,10 @@ export const googlelogin = async (req, res, next) => {
         const { name, email, picture } = await verifyIdTokenAndGetUser(id_token);
         const findUser = await User.findOne({ email }).lean()
         if (findUser) {
+            // Check if user is soft-deleted
+            if (findUser.isDelete) {
+                return res.status(403).json({ error: 'Your account has been deleted.' })
+            }
             const allSessions = await Session.find({ userId: findUser._id })
             if (allSessions.length >= 2) {//max 2 sessions allowed
                 await allSessions[0].deleteOne()

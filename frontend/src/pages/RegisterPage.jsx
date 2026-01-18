@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Mail, CheckCircle2, KeyRound, Lock, ArrowLeft, Loader2 } from 'lucide-react'
+import { User, Mail, CheckCircle2, KeyRound, Lock, ArrowLeft, Loader2, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { userAPI, authAPI } from '@/lib/api'
 
 export default function RegisterPage() {
@@ -17,6 +18,8 @@ export default function RegisterPage() {
     otp: '',
     password: 'sjnipj9isjb',
     confirmPassword: 'sjnipj9isjb',
+    role: 'user',
+    secretKey: '',
   })
   const [loading, setLoading] = useState(false)
   const [otpSending, setOtpSending] = useState(false)
@@ -83,12 +86,18 @@ export default function RegisterPage() {
     }
 
     try {
-      await userAPI.register({
+      const registrationData = {
         name: formData.name,
         email: formData.email,
         otp: formData.otp,
         password: formData.password,
-      })
+        role: formData.role,
+      }
+      // Include secretKey for admin or manager registration
+      if (formData.role === 'admin' || formData.role === 'manager') {
+        registrationData.secretKey = formData.secretKey
+      }
+      await userAPI.register(registrationData)
       setSuccess(true)
       setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
@@ -121,11 +130,19 @@ export default function RegisterPage() {
     }))
   }
 
+  const handleRoleChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value,
+      secretKey: value === 'user' ? '' : prev.secretKey // Clear secretKey if user role
+    }))
+  }
+
   const goBack = () => {
     setStep(1)
     setOtpSent(false)
     setError('')
-    setFormData(prev => ({ ...prev, otp: '', password: '', confirmPassword: '' }))
+    setFormData(prev => ({ ...prev, otp: '', password: '', confirmPassword: '', secretKey: '' }))
   }
 
   return (
@@ -238,6 +255,59 @@ export default function RegisterPage() {
                       className="h-11"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Register as</Label>
+                    <Select value={formData.role} onValueChange={handleRoleChange}>
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            User
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="manager">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            Manager
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-4 h-4" />
+                            Admin
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(formData.role === 'admin' || formData.role === 'manager') && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-2"
+                    >
+                      <Label htmlFor="secretKey">{formData.role === 'admin' ? 'Admin' : 'Manager'} Secret Key</Label>
+                      <Input
+                        id="secretKey"
+                        name="secretKey"
+                        type="password"
+                        placeholder={`Enter ${formData.role} secret key`}
+                        value={formData.secretKey}
+                        onChange={handleChange}
+                        required
+                        className="h-11"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Contact system administrator for the {formData.role} secret key
+                      </p>
+                    </motion.div>
+                  )}
 
                   <Button type="submit" className="w-full h-11" disabled={otpSending}>
                     {otpSending ? (

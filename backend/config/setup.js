@@ -46,6 +46,9 @@ try {
             enum : ["user", "admin" , "manager"],
             bsonType : 'string'
           },
+          isDelete : {
+            bsonType : 'bool'
+          },
           __v: {
             bsonType: 'int'
           }

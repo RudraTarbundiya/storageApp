@@ -1,4 +1,4 @@
-import { Home, Cloud, PanelRightClose, Globe } from 'lucide-react'
+import { Home, Cloud, PanelRightClose, Globe, Users } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Sidebar,
@@ -16,23 +16,36 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context'
 
-const menuItems = [
-  {
-    title: 'Landing Page',
-    icon: Globe,
-    path: '/',
-  },
-  {
-    title: 'My Files',
-    icon: Home,
-    path: '/dashboard',
-  },
-  {
-    title: 'Google Drive',
-    icon: Cloud,
-    path: '/google-drive',
-  },
-]
+const getMenuItems = (userRole) => {
+  const items = [
+    {
+      title: 'Landing Page',
+      icon: Globe,
+      path: '/',
+    },
+    {
+      title: 'My Files',
+      icon: Home,
+      path: '/dashboard',
+    },
+    {
+      title: 'Google Drive',
+      icon: Cloud,
+      path: '/google-drive',
+    },
+  ]
+
+  // Add Users menu item for admin only
+  if (userRole === 'admin') {
+    items.push({
+      title: 'Users',
+      icon: Users,
+      path: '/users',
+    })
+  }
+
+  return items
+}
 
 export default function AppSidebar() {
   const navigate = useNavigate()
@@ -80,7 +93,7 @@ export default function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {getMenuItems(user?.role).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     onClick={() => handleNavigation(item.path)}

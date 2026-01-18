@@ -24,7 +24,7 @@ app.use(cors({
     credentials: true
 }))//enable CORS
 
-app.use('/user', userRouteres)
+app.use('/', userRouteres)
 app.use('/auth',authRoutes)
 app.use('/directory', checkAuth, directoryRoutes)
 app.use('/file', checkAuth, filesRoutes)
