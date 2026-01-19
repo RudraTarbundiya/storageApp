@@ -7,7 +7,7 @@ import connectDB from './config/db.js'
 import filesRoutes from './routes/filesRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 import directoryRoutes from './routes/directoryRoutes.js'
-import userRouteres from './routes/userRoutes.js'
+import usersRouteres from './routes/usersRoutes.js'
 import gdRoutes from './routes/gdRoutes.js'
 import publicRoutes from './routes/publicRoutes.js'
 import checkAuth from './middleware/authMiddlwWare.js'
@@ -25,7 +25,7 @@ app.use(cors({
     credentials: true
 }))//enable CORS
 
-app.use('/', userRouteres)
+app.use('/users', usersRouteres)
 app.use('/auth',authRoutes)
 app.use('/directory', checkAuth, directoryRoutes)
 app.use('/file', checkAuth, filesRoutes)

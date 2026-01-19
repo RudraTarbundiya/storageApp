@@ -16,11 +16,11 @@ export const authAPI = {
 
 // User API
 export const userAPI = {
-  register: (data) => api.post('/user/register', data),
-  getCurrentUser: () => api.get('/user/profile'),
-  login: (email, password) => api.post('/user/login', { email, password }),
-  logout: () => api.post('/user/logout'),
-  logoutAll: () => api.post('/user/logoutall'),
+  register: (data) => api.post('/auth/register', data),
+  getCurrentUser: () => api.get('/auth/profile'),
+  login: (email, password) => api.post('/auth/login', { email, password }),
+  logout: () => api.post('/auth/logout'),
+  logoutAll: () => api.post('/auth/logoutall'),
   updateProfile: (data) => api.post('/auth/change-profile', data),
 }
 
