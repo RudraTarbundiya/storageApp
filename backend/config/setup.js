@@ -92,8 +92,11 @@ try {
             description: "Array of users with permissions",
             items: {
               bsonType: "object",
-              required: ["user"],
+              required: ["user", "permission"],
               properties: {
+                _id: {
+                  bsonType: "objectId"
+                },
                 user: {
                   bsonType: "objectId",
                   description: "Reference to User _id"
@@ -157,8 +160,11 @@ try {
             description: "Array of users with permissions",
             items: {
               bsonType: "object",
-              required: ["user"],
+              required: ["user", "permission"],
               properties: {
+                _id: {
+                  bsonType: "objectId"
+                },
                 user: {
                   bsonType: "objectId",
                   description: "Reference to User _id"

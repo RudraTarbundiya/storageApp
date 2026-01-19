@@ -9,7 +9,7 @@ const sessionSchema = new Schema({
     ceratedAt : {
         type : Date,
         default : Date.now,
-        expires : 3600 //after each hour user must need login again
+        expires : 60 * 60 * 24 * 7 //after one week user must need login again
     }
 },{
     strict : 'throw',

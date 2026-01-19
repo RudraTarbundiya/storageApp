@@ -5,7 +5,7 @@ import checkFileShare, { checkDirectoryShare } from "../middleware/checkShare.js
 import { getPublicDirData, sendPublicFile } from "../controller/publicController.js";
 const router = Router();
 
-router.post("/search",checkAuth,searchUserByEmail)
+router.post("/search", checkAuth, searchUserByEmail)
 
 // Share file/directory with user
 router.post('/file/:fileId', checkAuth, shareFile)
@@ -22,7 +22,7 @@ router.get('/by-me', checkAuth, getMySharedItems)
 router.get('/with-me', checkAuth, getSharedWithMe)
 
 //share Files and Directory
-router.get('/file/:id',checkAuth ,checkFileShare , sendPublicFile)
-router.get('/dir/:id',checkAuth ,checkDirectoryShare , getPublicDirData)
+router.get('/file/:id', checkAuth, checkFileShare, sendPublicFile)
+router.get('/dir/:id', checkAuth, checkDirectoryShare, getPublicDirData)
 
 export default router;

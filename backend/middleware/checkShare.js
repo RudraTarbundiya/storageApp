@@ -4,10 +4,10 @@ import Directory from "../models/directoryModel.js"
 // Check if user has access to a shared file
 export const checkFileShare = async (req, res, next) => {
     try {
-        const { fileId } = req.params
+        const { id } = req.params
         const userId = req.user._id
 
-        const file = await File.findById(fileId)
+        const file = await File.findById(id)
 
         if (!file) {
             return res.status(404).json({ message: 'File not found' })
@@ -38,10 +38,10 @@ export const checkFileShare = async (req, res, next) => {
 // Check if user has access to a shared directory
 export const checkDirectoryShare = async (req, res, next) => {
     try {
-        const { dirId } = req.params
+        const { id } = req.params
         const userId = req.user._id
 
-        const directory = await Directory.findById(dirId)
+        const directory = await Directory.findById(id)
 
         if (!directory) {
             return res.status(404).json({ message: 'Directory not found' })

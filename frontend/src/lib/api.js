@@ -45,7 +45,7 @@ export const directoryAPI = {
   getById: (id) => api.get(`/directory/${id}`),
   create: (dirname, parentId = null) =>
     api.post(parentId ? `/directory/${parentId}` : '/directory', { dirname }),
-  rename: (id, newName) => api.patch(`/directory/${id}`, { newName }),
+  rename: (id, newDirName) => api.patch(`/directory/${id}`, { newDirName }),
   delete: (id) => api.delete(`/directory/${id}`),
 }
 
@@ -248,7 +248,7 @@ export const fileAPI = {
     }
     return results
   },
-  get: (id) => api.get(`/file/${id}`, { responseType: 'blob' }),
+  get: (id, config = {}) => api.get(`/file/${id}`, { responseType: 'blob', ...config }),
   rename: (id, newFileName) => api.patch(`/file/${id}`, { newFileName }),
   delete: (id) => api.delete(`/file/${id}`),
 }
@@ -274,8 +274,32 @@ export const publicAPI = {
 
   // Access public content (no auth required)
   getPublicDirectory: (id) => api.get(`/public/dir/${id}`),
-  getPublicFile: (id) => api.get(`/public/file/${id}`, { responseType: 'blob' }),
+  getPublicFile: (id, config = {}) => api.get(`/public/file/${id}`, { responseType: 'blob', ...config }),
   downloadPublicFile: (id) => api.get(`/public/file/${id}?action=download`, { responseType: 'blob' }),
+}
+
+// User-specific Sharing API
+export const sharingAPI = {
+  // Search users by email for sharing (send email in body)
+  searchUsers: (email) => api.post('/shared/search', { email }),
+
+  // Share file/directory with a specific user
+  shareFile: (fileId, shareUserId, permission) =>
+    api.post(`/shared/file/${fileId}`, { shareUserId, permission }),
+  shareDirectory: (dirId, shareUserId, permission) =>
+    api.post(`/shared/dir/${dirId}`, { shareUserId, permission }),
+
+  // Remove share from file/directory
+  removeFileShare: (fileId, userId) => api.delete(`/shared/file/${fileId}/${userId}`),
+  removeDirectoryShare: (dirId, userId) => api.delete(`/shared/dir/${dirId}/${userId}`),
+
+  // Get shared items
+  getSharedWithMe: () => api.get('/shared/with-me'),
+  getSharedByMe: () => api.get('/shared/by-me'),
+
+  // Access shared file/directory content
+  getSharedFile: (id, config = {}) => api.get(`/shared/file/${id}`, { responseType: 'blob', ...config }),
+  getSharedDirectory: (id) => api.get(`/shared/dir/${id}`),
 }
 
 export default api

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import React from 'react'
 import { Upload, FolderPlus, Search, Grid3x3, List, Download, X, File, Image as ImageIcon, Video, FileText, Music } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -221,6 +221,9 @@ function DashboardContent() {
   const [previewUrl, setPreviewUrl] = useState(null)
   const [previewLoading, setPreviewLoading] = useState(false)
 
+  // Ref for aborting preview requests
+  const previewAbortController = React.useRef(null)
+
   const handleShare = (item, type) => {
     setShareItem(item)
     setShareType(type)
@@ -229,6 +232,11 @@ function DashboardContent() {
 
   const handlePreviewFile = async (file) => {
     const fileType = getFileType(file.extension)
+
+    // Abort any previous preview request
+    if (previewAbortController.current) {
+      previewAbortController.current.abort()
+    }
 
     // Show modal immediately with loading state
     setPreviewFile(file)
@@ -249,19 +257,28 @@ function DashboardContent() {
         setPreviewUrl(streamUrl)
         setPreviewLoading(false)
       } else {
+        // Create new abort controller for this request
+        previewAbortController.current = new AbortController()
         // For other file types, download as blob
-        const response = await fileAPI.get(file._id)
+        const response = await fileAPI.get(file._id, { signal: previewAbortController.current.signal })
         const blobUrl = URL.createObjectURL(response.data)
         setPreviewUrl(blobUrl)
         setPreviewLoading(false)
       }
     } catch (err) {
-      console.error('Preview failed:', err)
+      // Don't show error if request was aborted
+      if (err.name !== 'AbortError' && err.code !== 'ERR_CANCELED') {
+        console.error('Preview failed:', err)
+      }
       setPreviewLoading(false)
     }
   }
 
   const handleClosePreview = () => {
+    // Abort any in-flight preview request
+    if (previewAbortController.current) {
+      previewAbortController.current.abort()
+    }
     setPreviewOpen(false)
     setPreviewLoading(false)
     // Cleanup after a small delay to allow animation

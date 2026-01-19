@@ -10,6 +10,8 @@ import ProfilePage from '@/pages/ProfilePage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import LandingPage from '@/pages/LandingPage'
 import PublicSharePage from '@/pages/PublicSharePage'
+import SharedWithMePage from '@/pages/SharedWithMePage'
+import SharedByMePage from '@/pages/SharedByMePage'
 import AppLayout from '@/components/Layout/AppLayout'
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/files" element={<DashboardPage />} />
+                <Route path="/shared-with-me" element={<SharedWithMePage />} />
+                <Route path="/shared-by-me" element={<SharedByMePage />} />
                 <Route path="/google-drive" element={<GoogleDrivePage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/profile" element={<ProfilePage />} />

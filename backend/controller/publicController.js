@@ -6,10 +6,10 @@ import { calculateDirSize, getFileSize } from "./directoryController.js";
 export const getPublicDirData = async (req, res, next) => {
     const _id = req.params.id
     try {
-        const directoryData = await Directory.findOne({ _id }).lean()
+        const directoryData = await Directory.findOne({ _id }).populate('userId', 'name picture').lean()
         if (!directoryData) return res.status(404).json({ error: "Directory not found!" });
-        const files = await File.find({ parentDirId: _id }, { '__v': 0 }).lean()
-        const directories = await Directory.find({ parentDirId: _id }, { '__v': 0 }).lean()
+        const files = await File.find({ parentDirId: _id }, { '__v': 0 }).populate('userId', 'name picture').lean()
+        const directories = await Directory.find({ parentDirId: _id }, { '__v': 0 }).populate('userId', 'name picture').lean()
 
         // Get file sizes - either from DB or from filesystem
         const filesWithSizes = await Promise.all(files.map(async (f) => {
@@ -65,7 +65,7 @@ export const getPublicDirData = async (req, res, next) => {
 
 export const sendPublicFile = async (req, res, next) => {
     const id = req.params.id
-    const fileobj = await File.findById(id).lean()
+    const fileobj = await File.findById(id).populate('userId', 'name picture').lean()
     if (!fileobj) return res.status(404).send({ error: 'File not found!' })
 
     const filePath = path.join(import.meta.dirname, '..', 'storage', id + (fileobj.extension || ''))
@@ -74,7 +74,8 @@ export const sendPublicFile = async (req, res, next) => {
         return
     }
     res.sendFile(filePath, (err) => {
-        if (err) {
+        // Ignore aborted connections (client closed before file finished sending)
+        if (err && err.code !== 'ECONNABORTED' && !res.headersSent) {
             next(err)
         }
     })

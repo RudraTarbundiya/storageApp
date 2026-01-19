@@ -1,6 +1,6 @@
 import User from "../models/userModel.js";
 import Session from "../models/sesssionModel.js";
-
+// Middleware to check if user is authenticated with valid session and not soft-deleted
 export default async function checkAuth(req, res, next) {
     const {sid}= req.signedCookies
     if(!sid){

@@ -45,10 +45,16 @@ export const getDirectoryById = async (req, res, next) => {
 
     const _id = req.params.id || req.user.rootDirId.toString()
     try {
-        const directoryData = await Directory.findOne({ _id, userId: req.user._id }).lean()
+        const directoryData = await Directory.findOne({ _id, userId: req.user._id })
+            .populate('sharedWith.user', 'name email picture')
+            .lean()
         if (!directoryData) return res.status(404).json({ error: "Directory not found or you do not have access to it!" });
-        const files = await File.find({ parentDirId: _id }, { '__v': 0 }).lean()
-        const directories = await Directory.find({ parentDirId: _id }, { '__v': 0 }).lean()
+        const files = await File.find({ parentDirId: _id }, { '__v': 0 })
+            .populate('sharedWith.user', 'name email picture')
+            .lean()
+        const directories = await Directory.find({ parentDirId: _id }, { '__v': 0 })
+            .populate('sharedWith.user', 'name email picture')
+            .lean()
 
         // Get file sizes - either from DB or from filesystem
         const filesWithSizes = await Promise.all(files.map(async (f) => {

@@ -1,4 +1,4 @@
-import { Home, Cloud, PanelRightClose, Globe, Users, UserCircle, HardDrive } from 'lucide-react'
+import { Home, Cloud, PanelRightClose, Globe, Users, UserCircle, HardDrive, Share2, Users2 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Sidebar,
@@ -41,6 +41,16 @@ const getMenuItems = (userRole) => {
       path: '/dashboard',
     },
     {
+      title: 'Shared with me',
+      icon: Users2,
+      path: '/shared-with-me',
+    },
+    {
+      title: 'Shared by me',
+      icon: Share2,
+      path: '/shared-by-me',
+    },
+    {
       title: 'Google Drive',
       icon: Cloud,
       path: '/google-drive',
@@ -69,7 +79,7 @@ export default function AppSidebar() {
   const location = useLocation()
   const { user } = useAuth()
   const { setOpenMobile, toggleSidebar, isMobile } = useSidebar()
-  
+
   // Get storage info from FileManager context
   const { totalStorageUsed } = useFileManager()
 
@@ -148,7 +158,7 @@ export default function AppSidebar() {
         <div className="w-full bg-secondary rounded-full h-2 mb-2 overflow-hidden">
           <div
             className="h-2 rounded-full transition-all duration-500"
-            style={{ 
+            style={{
               width: `${storagePercentage}%`,
               backgroundColor: `hsl(${Math.max(0, 120 - (storagePercentage * 1.2))}, 70%, 50%)`
             }}
