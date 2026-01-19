@@ -26,6 +26,13 @@ const fileSchema = new Schema({
         required: true,
         ref: 'User'
     },
+    sharedWith: {
+        type: [{
+            user: { type: Schema.Types.ObjectId, ref: 'User' },
+            permission: { type: String, enum: ['view', 'edit'], default: 'view' }
+        }],
+        default: []
+    },
     isPublic: {
         type: Boolean,
         default: false

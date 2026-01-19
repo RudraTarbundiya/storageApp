@@ -10,17 +10,24 @@ const directorySchema = new Schema({
         type: Schema.Types.ObjectId,
         required: true
     },
-    parentDirId : {
-        type : Schema.Types.ObjectId,
-        default : null,
-        ref : 'Directory'
+    parentDirId: {
+        type: Schema.Types.ObjectId,
+        default: null,
+        ref: 'Directory'
     },
-    isPublic : {
-        type : Boolean,
-        default : false
+    sharedWith: {
+        type: [{
+            user: { type: Schema.Types.ObjectId, ref: 'User' },
+            permission: { type: String, enum: ['view', 'edit'], default: 'view' }
+        }],
+        default: []
+    },
+    isPublic: {
+        type: Boolean,
+        default: false
     }
-},{
-    strict : 'throw',
+}, {
+    strict: 'throw',
 })
 
 const Directory = model('Directory', directorySchema)

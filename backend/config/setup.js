@@ -4,9 +4,9 @@ await connectDB()
 const clinet = mongoose.connection.getClient();
 
 try {
-  const db =  mongoose.connection.db
+  const db = mongoose.connection.db
   const command = 'collMod' // create OR MODIFY COLLECTION(collMod)
-
+  //user collection schema validation
   await db.command({
     [command]: "users",//collecection modification
     validator: {
@@ -36,18 +36,18 @@ try {
             bsonType: 'string',
             minLength: 4
           },
-          picture : {
+          picture: {
             bsonType: ['string', 'null'],
           },
           rootDirId: {
             bsonType: 'objectId'
           },
-          role:{
-            enum : ["user", "admin" , "manager" , "owner"],
-            bsonType : 'string'
+          role: {
+            enum: ["user", "admin", "manager", "owner"],
+            bsonType: 'string'
           },
-          isDelete : {
-            bsonType : 'bool'
+          isDelete: {
+            bsonType: 'bool'
           },
           __v: {
             bsonType: 'int'
@@ -59,7 +59,7 @@ try {
     validationAction: 'error',
     validationLevel: 'strict'
   })
-
+  //directory collection schema validation
   await db.command({
     [command]: "directories",
     validator: {
@@ -87,8 +87,28 @@ try {
           userId: {
             bsonType: 'objectId'
           },
-          isPublic : {
-            bsonType : 'bool'
+          sharedWith: {
+            bsonType: "array",
+            description: "Array of users with permissions",
+            items: {
+              bsonType: "object",
+              required: ["user"],
+              properties: {
+                user: {
+                  bsonType: "objectId",
+                  description: "Reference to User _id"
+                },
+                permission: {
+                  bsonType: "string",
+                  enum: ["view", "edit"],
+                  description: "Permission level"
+                }
+              },
+              additionalProperties: false
+            }
+          },
+          isPublic: {
+            bsonType: 'bool'
           },
           __v: {
             bsonType: 'int'
@@ -100,7 +120,7 @@ try {
     validationAction: 'error',
     validationLevel: 'strict'
   })
-
+  //file collection schema validation
   await db.command({
     [command]: "files",
     validator: {
@@ -123,7 +143,7 @@ try {
           extension: {
             bsonType: 'string'
           },
-          size:{
+          size: {
             bsonType: 'number'
           },
           parentDirId: {
@@ -132,8 +152,28 @@ try {
           userId: {
             bsonType: 'objectId'
           },
-          isPublic : {
-            bsonType : 'bool'
+          sharedWith: {
+            bsonType: "array",
+            description: "Array of users with permissions",
+            items: {
+              bsonType: "object",
+              required: ["user"],
+              properties: {
+                user: {
+                  bsonType: "objectId",
+                  description: "Reference to User _id"
+                },
+                permission: {
+                  bsonType: "string",
+                  enum: ["view", "edit"],
+                  description: "Permission level"
+                }
+              },
+              additionalProperties: false
+            }
+          },
+          isPublic: {
+            bsonType: 'bool'
           },
           __v: {
             bsonType: 'int'
@@ -147,6 +187,6 @@ try {
   })
 } catch (err) {
   console.log('Error setting up schema validation:', err)
-}finally{
+} finally {
   await clinet.close();
 }

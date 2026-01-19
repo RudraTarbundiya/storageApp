@@ -10,6 +10,7 @@ import directoryRoutes from './routes/directoryRoutes.js'
 import usersRouteres from './routes/usersRoutes.js'
 import gdRoutes from './routes/gdRoutes.js'
 import publicRoutes from './routes/publicRoutes.js'
+import sharedRoutes from './routes/sharedRoutes.js'
 import checkAuth from './middleware/authMiddlwWare.js'
 
 await connectDB()
@@ -30,6 +31,7 @@ app.use('/auth',authRoutes)
 app.use('/directory', checkAuth, directoryRoutes)
 app.use('/file', checkAuth, filesRoutes)
 app.use('/gd',checkAuth, gdRoutes)
+app.use('/shared',sharedRoutes)
 app.use('/public',publicRoutes)
 
 //this is global middleware for eroor handling
