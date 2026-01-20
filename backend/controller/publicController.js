@@ -102,6 +102,11 @@ export const sendPublicFile = async (req, res, next) => {
         res.setHeader('Content-Type', mimeTypes[ext])
     }
 
+    // Set Content-Disposition header with filename for the frontend to extract
+    const encodedFilename = encodeURIComponent(fileobj.name)
+    res.setHeader('Content-Disposition', `inline; filename="${encodedFilename}"`)
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type')
+
     if (req.query.action === 'download') {
         res.download(filePath, fileobj.name)
         return

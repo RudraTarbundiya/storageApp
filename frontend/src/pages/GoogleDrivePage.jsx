@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { motion } from 'framer-motion'
-import { Cloud, Download, FolderOpen, File, Home, ChevronRight } from 'lucide-react'
+import { Cloud, Download, FolderOpen, File as FileIcon, Home, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'

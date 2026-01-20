@@ -1,6 +1,5 @@
-import { useState } from 'react'
-import React from 'react'
-import { Upload, FolderPlus, Search, Grid3x3, List, Download, X, File, Image as ImageIcon, Video, FileText, Music } from 'lucide-react'
+import React,{ useState, useEffect } from 'react'
+import { Upload, FolderPlus, Search, Grid3x3, List, Download, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -9,159 +8,10 @@ import FileCard from '@/components/FileCard'
 import FolderCard from '@/components/FolderCard'
 import BreadcrumbNav from '@/components/BreadcrumbNav'
 import ShareDialog from '@/components/ShareDialog'
-import { useFileManager } from '@/context'
+import FilePreviewModal from '@/components/FilePreviewModal'
+import { useFileManager, usePreview } from '@/context'
 import { fileAPI } from '@/lib/api'
 
-// Helper function to determine file type
-const getFileType = (extension) => {
-  const ext = (extension || '').toLowerCase().replace('.', '')
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
-  const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']
-  const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a']
-  const pdfExts = ['pdf']
-
-  if (imageExts.includes(ext)) return 'image'
-  if (videoExts.includes(ext)) return 'video'
-  if (audioExts.includes(ext)) return 'audio'
-  if (pdfExts.includes(ext)) return 'pdf'
-  return 'other'
-}
-
-// Get file icon based on type
-const getFileIcon = (extension) => {
-  const type = getFileType(extension)
-  switch (type) {
-    case 'image': return ImageIcon
-    case 'video': return Video
-    case 'audio': return Music
-    case 'pdf': return FileText
-    default: return File
-  }
-}
-
-// Format file size helper
-const formatFileSize = (bytes) => {
-  if (!bytes || bytes === 0) return 'Unknown'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
-
-// Preview Modal Component with loading state
-function PreviewModal({ open, onClose, file, fileUrl, isLoading, onDownload }) {
-  const fileType = getFileType(file?.extension)
-
-  if (!open) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal Content */}
-      <div className="relative z-10 w-[95vw] max-w-4xl max-h-[90vh] bg-background rounded-xl overflow-hidden shadow-2xl border">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-background">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="h-10 w-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
-              {(() => {
-                const IconComponent = getFileIcon(file?.extension)
-                return <IconComponent className="h-5 w-5 text-white" />
-              })()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-medium truncate text-sm md:text-base">{file?.name || 'Preview'}</h3>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>{file?.extension || 'File'}</span>
-                <span>•</span>
-                <span>{formatFileSize(file?.size)}</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={() => onDownload?.(file)} className="hidden sm:flex">
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => onDownload?.(file)} className="sm:hidden">
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Preview content */}
-        <div className="flex items-center justify-center bg-slate-950 min-h-75 md:min-h-100 max-h-[70vh] overflow-auto">
-          {/* Loading state */}
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center p-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
-              <p className="text-white text-sm">Loading preview...</p>
-            </div>
-          )}
-
-          {!isLoading && fileType === 'image' && fileUrl && (
-            <img
-              src={fileUrl}
-              alt={file?.name}
-              className="max-w-full max-h-[70vh] object-contain"
-            />
-          )}
-
-          {!isLoading && fileType === 'video' && fileUrl && (
-            <video
-              src={fileUrl}
-              controls
-              autoPlay
-              preload="metadata"
-              className="max-w-full max-h-[70vh]"
-            >
-              Your browser does not support the video tag.
-            </video>
-          )}
-
-          {!isLoading && fileType === 'audio' && fileUrl && (
-            <div className="p-8 md:p-12 text-center w-full">
-              <div className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                <Music className="h-10 w-10 md:h-12 md:w-12 text-white" />
-              </div>
-              <h4 className="text-white font-medium mb-4 truncate px-4">{file?.name}</h4>
-              <audio src={fileUrl} controls autoPlay preload="metadata" className="w-full max-w-md mx-auto" />
-            </div>
-          )}
-
-          {!isLoading && fileType === 'pdf' && fileUrl && (
-            <iframe
-              src={fileUrl}
-              className="w-full h-[70vh]"
-              title={file?.name}
-            />
-          )}
-
-          {!isLoading && (fileType === 'other') && (
-            <div className="p-8 md:p-12 text-center text-white">
-              <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl bg-linear-to-br from-slate-600 to-slate-700 flex items-center justify-center mx-auto mb-6">
-                <FileText className="h-8 w-8 md:h-10 md:w-10" />
-              </div>
-              <h4 className="font-medium mb-2 truncate px-4">{file?.name}</h4>
-              <p className="text-slate-400 text-sm mb-6">Preview not available for this file type</p>
-              <Button onClick={() => onDownload?.(file)}>
-                <Download className="h-4 w-4 mr-2" />
-                Download to View
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function DashboardContent() {
   const {
@@ -211,18 +61,12 @@ function DashboardContent() {
   } = useFileManager()
 
   // Share dialog state
-  const [showShareDialog, setShowShareDialog] = useState(false)
-  const [shareItem, setShareItem] = useState(null)
-  const [shareType, setShareType] = useState('file')
+  const [showShareDialog, setShowShareDialog] = React.useState(false)
+  const [shareItem, setShareItem] = React.useState(null)
+  const [shareType, setShareType] = React.useState('file')
 
-  // Preview modal state
-  const [previewOpen, setPreviewOpen] = useState(false)
-  const [previewFile, setPreviewFile] = useState(null)
-  const [previewUrl, setPreviewUrl] = useState(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
-
-  // Ref for aborting preview requests
-  const previewAbortController = React.useRef(null)
+  // Preview management
+  const { handlePreview } = usePreview()
 
   const handleShare = (item, type) => {
     setShareItem(item)
@@ -230,65 +74,11 @@ function DashboardContent() {
     setShowShareDialog(true)
   }
 
-  const handlePreviewFile = async (file) => {
-    const fileType = getFileType(file.extension)
-
-    // Abort any previous preview request
-    if (previewAbortController.current) {
-      previewAbortController.current.abort()
-    }
-
-    // Show modal immediately with loading state
-    setPreviewFile(file)
-    setPreviewOpen(true)
-    setPreviewLoading(true)
-
-    try {
-      // Revoke previous URL if exists
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
-        setPreviewUrl(null)
-      }
-
-      // For video and audio, use direct streaming URL for better performance
-      if (fileType === 'video' || fileType === 'audio') {
-        // Use direct URL that streams instead of downloading entire file
-        const streamUrl = `http://localhost:4000/file/${file._id}`
-        setPreviewUrl(streamUrl)
-        setPreviewLoading(false)
-      } else {
-        // Create new abort controller for this request
-        previewAbortController.current = new AbortController()
-        // For other file types, download as blob
-        const response = await fileAPI.get(file._id, { signal: previewAbortController.current.signal })
-        const blobUrl = URL.createObjectURL(response.data)
-        setPreviewUrl(blobUrl)
-        setPreviewLoading(false)
-      }
-    } catch (err) {
-      // Don't show error if request was aborted
-      if (err.name !== 'AbortError' && err.code !== 'ERR_CANCELED') {
-        console.error('Preview failed:', err)
-      }
-      setPreviewLoading(false)
-    }
-  }
-
-  const handleClosePreview = () => {
-    // Abort any in-flight preview request
-    if (previewAbortController.current) {
-      previewAbortController.current.abort()
-    }
-    setPreviewOpen(false)
-    setPreviewLoading(false)
-    // Cleanup after a small delay to allow animation
-    setTimeout(() => {
-      if (previewUrl && !previewUrl.startsWith('http://localhost')) {
-        URL.revokeObjectURL(previewUrl)
-      }
-      setPreviewUrl(null)
-      setPreviewFile(null)
-    }, 200)
+  const handlePreviewFile = (file) => {
+    handlePreview(file, {
+      fetcher: (id, signal) => fileAPI.get(id, { signal, responseType: 'blob' }),
+      streamUrl: `http://localhost:4000/file/${file._id}`
+    })
   }
 
   const filteredFolders = folders.filter(f =>
@@ -568,15 +358,7 @@ function DashboardContent() {
         type={shareType}
       />
 
-      {/* Preview Modal */}
-      <PreviewModal
-        open={previewOpen}
-        onClose={handleClosePreview}
-        file={previewFile}
-        fileUrl={previewUrl}
-        isLoading={previewLoading}
-        onDownload={handleDownload}
-      />
+      <FilePreviewModal onDownload={handleDownload} />
     </div>
   )
 }

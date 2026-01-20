@@ -121,12 +121,14 @@ export const getSharedWithMe = async (req, res, next) => {
     try {
         const userId = req.user._id
 
-        // Get all files shared with me
+        // Get all files explicitly shared with me
+        // Note: Only files with explicit sharedWith entry are returned
+        // Files created AFTER sharing will NOT be included (must be explicitly shared)
         const allFiles = await File.find({ 'sharedWith.user': userId })
             .populate('userId', 'name  picture')
             .populate('sharedWith.user', 'name  picture')
 
-        // Get all directories shared with me
+        // Get all directories explicitly shared with me
         const allDirectories = await Directory.find({ 'sharedWith.user': userId })
             .populate('userId', 'name  picture')
             .populate('sharedWith.user', 'name  picture')
@@ -140,9 +142,11 @@ export const getSharedWithMe = async (req, res, next) => {
             return !dir.parentDirId || !sharedDirIds.includes(dir.parentDirId.toString())
         })
 
-        // Filter files to only include those NOT in any shared directory
+        // Filter files to only include explicitly shared standalone files
+        // Excludes files inside shared directories (they are accessed through directory navigation)
+        // Newly created files after sharing are NOT included (require explicit sharing)
         const standaloneFiles = allFiles.filter(file => {
-            return !sharedDirIds.includes(file.parentDirId.toString())
+            return !sharedDirIds.includes(file.parentDirId?.toString())
         })
 
         res.json({ files: standaloneFiles, directories: topDirectories })

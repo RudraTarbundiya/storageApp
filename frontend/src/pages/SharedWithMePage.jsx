@@ -1,48 +1,14 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { Search, Grid3x3, List, Users, Folder, File, Download, Eye, Pencil, Music, Video, FileText, Image as ImageIcon, ChevronRight, Home } from 'lucide-react'
+import { Search, Grid3x3, List, Users, Folder, Download, Eye, Pencil, ChevronRight, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { sharingAPI } from '@/lib/api'
-import { useAlert } from '@/context'
+import { useAlert, usePreview } from '@/context'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
 import FilePreviewModal from '@/components/FilePreviewModal'
+import { getFileType, getFileIcon, formatFileSize } from '@/lib/fileUtils'
 
-// Helper function to determine file type
-const getFileType = (extension) => {
-    const ext = (extension || '').toLowerCase().replace('.', '')
-    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
-    const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']
-    const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a']
-    const pdfExts = ['pdf']
-
-    if (imageExts.includes(ext)) return 'image'
-    if (videoExts.includes(ext)) return 'video'
-    if (audioExts.includes(ext)) return 'audio'
-    if (pdfExts.includes(ext)) return 'pdf'
-    return 'other'
-}
-
-// Get file icon based on type
-const getFileIcon = (extension) => {
-    const type = getFileType(extension)
-    switch (type) {
-        case 'image': return ImageIcon
-        case 'video': return Video
-        case 'audio': return Music
-        case 'pdf': return FileText
-        default: return File
-    }
-}
-
-// Format file size helper
-const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return 'Unknown'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
 
 // Shared File Card Component
 function SharedFileCard({ file, viewMode, onPreview, onDownload }) {
@@ -58,7 +24,7 @@ function SharedFileCard({ file, viewMode, onPreview, onDownload }) {
     const badgeClasses = myPermission === 'edit'
         ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
         : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-    const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(getFileType(file.extension))
+    const isPreviewable = ['image', 'video', 'audio', 'pdf', 'code', 'document'].includes(getFileType(file.extension))
 
     if (viewMode === 'list') {
         return (
@@ -292,10 +258,7 @@ export default function SharedWithMePage() {
     const [folderLoading, setFolderLoading] = useState(false)
 
     // Preview state
-    const [previewOpen, setPreviewOpen] = useState(false)
-    const [previewFile, setPreviewFile] = useState(null)
-    const [previewUrl, setPreviewUrl] = useState(null)
-    const [previewLoading, setPreviewLoading] = useState(false)
+    const { handlePreview } = usePreview()
 
     // Track if initial root data has been fetched
     const hasLoadedRoot = useRef(false)
@@ -363,48 +326,12 @@ export default function SharedWithMePage() {
     }, [currentFolderId, fetchSharedItems, fetchFolderContents])
 
 
-    // Ref for aborting preview requests
-    const previewAbortController = useRef(null)
 
-    const handlePreviewFile = async (file) => {
-        const fileType = getFileType(file.extension)
-
-        // Abort any previous preview request
-        if (previewAbortController.current) {
-            previewAbortController.current.abort()
-        }
-
-        setPreviewFile(file)
-        setPreviewOpen(true)
-        setPreviewLoading(true)
-
-        try {
-            if (previewUrl && !previewUrl.startsWith('http://localhost')) {
-                URL.revokeObjectURL(previewUrl)
-                setPreviewUrl(null)
-            }
-
-            if (fileType === 'video' || fileType === 'audio') {
-                const streamUrl = `http://localhost:4000/shared/file/${file._id}`
-                setPreviewUrl(streamUrl)
-                setPreviewLoading(false)
-            } else {
-                // Create new abort controller for this request
-                previewAbortController.current = new AbortController()
-                const response = await sharingAPI.getSharedFile(file._id, {
-                    signal: previewAbortController.current.signal
-                })
-                const blobUrl = URL.createObjectURL(response.data)
-                setPreviewUrl(blobUrl)
-                setPreviewLoading(false)
-            }
-        } catch (err) {
-            // Don't show error if request was aborted
-            if (err.name !== 'AbortError' && err.code !== 'ERR_CANCELED') {
-                showAlert('Failed to load preview', 'destructive')
-            }
-            setPreviewLoading(false)
-        }
+    const handlePreviewFile = (file) => {
+        handlePreview(file, {
+            fetcher: (id, signal) => sharingAPI.getSharedFile(id, { signal, responseType: 'blob' }),
+            streamUrl: `http://localhost:4000/shared/file/${file._id}`
+        })
     }
 
     const handleDownload = async (file) => {
@@ -435,17 +362,6 @@ export default function SharedWithMePage() {
         setCurrentFolderId(newPath[newPath.length - 1].id)
     }
 
-    const handleClosePreview = () => {
-        setPreviewOpen(false)
-        setPreviewLoading(false)
-        setTimeout(() => {
-            if (previewUrl && !previewUrl.startsWith('http://localhost')) {
-                URL.revokeObjectURL(previewUrl)
-            }
-            setPreviewUrl(null)
-            setPreviewFile(null)
-        }, 200)
-    }
 
     const filteredDirectories = useMemo(() => (
         directories.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -563,15 +479,7 @@ export default function SharedWithMePage() {
                 )}
             </div>
 
-            {/* File Preview Modal */}
-            <FilePreviewModal
-                open={previewOpen}
-                onClose={handleClosePreview}
-                file={previewFile}
-                fileUrl={previewUrl}
-                isLoading={previewLoading}
-                onDownload={handleDownload}
-            />
+            <FilePreviewModal onDownload={handleDownload} />
         </div>
     )
 }

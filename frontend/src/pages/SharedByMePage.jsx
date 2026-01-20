@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Grid3x3, List, Share2, Folder, File, Eye, Pencil, Music, Video, FileText, Image as ImageIcon, Trash2 } from 'lucide-react'
+import { Search, Grid3x3, List, Share2, Folder, File as FileIcon, Eye, Pencil, Music, Video, FileText, Image as ImageIcon, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { sharingAPI } from '@/lib/api'

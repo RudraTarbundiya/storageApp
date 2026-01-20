@@ -3,63 +3,17 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
     ArrowLeft, Folder, FolderOpen, Download, Eye, Loader2,
-    File, Image as ImageIcon, Video, FileText, Music, ChevronRight, Home
+    ChevronRight, Home
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { adminAPI } from '@/lib/api'
-import { useAlert } from '@/context'
+import { useAlert, usePreview } from '@/context'
 import FilePreviewModal from '@/components/FilePreviewModal'
+import { getFileType, getFileIcon, getGradient, formatFileSize } from '@/lib/fileUtils'
 
-// Helper function to determine file type
-const getFileType = (extension) => {
-    const ext = (extension || '').toLowerCase().replace('.', '')
-    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
-    const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']
-    const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a']
-    const pdfExts = ['pdf']
-
-    if (imageExts.includes(ext)) return 'image'
-    if (videoExts.includes(ext)) return 'video'
-    if (audioExts.includes(ext)) return 'audio'
-    if (pdfExts.includes(ext)) return 'pdf'
-    return 'other'
-}
-
-// Get file icon based on type
-const getFileIcon = (extension) => {
-    const type = getFileType(extension)
-    switch (type) {
-        case 'image': return ImageIcon
-        case 'video': return Video
-        case 'audio': return Music
-        case 'pdf': return FileText
-        default: return File
-    }
-}
-
-// Get gradient colors based on file type
-const getGradient = (extension) => {
-    const type = getFileType(extension)
-    switch (type) {
-        case 'image': return 'from-pink-500 to-rose-600'
-        case 'video': return 'from-purple-500 to-indigo-600'
-        case 'audio': return 'from-green-500 to-emerald-600'
-        case 'pdf': return 'from-red-500 to-orange-600'
-        default: return 'from-blue-500 to-purple-600'
-    }
-}
-
-// Format file size
-const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return 'Unknown'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
 
 export default function AdminFileBrowserPage() {
     const { userId } = useParams()
@@ -75,9 +29,9 @@ export default function AdminFileBrowserPage() {
     const [directories, setDirectories] = useState([])
     const [files, setFiles] = useState([])
     const [breadcrumbs, setBreadcrumbs] = useState([])
-    const [previewFile, setPreviewFile] = useState(null)
-    const [previewUrl, setPreviewUrl] = useState(null)
-    const [previewLoading, setPreviewLoading] = useState(false)
+
+    // Preview Management
+    const { handlePreview } = usePreview()
 
     // Fetch user's root directory
     const fetchUserRoot = useCallback(async () => {
@@ -151,45 +105,12 @@ export default function AdminFileBrowserPage() {
         }
     }
 
-    // Preview file - use streaming for video/audio, blob for images/pdf
-    const handlePreview = async (file) => {
-        const fileType = getFileType(file.extension)
-        setPreviewFile(file)
-
-        // For video/audio, use direct streaming URL (browser handles range requests)
-        if (fileType === 'video' || fileType === 'audio') {
-            // Use direct URL - the video element will handle streaming with cookies
-            setPreviewUrl(`http://localhost:4000/admin/file/${file._id || file.id}`)
-            setPreviewLoading(false)
-            return
-        }
-
-        // For images/pdf, fetch as blob
-        setPreviewLoading(true)
-        setPreviewUrl(null)
-
-        try {
-            const response = await adminAPI.getFile(file._id || file.id)
-            const blob = new Blob([response.data], { type: response.headers['content-type'] })
-            const url = window.URL.createObjectURL(blob)
-            setPreviewUrl(url)
-        } catch (err) {
-            showAlert('Failed to load preview', 'destructive')
-            setPreviewFile(null)
-        } finally {
-            setPreviewLoading(false)
-        }
-    }
-
-    // Close preview and cleanup blob URL (only for non-streaming URLs)
-    const handleClosePreview = () => {
-        const fileType = previewFile ? getFileType(previewFile.extension) : null
-        // Only revoke if it's a blob URL (not streaming URL)
-        if (previewUrl && fileType !== 'video' && fileType !== 'audio') {
-            window.URL.revokeObjectURL(previewUrl)
-        }
-        setPreviewFile(null)
-        setPreviewUrl(null)
+    // Preview file using centralized logic
+    const handlePreviewFile = (file) => {
+        handlePreview(file, {
+            fetcher: (id, signal) => adminAPI.getFile(id, { signal, responseType: 'blob' }),
+            streamUrl: `http://localhost:4000/admin/file/${file._id || file.id}`
+        })
     }
 
     if (loading && !currentDir) {
@@ -304,7 +225,7 @@ export default function AdminFileBrowserPage() {
                                 {files.map((file) => {
                                     const IconComponent = getFileIcon(file.extension)
                                     const fileType = getFileType(file.extension)
-                                    const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
+                                    const isPreviewable = ['image', 'video', 'audio', 'pdf', 'code', 'document'].includes(fileType)
 
                                     return (
                                         <motion.div
@@ -336,7 +257,7 @@ export default function AdminFileBrowserPage() {
                                                                 variant="outline"
                                                                 size="sm"
                                                                 className="flex-1 h-8 text-xs"
-                                                                onClick={() => handlePreview(file)}
+                                                                onClick={() => handlePreviewFile(file)}
                                                             >
                                                                 <Eye className="h-3 w-3 mr-1" />
                                                                 Preview
@@ -363,15 +284,7 @@ export default function AdminFileBrowserPage() {
                 )}
             </div>
 
-            {/* File Preview Modal */}
-            <FilePreviewModal
-                open={!!previewFile}
-                file={previewFile}
-                onClose={handleClosePreview}
-                fileUrl={previewUrl}
-                isLoading={previewLoading}
-                onDownload={handleDownload}
-            />
+            <FilePreviewModal onDownload={handleDownload} />
         </>
     )
 }

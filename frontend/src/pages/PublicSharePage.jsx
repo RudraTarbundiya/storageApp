@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Folder,
-    File,
     Download,
     ExternalLink,
     ChevronRight,
@@ -14,206 +13,24 @@ import {
     List,
     Lock,
     Search,
-    X,
-    Image as ImageIcon,
-    Video,
-    FileText,
-    Music
+    File as FileIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { publicAPI } from '@/lib/api'
+import { usePreview } from '@/context'
+import FilePreviewModal from '@/components/FilePreviewModal'
+import { getFileType, getFileIcon, getGradient, formatFileSize } from '@/lib/fileUtils'
 
-// Helper function to determine file type
-const getFileType = (extension) => {
-    const ext = (extension || '').toLowerCase().replace('.', '')
 
-    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
-    const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']
-    const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a']
-    const textExts = ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'h']
-    const pdfExts = ['pdf']
-
-    if (imageExts.includes(ext)) return 'image'
-    if (videoExts.includes(ext)) return 'video'
-    if (audioExts.includes(ext)) return 'audio'
-    if (textExts.includes(ext)) return 'text'
-    if (pdfExts.includes(ext)) return 'pdf'
-    return 'other'
-}
-
-// Get file icon based on type
-const getFileIcon = (extension) => {
-    const type = getFileType(extension)
-    switch (type) {
-        case 'image': return ImageIcon
-        case 'video': return Video
-        case 'audio': return Music
-        case 'text':
-        case 'pdf': return FileText
-        default: return File
-    }
-}
-
-// Format file size helper
-const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return 'Unknown size'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
-
-// Preview Modal Component with loading state
-function PreviewModal({ open, onClose, file, fileUrl, isLoading }) {
-    const fileType = getFileType(file?.extension)
-
-    const handleDownload = async () => {
-        if (!file) return
-        try {
-            const response = await publicAPI.downloadPublicFile(file._id)
-            const url = window.URL.createObjectURL(response.data)
-            const link = document.createElement('a')
-            link.href = url
-            link.download = file.name
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            window.URL.revokeObjectURL(url)
-        } catch (err) {
-            console.error('Download failed:', err)
-        }
-    }
-
-    if (!open) return null
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                onClick={onClose}
-            />
-
-            {/* Modal Content */}
-            <div className="relative z-10 w-[95vw] max-w-4xl max-h-[90vh] bg-background rounded-xl overflow-hidden shadow-2xl border">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b bg-background">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="h-10 w-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
-                            {(() => {
-                                const IconComponent = getFileIcon(file?.extension)
-                                return <IconComponent className="h-5 w-5 text-white" />
-                            })()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <h3 className="font-medium truncate text-sm md:text-base">{file?.name || 'Preview'}</h3>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{file?.extension || 'File'}</span>
-                                <span>•</span>
-                                <span>{formatFileSize(file?.size)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <Button variant="outline" size="sm" onClick={handleDownload} className="hidden sm:flex">
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                        </Button>
-                        <Button variant="outline" size="icon" onClick={handleDownload} className="sm:hidden">
-                            <Download className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Preview content */}
-                <div className="flex items-center justify-center bg-slate-950 min-h-75 md:min-h-100 max-h-[70vh] overflow-auto">
-                    {/* Loading state */}
-                    {isLoading && (
-                        <div className="flex flex-col items-center justify-center p-12">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
-                            <p className="text-white text-sm">Loading preview...</p>
-                        </div>
-                    )}
-
-                    {!isLoading && fileType === 'image' && fileUrl && (
-                        <img
-                            src={fileUrl}
-                            alt={file?.name}
-                            className="max-w-full max-h-[70vh] object-contain"
-                        />
-                    )}
-
-                    {!isLoading && fileType === 'video' && fileUrl && (
-                        <video
-                            src={fileUrl}
-                            controls
-                            autoPlay
-                            preload="metadata"
-                            className="max-w-full max-h-[70vh]"
-                        >
-                            Your browser does not support the video tag.
-                        </video>
-                    )}
-
-                    {!isLoading && fileType === 'audio' && fileUrl && (
-                        <div className="p-8 md:p-12 text-center w-full">
-                            <div className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                                <Music className="h-10 w-10 md:h-12 md:w-12 text-white" />
-                            </div>
-                            <h4 className="text-white font-medium mb-4 truncate px-4">{file?.name}</h4>
-                            <audio src={fileUrl} controls autoPlay preload="metadata" className="w-full max-w-md mx-auto" />
-                        </div>
-                    )}
-
-                    {!isLoading && fileType === 'pdf' && fileUrl && (
-                        <iframe
-                            src={fileUrl}
-                            className="w-full h-[70vh]"
-                            title={file?.name}
-                        />
-                    )}
-
-                    {!isLoading && (fileType === 'other' || fileType === 'text') && (
-                        <div className="p-8 md:p-12 text-center text-white">
-                            <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl bg-linear-to-br from-slate-600 to-slate-700 flex items-center justify-center mx-auto mb-6">
-                                <FileText className="h-8 w-8 md:h-10 md:w-10" />
-                            </div>
-                            <h4 className="font-medium mb-2 truncate px-4">{file?.name}</h4>
-                            <p className="text-slate-400 text-sm mb-6">Preview not available for this file type</p>
-                            <Button onClick={handleDownload}>
-                                <Download className="h-4 w-4 mr-2" />
-                                Download to View
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    )
-}
 
 // File preview component for guest users - with always visible buttons
 function PublicFileCard({ file, onPreview, onDownload }) {
     const IconComponent = getFileIcon(file.extension)
     const fileType = getFileType(file.extension)
-    const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
-
-    // Get gradient colors based on file type
-    const getGradient = () => {
-        switch (fileType) {
-            case 'image': return 'from-pink-500 to-rose-600'
-            case 'video': return 'from-purple-500 to-indigo-600'
-            case 'audio': return 'from-green-500 to-emerald-600'
-            case 'pdf': return 'from-red-500 to-orange-600'
-            default: return 'from-blue-500 to-purple-600'
-        }
-    }
+    const isPreviewable = ['image', 'video', 'audio', 'pdf', 'code', 'document'].includes(fileType)
 
     return (
         <motion.div
@@ -226,7 +43,7 @@ function PublicFileCard({ file, onPreview, onDownload }) {
             <Card className="group hover:shadow-lg transition-all border-slate-200 dark:border-slate-800">
                 <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
-                        <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br ${getGradient()} shadow-sm`}>
+                        <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br ${getGradient(file.extension)} shadow-sm`}>
                             <IconComponent className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-xs text-muted-foreground font-medium">
@@ -355,14 +172,9 @@ export default function PublicSharePage() {
     const [viewMode, setViewMode] = useState('grid')
     const [searchQuery, setSearchQuery] = useState('')
 
-    // Preview modal state
-    const [previewOpen, setPreviewOpen] = useState(false)
-    const [previewFile, setPreviewFile] = useState(null)
-    const [previewUrl, setPreviewUrl] = useState(null)
-    const [previewLoading, setPreviewLoading] = useState(false)
+    // Preview management
+    const { handlePreview } = usePreview()
 
-    // Ref for aborting preview requests
-    const previewAbortController = React.useRef(null)
 
     // Single file data
     const [singleFileData, setSingleFileData] = useState(null)
@@ -387,7 +199,8 @@ export default function PublicSharePage() {
                 let extension = ''
                 const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
                 if (filenameMatch) {
-                    fileName = filenameMatch[1].replace(/['"]/g, '')
+                    // Decode the URL-encoded filename
+                    fileName = decodeURIComponent(filenameMatch[1].replace(/['"]/g, ''))
                 }
 
                 // Get extension from content type or filename
@@ -412,12 +225,11 @@ export default function PublicSharePage() {
                     _id: id,
                     name: fileName,
                     extension: extension,
-                    size: response.data.size || 0
+                    size: response.data.size || 0,
+                    blobUrl: blobUrl
                 }
 
                 setSingleFileData(fileObj)
-                setPreviewUrl(blobUrl)
-                setPreviewFile(fileObj)
                 setData({ type: 'file', url: blobUrl, id, fileInfo: fileObj })
             } else if (type === 'folder') {
                 // For folder, fetch the directory content
@@ -446,14 +258,6 @@ export default function PublicSharePage() {
         fetchPublicContent(currentFolderId)
     }, [fetchPublicContent, currentFolderId])
 
-    // Cleanup preview URL on unmount
-    useEffect(() => {
-        return () => {
-            if (previewUrl) {
-                URL.revokeObjectURL(previewUrl)
-            }
-        }
-    }, [previewUrl])
 
     const handleOpenFolder = (folder) => {
         setBreadcrumbs(prev => [...prev, { id: folder._id, name: folder.name }])
@@ -471,68 +275,13 @@ export default function PublicSharePage() {
         }
     }
 
-    const handlePreviewFile = async (file) => {
-        const fileType = getFileType(file.extension)
-
-        // Abort any previous preview request
-        if (previewAbortController.current) {
-            previewAbortController.current.abort()
-        }
-
-        // Show modal immediately with loading state
-        setPreviewFile(file)
-        setPreviewOpen(true)
-        setPreviewLoading(true)
-
-        try {
-            // Revoke previous URL if exists (but not for streaming URLs)
-            if (previewUrl && type !== 'file' && !previewUrl.startsWith('http://localhost')) {
-                URL.revokeObjectURL(previewUrl)
-                setPreviewUrl(null)
-            }
-
-            // For video and audio, use direct streaming URL for better performance
-            if (fileType === 'video' || fileType === 'audio') {
-                // Use direct URL that streams instead of downloading entire file
-                const streamUrl = `http://localhost:4000/public/file/${file._id}`
-                setPreviewUrl(streamUrl)
-                setPreviewLoading(false)
-            } else {
-                // Create new abort controller for this request
-                previewAbortController.current = new AbortController()
-                // For other file types, download as blob
-                const response = await publicAPI.getPublicFile(file._id, { signal: previewAbortController.current.signal })
-                const blobUrl = URL.createObjectURL(response.data)
-                setPreviewUrl(blobUrl)
-                setPreviewLoading(false)
-            }
-        } catch (err) {
-            // Don't show error if request was aborted
-            if (err.name !== 'AbortError' && err.code !== 'ERR_CANCELED') {
-                console.error('Preview failed:', err)
-            }
-            setPreviewLoading(false)
-        }
+    const handlePreviewFile = (file) => {
+        handlePreview(file, {
+            fetcher: (id, signal) => publicAPI.getPublicFile(id, { signal }),
+            streamUrl: `http://localhost:4000/public/file/${file._id}`
+        })
     }
 
-    const handleClosePreview = () => {
-        // Abort any in-flight preview request
-        if (previewAbortController.current) {
-            previewAbortController.current.abort()
-        }
-        setPreviewOpen(false)
-        setPreviewLoading(false)
-        // Cleanup after a small delay to allow animation (but not for single file view)
-        if (type !== 'file') {
-            setTimeout(() => {
-                if (previewUrl && !previewUrl.startsWith('http://localhost')) {
-                    URL.revokeObjectURL(previewUrl)
-                }
-                setPreviewUrl(null)
-                setPreviewFile(null)
-            }, 200)
-        }
-    }
 
     const handleDownloadFile = async (file) => {
         try {
@@ -594,7 +343,7 @@ export default function PublicSharePage() {
     // Single file view - Same UI as folder but with one file card
     if (type === 'file' && data?.type === 'file' && singleFileData) {
         const fileType = getFileType(singleFileData.extension)
-        const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
+        const isPreviewable = ['image', 'video', 'audio', 'pdf', 'code', 'document'].includes(fileType)
 
         return (
             <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -604,7 +353,7 @@ export default function PublicSharePage() {
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm shrink-0">
-                                    <File className="h-4 w-4 md:h-5 md:w-5 text-white" />
+                                    <FileIcon className="h-4 w-4 md:h-5 md:w-5 text-white" />
                                 </div>
                                 <div className="min-w-0">
                                     <h1 className="font-semibold text-base md:text-lg truncate">Shared File</h1>
@@ -638,7 +387,7 @@ export default function PublicSharePage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                         <PublicFileCard
                             file={singleFileData}
-                            onPreview={() => setPreviewOpen(true)}
+                            onPreview={() => handlePreviewFile(singleFileData)}
                             onDownload={() => handleDownloadFile(singleFileData)}
                         />
                     </div>
@@ -651,14 +400,7 @@ export default function PublicSharePage() {
                     </div>
                 </main>
 
-                {/* Preview Modal for single file */}
-                <PreviewModal
-                    open={previewOpen}
-                    onClose={handleClosePreview}
-                    file={singleFileData}
-                    fileUrl={previewUrl}
-                    isLoading={previewLoading}
-                />
+                <FilePreviewModal onDownload={handleDownloadFile} />
             </div>
         )
     }
@@ -769,14 +511,7 @@ export default function PublicSharePage() {
                 </div>
             </main>
 
-            {/* Preview Modal */}
-            <PreviewModal
-                open={previewOpen}
-                onClose={handleClosePreview}
-                file={previewFile}
-                fileUrl={previewUrl}
-                isLoading={previewLoading}
-            />
+            <FilePreviewModal onDownload={handleDownloadFile} />
         </div>
     )
 }

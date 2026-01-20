@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { File, MoreVertical, Download, Edit2, Trash2, ExternalLink, Link2, Eye, Image as ImageIcon, Video, FileText, Music } from 'lucide-react'
+import { MoreVertical, Download, Edit2, Trash2, ExternalLink, Link2, Eye } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,58 +10,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
+import { getFileType, getFileIcon, getGradient, formatFileSize } from '@/lib/fileUtils'
 
-// Helper function to determine file type
-const getFileType = (extension) => {
-  const ext = (extension || '').toLowerCase().replace('.', '')
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
-  const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']
-  const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a']
-  const pdfExts = ['pdf']
-
-  if (imageExts.includes(ext)) return 'image'
-  if (videoExts.includes(ext)) return 'video'
-  if (audioExts.includes(ext)) return 'audio'
-  if (pdfExts.includes(ext)) return 'pdf'
-  return 'other'
-}
-
-// Get file icon based on type
-const getFileIcon = (extension) => {
-  const type = getFileType(extension)
-  switch (type) {
-    case 'image': return ImageIcon
-    case 'video': return Video
-    case 'audio': return Music
-    case 'pdf': return FileText
-    default: return File
-  }
-}
-
-// Get gradient colors based on file type
-const getGradient = (extension) => {
-  const type = getFileType(extension)
-  switch (type) {
-    case 'image': return 'from-pink-500 to-rose-600'
-    case 'video': return 'from-purple-500 to-indigo-600'
-    case 'audio': return 'from-green-500 to-emerald-600'
-    case 'pdf': return 'from-red-500 to-orange-600'
-    default: return 'from-blue-500 to-purple-600'
-  }
-}
 
 export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare, onPreview }) {
-  const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return 'Unknown'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-  }
-
   const IconComponent = getFileIcon(file.extension)
   const fileType = getFileType(file.extension)
-  const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
+  const isPreviewable = ['image', 'video', 'audio', 'pdf', 'code', 'document'].includes(fileType)
 
   return (
     <motion.div

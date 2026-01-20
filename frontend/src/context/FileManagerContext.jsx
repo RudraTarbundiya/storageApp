@@ -271,9 +271,19 @@ export function FileManagerProvider({ children }) {
 
     const handleOpenFile = useCallback(async (file) => {
         try {
-            const response = await fileAPI.get(file._id)
-            const url = window.URL.createObjectURL(response.data)
-            window.open(url, '_blank')
+            // Check file type for streaming vs blob download
+            const ext = (file.extension || '').toLowerCase().replace('.', '')
+            const streamableExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'aac', 'flac', 'm4a']
+
+            if (streamableExts.includes(ext)) {
+                // For video/audio, open the streaming URL directly (more efficient)
+                window.open(`http://localhost:4000/file/${file._id}`, '_blank')
+            } else {
+                // For other files, download blob and open
+                const response = await fileAPI.get(file._id)
+                const url = window.URL.createObjectURL(response.data)
+                window.open(url, '_blank')
+            }
         } catch (error) {
             showAlert('Failed to open file', 'destructive')
         }
