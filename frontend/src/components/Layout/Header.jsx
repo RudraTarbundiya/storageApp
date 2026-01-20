@@ -60,7 +60,7 @@ export default function Header({ user }) {
   const showMenuButton = isMobile || !open
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-3">
           {/* Hamburger menu button - shows when sidebar is closed */}
@@ -99,7 +99,7 @@ export default function Header({ user }) {
               <Button variant="ghost" className="relative h-10 w-10 rounded-full cursor-pointer hover:bg-accent hover:scale-105 transition-transform">
                 <Avatar className="h-10 w-10">
                   {user?.picture && <AvatarImage src={user.picture} alt={user?.name} referrerPolicy="no-referrer" />}
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                  <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>

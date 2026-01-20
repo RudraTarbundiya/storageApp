@@ -91,7 +91,7 @@ export default function GetStartedSteps() {
 
                             <div className="relative hover-lift bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:border-gray-200 transition-all duration-300">
                                 {/* Step Number */}
-                                <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 text-white text-sm font-bold flex items-center justify-center shadow-lg">
+                                <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-linear-to-br from-gray-800 to-gray-900 text-white text-sm font-bold flex items-center justify-center shadow-lg">
                                     {index + 1}
                                 </div>
 

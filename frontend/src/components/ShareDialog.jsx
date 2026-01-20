@@ -280,7 +280,7 @@ export default function ShareDialog({
                                                     {user.picture && (
                                                         <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />
                                                     )}
-                                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                                                    <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white text-xs">
                                                         {user.name?.charAt(0).toUpperCase() || 'U'}
                                                     </AvatarFallback>
                                                 </Avatar>
@@ -337,7 +337,7 @@ export default function ShareDialog({
                                                             {user.picture && (
                                                                 <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />
                                                             )}
-                                                            <AvatarFallback className="bg-gradient-to-br from-green-500 to-teal-600 text-white text-xs">
+                                                            <AvatarFallback className="bg-linear-to-br from-green-500 to-teal-600 text-white text-xs">
                                                                 {user.name?.charAt(0).toUpperCase() || 'U'}
                                                             </AvatarFallback>
                                                         </Avatar>

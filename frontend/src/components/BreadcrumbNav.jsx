@@ -15,7 +15,7 @@ export default function BreadcrumbNav({ items, onNavigate }) {
 
       {items.map((item, index) => (
         <div key={item.id} className="flex items-center gap-1">
-          <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
           <Button
             variant="ghost"
             size="sm"

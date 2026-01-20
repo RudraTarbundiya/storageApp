@@ -64,7 +64,7 @@ function SharedFileCard({ file, viewMode, onPreview, onDownload }) {
         return (
             <div className="group rounded-xl border bg-card p-4 hover:shadow-md transition-all">
                 <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
+                    <div className="h-12 w-12 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
                         <IconComponent className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -86,7 +86,7 @@ function SharedFileCard({ file, viewMode, onPreview, onDownload }) {
                         <div className="flex items-center gap-2 mt-3">
                             <Avatar className="h-7 w-7">
                                 {ownerPicture && <AvatarImage src={ownerPicture} alt={ownerName} referrerPolicy="no-referrer" />}
-                                <AvatarFallback className="text-[11px] bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                                <AvatarFallback className="text-[11px] bg-linear-to-br from-green-500 to-teal-600 text-white">
                                     {ownerInitial}
                                 </AvatarFallback>
                             </Avatar>
@@ -125,7 +125,7 @@ function SharedFileCard({ file, viewMode, onPreview, onDownload }) {
         <Card className="group rounded-xl border bg-card hover:shadow-lg transition-all">
             <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <div className="h-12 w-12 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                         <IconComponent className="h-6 w-6 text-white" />
                     </div>
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badgeClasses}`}>
@@ -140,7 +140,7 @@ function SharedFileCard({ file, viewMode, onPreview, onDownload }) {
                 <div className="flex items-center gap-2">
                     <Avatar className="h-7 w-7">
                         {ownerPicture && <AvatarImage src={ownerPicture} alt={ownerName} referrerPolicy="no-referrer" />}
-                        <AvatarFallback className="text-[11px] bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                        <AvatarFallback className="text-[11px] bg-linear-to-br from-green-500 to-teal-600 text-white">
                             {ownerInitial}
                         </AvatarFallback>
                     </Avatar>
@@ -192,7 +192,7 @@ function SharedFolderCard({ folder, viewMode, onOpen }) {
         return (
             <div className="group rounded-xl border bg-card p-4 hover:shadow-md transition-all">
                 <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shrink-0 cursor-pointer" onClick={() => onOpen(folder)}>
+                    <div className="h-12 w-12 rounded-xl bg-linear-to-br from-yellow-400 to-orange-500 flex items-center justify-center shrink-0 cursor-pointer" onClick={() => onOpen(folder)}>
                         <Folder className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -214,7 +214,7 @@ function SharedFolderCard({ folder, viewMode, onOpen }) {
                         <div className="flex items-center gap-2 mt-3">
                             <Avatar className="h-7 w-7">
                                 {ownerPicture && <AvatarImage src={ownerPicture} alt={ownerName} referrerPolicy="no-referrer" />}
-                                <AvatarFallback className="text-[11px] bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                                <AvatarFallback className="text-[11px] bg-linear-to-br from-green-500 to-teal-600 text-white">
                                     {ownerInitial}
                                 </AvatarFallback>
                             </Avatar>
@@ -241,7 +241,7 @@ function SharedFolderCard({ folder, viewMode, onOpen }) {
         <Card className="group rounded-xl border bg-card hover:shadow-lg transition-all cursor-pointer" onClick={() => onOpen(folder)}>
             <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                    <div className="h-12 w-12 rounded-xl bg-linear-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
                         <Folder className="h-6 w-6 text-white" />
                     </div>
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badgeClasses}`}>
@@ -256,7 +256,7 @@ function SharedFolderCard({ folder, viewMode, onOpen }) {
                 <div className="flex items-center gap-2">
                     <Avatar className="h-7 w-7">
                         {ownerPicture && <AvatarImage src={ownerPicture} alt={ownerName} referrerPolicy="no-referrer" />}
-                        <AvatarFallback className="text-[11px] bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                        <AvatarFallback className="text-[11px] bg-linear-to-br from-green-500 to-teal-600 text-white">
                             {ownerInitial}
                         </AvatarFallback>
                     </Avatar>
@@ -476,7 +476,7 @@ export default function SharedWithMePage() {
                             {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                             <button
                                 onClick={() => handleNavigateTo(index)}
-                                className={`hover:text-blue-500 transition-colors truncate max-w-[150px] flex items-center gap-1 ${index === folderPath.length - 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
+                                className={`hover:text-blue-500 transition-colors truncate max-w-37.5 flex items-center gap-1 ${index === folderPath.length - 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
                             >
                                 {index === 0 ? (
                                     <>

@@ -51,7 +51,7 @@ function MySharedFileCard({ file, viewMode, onRemoveShare }) {
     if (viewMode === 'list') {
         return (
             <div className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
                     <IconComponent className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -66,11 +66,11 @@ function MySharedFileCard({ file, viewMode, onRemoveShare }) {
                     {sharedWith.slice(0, 3).map((share, idx) => {
                         const user = share.user || {}
                         return (
-                            <div key={user._id || idx} className="flex flex-col gap-1 px-3 py-2 bg-muted rounded-lg min-w-[170px]">
+                            <div key={user._id || idx} className="flex flex-col gap-1 px-3 py-2 bg-muted rounded-lg min-w-42.5">
                                 <div className="flex items-center gap-2">
                                     <Avatar className="h-6 w-6">
                                         {user.picture && <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />}
-                                        <AvatarFallback className="text-[10px] bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                                        <AvatarFallback className="text-[10px] bg-linear-to-br from-green-500 to-teal-600 text-white">
                                             {user.name?.charAt(0) || 'U'}
                                         </AvatarFallback>
                                     </Avatar>
@@ -101,7 +101,7 @@ function MySharedFileCard({ file, viewMode, onRemoveShare }) {
     return (
         <div className="rounded-xl border bg-card p-4 hover:shadow-lg transition-all duration-200 hover:border-primary/20">
             <div className="flex items-start justify-between mb-3">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                     <IconComponent className="h-6 w-6 text-white" />
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -119,12 +119,12 @@ function MySharedFileCard({ file, viewMode, onRemoveShare }) {
                         return (
                             <div
                                 key={user._id || idx}
-                                className="flex flex-col gap-1 px-3 py-2 bg-muted rounded-lg min-w-[170px] group"
+                                className="flex flex-col gap-1 px-3 py-2 bg-muted rounded-lg min-w-42.5 group"
                             >
                                 <div className="flex items-center gap-2">
                                     <Avatar className="h-5 w-5">
                                         {user.picture && <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />}
-                                        <AvatarFallback className="text-[9px] bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                                        <AvatarFallback className="text-[9px] bg-linear-to-br from-green-500 to-teal-600 text-white">
                                             {user.name?.charAt(0) || 'U'}
                                         </AvatarFallback>
                                     </Avatar>
@@ -160,7 +160,7 @@ function MySharedFolderCard({ folder, viewMode, onRemoveShare }) {
     if (viewMode === 'list') {
         return (
             <div className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-lg bg-linear-to-br from-yellow-400 to-orange-500 flex items-center justify-center shrink-0">
                     <Folder className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -175,11 +175,11 @@ function MySharedFolderCard({ folder, viewMode, onRemoveShare }) {
                     {sharedWith.slice(0, 3).map((share, idx) => {
                         const user = share.user || {}
                         return (
-                            <div key={user._id || idx} className="flex flex-col gap-1 px-3 py-2 bg-muted rounded-lg min-w-[170px]">
+                            <div key={user._id || idx} className="flex flex-col gap-1 px-3 py-2 bg-muted rounded-lg min-w-42.5">
                                 <div className="flex items-center gap-2">
                                     <Avatar className="h-6 w-6">
                                         {user.picture && <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />}
-                                        <AvatarFallback className="text-[10px] bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                                        <AvatarFallback className="text-[10px] bg-linear-to-br from-green-500 to-teal-600 text-white">
                                             {user.name?.charAt(0) || 'U'}
                                         </AvatarFallback>
                                     </Avatar>
@@ -210,7 +210,7 @@ function MySharedFolderCard({ folder, viewMode, onRemoveShare }) {
     return (
         <div className="rounded-xl border bg-card p-4 hover:shadow-lg transition-all duration-200 hover:border-primary/20">
             <div className="flex items-start justify-between mb-3">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-linear-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
                     <Folder className="h-6 w-6 text-white" />
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -228,12 +228,12 @@ function MySharedFolderCard({ folder, viewMode, onRemoveShare }) {
                         return (
                             <div
                                 key={user._id || idx}
-                                className="flex flex-col gap-1 px-3 py-2 bg-muted rounded-lg min-w-[170px] group"
+                                className="flex flex-col gap-1 px-3 py-2 bg-muted rounded-lg min-w-42.5 group"
                             >
                                 <div className="flex items-center gap-2">
                                     <Avatar className="h-5 w-5">
                                         {user.picture && <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />}
-                                        <AvatarFallback className="text-[9px] bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                                        <AvatarFallback className="text-[9px] bg-linear-to-br from-green-500 to-teal-600 text-white">
                                             {user.name?.charAt(0) || 'U'}
                                         </AvatarFallback>
                                     </Avatar>

@@ -77,7 +77,7 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="relative">
-              <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${getGradient(file.extension)} shadow-sm`}>
+              <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br ${getGradient(file.extension)} shadow-sm`}>
                 <IconComponent className="w-6 h-6 text-white" />
               </div>
               {file.isPublic && (

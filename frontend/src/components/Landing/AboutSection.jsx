@@ -60,7 +60,7 @@ export default function AboutSection() {
                     >
                         <div className="relative aspect-square max-w-md mx-auto">
                             {/* Background circles */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full opacity-60 blur-3xl" />
+                            <div className="absolute inset-0 bg-linear-to-br from-blue-100 to-purple-100 rounded-full opacity-60 blur-3xl" />
 
                             {/* Main card */}
                             <div className="relative glass-card rounded-3xl p-8 shadow-2xl">

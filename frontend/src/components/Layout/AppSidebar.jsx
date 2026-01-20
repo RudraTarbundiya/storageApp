@@ -176,7 +176,7 @@ export default function AppSidebar() {
             {user?.picture && (
               <AvatarImage src={user.picture} alt={user?.name} referrerPolicy="no-referrer" />
             )}
-            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-medium">
+            <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white text-sm font-medium">
               {user?.name?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>

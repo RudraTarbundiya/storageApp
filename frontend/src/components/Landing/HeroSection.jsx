@@ -129,7 +129,7 @@ export default function HeroSection() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">Pro</div>
-                                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
+                                            <div className="w-7 h-7 rounded-full bg-linear-to-br from-purple-500 to-pink-500" />
                                         </div>
                                     </div>
 

@@ -38,7 +38,7 @@ app.use('/public',publicRoutes)
 app.use((err, req, res, next) => {
     console.log(err)
     // return res.status(200).json(err)//for testing
-    // return res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
+    return res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
 })
 
 app.listen(4000, () => {

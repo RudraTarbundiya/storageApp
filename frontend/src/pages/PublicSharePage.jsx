@@ -102,7 +102,7 @@ function PreviewModal({ open, onClose, file, fileUrl, isLoading }) {
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b bg-background">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
+                        <div className="h-10 w-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
                             {(() => {
                                 const IconComponent = getFileIcon(file?.extension)
                                 return <IconComponent className="h-5 w-5 text-white" />
@@ -132,7 +132,7 @@ function PreviewModal({ open, onClose, file, fileUrl, isLoading }) {
                 </div>
 
                 {/* Preview content */}
-                <div className="flex items-center justify-center bg-slate-950 min-h-[300px] md:min-h-[400px] max-h-[70vh] overflow-auto">
+                <div className="flex items-center justify-center bg-slate-950 min-h-75 md:min-h-100 max-h-[70vh] overflow-auto">
                     {/* Loading state */}
                     {isLoading && (
                         <div className="flex flex-col items-center justify-center p-12">
@@ -163,7 +163,7 @@ function PreviewModal({ open, onClose, file, fileUrl, isLoading }) {
 
                     {!isLoading && fileType === 'audio' && fileUrl && (
                         <div className="p-8 md:p-12 text-center w-full">
-                            <div className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                            <div className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
                                 <Music className="h-10 w-10 md:h-12 md:w-12 text-white" />
                             </div>
                             <h4 className="text-white font-medium mb-4 truncate px-4">{file?.name}</h4>
@@ -181,7 +181,7 @@ function PreviewModal({ open, onClose, file, fileUrl, isLoading }) {
 
                     {!isLoading && (fileType === 'other' || fileType === 'text') && (
                         <div className="p-8 md:p-12 text-center text-white">
-                            <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center mx-auto mb-6">
+                            <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl bg-linear-to-br from-slate-600 to-slate-700 flex items-center justify-center mx-auto mb-6">
                                 <FileText className="h-8 w-8 md:h-10 md:w-10" />
                             </div>
                             <h4 className="font-medium mb-2 truncate px-4">{file?.name}</h4>
@@ -226,7 +226,7 @@ function PublicFileCard({ file, onPreview, onDownload }) {
             <Card className="group hover:shadow-lg transition-all border-slate-200 dark:border-slate-800">
                 <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
-                        <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${getGradient()} shadow-sm`}>
+                        <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br ${getGradient()} shadow-sm`}>
                             <IconComponent className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-xs text-muted-foreground font-medium">
@@ -286,7 +286,7 @@ function PublicFolderCard({ folder, onOpen }) {
             >
                 <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br from-amber-400 to-orange-500 shadow-sm">
                             <Folder className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-xs text-muted-foreground font-medium">
@@ -330,7 +330,7 @@ function PublicBreadcrumb({ items, onNavigate }) {
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     <button
                         onClick={() => onNavigate(item.id, index)}
-                        className={`hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted truncate max-w-[120px] sm:max-w-[200px] ${index === items.length - 1
+                        className={`hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted truncate max-w-30 sm:max-w-50 ${index === items.length - 1
                             ? 'text-foreground font-medium'
                             : 'text-muted-foreground'
                             }`}
@@ -562,7 +562,7 @@ export default function PublicSharePage() {
     // Loading state
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
                     <p className="text-muted-foreground">Loading shared content...</p>
@@ -574,7 +574,7 @@ export default function PublicSharePage() {
     // Error state
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
                 <Card className="max-w-md w-full">
                     <CardContent className="p-6 md:p-8 text-center">
                         <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
@@ -597,13 +597,13 @@ export default function PublicSharePage() {
         const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+            <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
                 {/* Header */}
                 <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b">
                     <div className="container mx-auto px-4 md:px-6 py-3 md:py-4">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm shrink-0">
+                                <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm shrink-0">
                                     <File className="h-4 w-4 md:h-5 md:w-5 text-white" />
                                 </div>
                                 <div className="min-w-0">
@@ -665,13 +665,13 @@ export default function PublicSharePage() {
 
     // Folder view
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
             {/* Header */}
             <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b">
                 <div className="container mx-auto px-4 md:px-6 py-3 md:py-4">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm shrink-0">
+                            <div className="h-9 w-9 md:h-10 md:w-10 rounded-lg bg-linear-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm shrink-0">
                                 <Folder className="h-4 w-4 md:h-5 md:w-5 text-white" />
                             </div>
                             <div className="min-w-0">

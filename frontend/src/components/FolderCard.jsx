@@ -32,7 +32,7 @@ export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="relative">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
+              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br from-amber-400 to-orange-500 shadow-sm">
                 <Folder className="w-6 h-6 text-white" />
               </div>
               {folder.isPublic && (

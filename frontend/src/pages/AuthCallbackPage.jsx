@@ -37,9 +37,9 @@ export default function AuthCallbackPage() {
   }, [navigate])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="text-center max-w-md">
-        <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl mb-6 mx-auto shadow-xl animate-pulse">
+        <div className="flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-500 to-purple-600 rounded-3xl mb-6 mx-auto shadow-xl animate-pulse">
           <Cloud className="w-10 h-10 text-white" />
         </div>
         

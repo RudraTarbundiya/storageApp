@@ -89,7 +89,7 @@ export default function PricingSection() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: index * 0.1 }}
                             className={`relative rounded-2xl p-8 ${plan.popular
-                                    ? 'bg-gradient-to-br from-gray-900 to-gray-800 text-white scale-105 shadow-2xl'
+                                    ? 'bg-linear-to-br from-gray-900 to-gray-800 text-white scale-105 shadow-2xl'
                                     : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg'
                                 } transition-all duration-300`}
                         >

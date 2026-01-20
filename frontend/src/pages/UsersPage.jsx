@@ -291,7 +291,7 @@ export default function UsersPage() {
                     {user.picture && (
                         <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />
                     )}
-                    <AvatarFallback className={`bg-gradient-to-br ${isDeleted ? 'from-red-400 to-red-600' : 'from-blue-500 to-purple-600'} text-white`}>
+                    <AvatarFallback className={`bg-linear-to-br ${isDeleted ? 'from-red-400 to-red-600' : 'from-blue-500 to-purple-600'} text-white`}>
                         {user.name?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
                 </Avatar>
@@ -320,7 +320,7 @@ export default function UsersPage() {
                         onValueChange={(value) => openRoleChangeDialog(user, value)}
                         disabled={actionLoading[`role-${user._id}`]}
                     >
-                        <SelectTrigger className="w-[130px] h-8">
+                        <SelectTrigger className="w-32.5 h-8">
                             {actionLoading[`role-${user._id}`] ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
@@ -416,7 +416,7 @@ export default function UsersPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center justify-center min-h-100">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         )
