@@ -30,6 +30,11 @@ export const adminAPI = {
   logoutUser: (userId) => api.post(`/users/${userId}/logout`),
   deleteUser: (userId) => api.delete(`/users/${userId}/delete`),
   changeUserRole: (userId, newRole) => api.post(`/users/${userId}/role`, { newRole }),
+  // Admin file browser
+  getUserRootDir: (userId) => api.get(`/admin/user/${userId}/root`),
+  getDirectory: (dirId) => api.get(`/admin/directory/${dirId}`),
+  getFile: (fileId, config = {}) => api.get(`/admin/file/${fileId}`, { responseType: 'blob', ...config }),
+  downloadFile: (fileId) => api.get(`/admin/file/${fileId}?action=download`, { responseType: 'blob' }),
 }
 
 // Owner API (owner-only endpoints)

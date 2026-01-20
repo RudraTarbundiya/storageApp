@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, LogOut, Trash2, Loader2, UserCircle, Shield, UserCog, RefreshCw, AlertTriangle, RotateCcw, Trash, Crown } from 'lucide-react'
+import { Users, LogOut, Trash2, Loader2, UserCircle, Shield, UserCog, RefreshCw, AlertTriangle, RotateCcw, Trash, Crown, FolderOpen } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -35,6 +36,7 @@ export default function UsersPage() {
     const [roleChangeDialog, setRoleChangeDialog] = useState({ open: false, user: null, newRole: null })
     const { user: currentUser } = useAuth()
     const { showAlert } = useAlert()
+    const navigate = useNavigate()
 
     const isOwner = currentUser?.role === 'owner'
     const isAdmin = currentUser?.role === 'admin'
@@ -359,7 +361,7 @@ export default function UsersPage() {
                             {actionLoading[`recover-${user._id}`] ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                                <RotateCcw className="w-4 h-4" />
+                                <><RotateCcw className="w-4 h-4 mr-1" /> Recover</>
                             )}
                         </Button>
                         <Button
@@ -372,7 +374,7 @@ export default function UsersPage() {
                             {actionLoading[`hardDelete-${user._id}`] ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                                <Trash className="w-4 h-4" />
+                                <><Trash className="w-4 h-4 mr-1" /> Delete</>
                             )}
                         </Button>
                     </>
@@ -389,9 +391,21 @@ export default function UsersPage() {
                             {actionLoading[`logout-${user._id}`] ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                                <LogOut className="w-4 h-4" />
+                                <><LogOut className="w-4 h-4 mr-1" /> Logout</>
                             )}
                         </Button>
+
+                        {/* Browse Files button for admins */}
+                        {(isOwner || isAdmin) && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/admin/files/${user._id}?name=${encodeURIComponent(user.name)}`)}
+                                title="Browse this user's files"
+                            >
+                                <FolderOpen className="w-4 h-4 mr-1" /> Files
+                            </Button>
+                        )}
 
                         {canDelete() && (
                             <Button
@@ -404,7 +418,7 @@ export default function UsersPage() {
                                 {actionLoading[`delete-${user._id}`] ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
-                                    <Trash2 className="w-4 h-4" />
+                                    <><Trash2 className="w-4 h-4 mr-1" /> Delete</>
                                 )}
                             </Button>
                         )}

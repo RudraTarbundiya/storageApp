@@ -3,6 +3,7 @@ import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import { calculateDirSize, getFileSize } from "./directoryController.js";
 
+//use in public share,share with user,admin view all files but use different middleware for that
 export const getPublicDirData = async (req, res, next) => {
     const _id = req.params.id
     try {

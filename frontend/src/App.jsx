@@ -12,6 +12,7 @@ import LandingPage from '@/pages/LandingPage'
 import PublicSharePage from '@/pages/PublicSharePage'
 import SharedWithMePage from '@/pages/SharedWithMePage'
 import SharedByMePage from '@/pages/SharedByMePage'
+import AdminFileBrowserPage from '@/pages/AdminFileBrowserPage'
 import AppLayout from '@/components/Layout/AppLayout'
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
                 <Route path="/google-drive" element={<GoogleDrivePage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/admin/files/:userId" element={<AdminFileBrowserPage />} />
               </Route>
             </Routes>
           </BrowserRouter>
