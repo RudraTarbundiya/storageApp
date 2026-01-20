@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, LogOut, Trash2, Loader2, UserCircle, Shield, UserCog, RefreshCw, AlertTriangle, RotateCcw, Trash, Crown, FolderOpen } from 'lucide-react'
+import { Users, LogOut, Trash2, Loader2, UserCircle, Shield, UserCog, RefreshCw, AlertTriangle, RotateCcw, Trash, Crown, FolderOpen, HardDrive } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,8 +22,28 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
 import { adminAPI, ownerAPI } from '@/lib/api'
 import { useAuth, useAlert } from '@/context'
+
+// Storage limit in bytes (3 GB)
+const STORAGE_LIMIT = 3 * 1024 * 1024 * 1024
+
+// Format bytes to human readable
+const formatStorage = (bytes) => {
+    if (!bytes || bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
 
 export default function UsersPage() {
     const [users, setUsers] = useState([])
@@ -227,48 +247,27 @@ export default function UsersPage() {
         return user?.email === currentUser?.email
     }
 
-    // Check if current user can modify target user based on role hierarchy
     const canModifyUser = (targetUser) => {
         if (isOwner) return true
-        if (isAdmin) {
-            // Admin can modify user, manager, and other admin (not owner)
-            return targetUser.role !== 'owner'
-        }
-        if (isManager) {
-            // Manager can only modify regular users and managers
-            return targetUser.role === 'user' || targetUser.role === 'manager'
-        }
+        if (isAdmin) return targetUser.role !== 'owner'
+        if (isManager) return targetUser.role === 'user' || targetUser.role === 'manager'
         return false
     }
 
-    // Check if current user can change target user's role
     const canChangeRole = (targetUser) => {
         if (isCurrentUser(targetUser._id)) return false
         return canModifyUser(targetUser)
     }
 
-    // Get available roles based on current user's role
     const getAvailableRoles = (targetUser) => {
-        if (isOwner) {
-            return ['user', 'manager', 'admin', 'owner']
-        }
-        if (isAdmin) {
-            // Admin can set to user, manager, admin (but not owner)
-            return ['user', 'manager', 'admin']
-        }
-        if (isManager) {
-            // Manager can only set to user or manager
-            return ['user', 'manager']
-        }
+        if (isOwner) return ['user', 'manager', 'admin', 'owner']
+        if (isAdmin) return ['user', 'manager', 'admin']
+        if (isManager) return ['user', 'manager']
         return []
     }
 
-    // Check if current user can delete
-    const canDelete = () => {
-        return isOwner || isAdmin
-    }
+    const canDelete = () => isOwner || isAdmin
 
-    // Check if current user can logout target
     const canLogoutUser = (targetUser) => {
         if (isOwner) return true
         if (isAdmin) return targetUser.role !== 'admin' && targetUser.role !== 'owner'
@@ -276,55 +275,81 @@ export default function UsersPage() {
         return false
     }
 
-    const renderUserCard = (user, isDeleted = false) => (
-        <motion.div
-            key={user._id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className={`flex items-center justify-between p-4 rounded-lg border ${isCurrentUser(user._id)
-                ? 'bg-primary/5 border-primary/20'
-                : isDeleted
-                    ? 'bg-red-50/50 border-red-100'
-                    : 'bg-card hover:bg-accent/50'
-                } transition-colors`}
-        >
-            <div className="flex items-center gap-4">
-                <Avatar className="h-10 w-10">
-                    {user.picture && (
-                        <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />
-                    )}
-                    <AvatarFallback className={`bg-linear-to-br ${isDeleted ? 'from-red-400 to-red-600' : 'from-blue-500 to-purple-600'} text-white`}>
-                        {user.name?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                </Avatar>
-                <div>
-                    <div className="flex items-center gap-2">
-                        <p className={`font-medium ${isDeleted ? 'text-red-700' : ''}`}>{user.name}</p>
-                        {isCurrentUser(user._id) && (
-                            <Badge variant="outline" className="text-xs">You</Badge>
-                        )}
-                        {!isDeleted && user.isLoggedIn && (
-                            <span className="w-2 h-2 bg-green-500 rounded-full" title="Online" />
-                        )}
-                        {isDeleted && (
-                            <Badge variant="outline" className="text-xs text-red-500 border-red-200">Deleted</Badge>
-                        )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                </div>
-            </div>
+    // Storage progress color
+    const getStorageColor = (used) => {
+        const percent = (used / STORAGE_LIMIT) * 100
+        if (percent >= 90) return 'bg-red-500'
+        if (percent >= 70) return 'bg-yellow-500'
+        return 'bg-green-500'
+    }
 
-            <div className="flex items-center gap-3">
-                {/* Role dropdown or badge */}
+    const renderUserRow = (user, isDeleted = false) => (
+        <TableRow key={user._id} className={isCurrentUser(user._id) ? 'bg-primary/5' : isDeleted ? 'bg-red-50/50' : ''}>
+            {/* User Column */}
+            <TableCell>
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9">
+                        {user.picture && (
+                            <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />
+                        )}
+                        <AvatarFallback className={`bg-linear-to-br ${isDeleted ? 'from-red-400 to-red-600' : 'from-blue-500 to-purple-600'} text-white text-sm`}>
+                            {user.name?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className={`font-medium text-sm ${isDeleted ? 'text-red-700' : ''}`}>{user.name}</span>
+                            {isCurrentUser(user._id) && <Badge variant="outline" className="text-xs">You</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                </div>
+            </TableCell>
+
+            {/* Status Column */}
+            <TableCell>
+                {isDeleted ? (
+                    <Badge variant="outline" className="text-red-500 border-red-200">Deleted</Badge>
+                ) : user.isLoggedIn ? (
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        <span className="text-sm text-green-600">Online</span>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                        <span className="text-sm text-muted-foreground">Offline</span>
+                    </div>
+                )}
+            </TableCell>
+
+            {/* Storage Column */}
+            <TableCell>
+                <div className="w-32">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-muted-foreground">{formatStorage(user.storageUsed || 0)}</span>
+                        <span className="text-muted-foreground">/ 3 GB</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                        <div
+                            className={`h-1.5 rounded-full transition-all ${getStorageColor(user.storageUsed || 0)}`}
+                            style={{ width: `${Math.min(((user.storageUsed || 0) / STORAGE_LIMIT) * 100, 100)}%` }}
+                        />
+                    </div>
+                </div>
+            </TableCell>
+
+            {/* Role Column */}
+            <TableCell>
                 {!isDeleted && canChangeRole(user) ? (
                     <Select
                         value={user.role}
                         onValueChange={(value) => openRoleChangeDialog(user, value)}
                         disabled={actionLoading[`role-${user._id}`]}
                     >
-                        <SelectTrigger className="w-32.5 h-8">
+                        <SelectTrigger className="w-28 h-8 text-xs">
                             {actionLoading[`role-${user._id}`] ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-3 h-3 animate-spin" />
                             ) : (
                                 <SelectValue />
                             )}
@@ -332,7 +357,7 @@ export default function UsersPage() {
                         <SelectContent>
                             {getAvailableRoles(user).map((role) => (
                                 <SelectItem key={role} value={role}>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 text-xs">
                                         {role === 'owner' && <Crown className="w-3 h-3 text-yellow-600" />}
                                         {role === 'admin' && <Shield className="w-3 h-3 text-red-600" />}
                                         {role === 'manager' && <UserCog className="w-3 h-3 text-blue-600" />}
@@ -346,86 +371,87 @@ export default function UsersPage() {
                 ) : (
                     getRoleBadge(user.role)
                 )}
+            </TableCell>
 
-                {isDeleted ? (
-                    // Actions for deleted users (owner only)
-                    <>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openConfirmDialog('recover', user)}
-                            disabled={actionLoading[`recover-${user._id}`]}
-                            title="Recover this user"
-                            className="text-green-600 border-green-200 hover:bg-green-50"
-                        >
-                            {actionLoading[`recover-${user._id}`] ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <><RotateCcw className="w-4 h-4 mr-1" /> Recover</>
-                            )}
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openConfirmDialog('hardDelete', user)}
-                            disabled={actionLoading[`hardDelete-${user._id}`]}
-                            title="Permanently delete this user"
-                        >
-                            {actionLoading[`hardDelete-${user._id}`] ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <><Trash className="w-4 h-4 mr-1" /> Delete</>
-                            )}
-                        </Button>
-                    </>
-                ) : (
-                    // Actions for active users
-                    <>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openConfirmDialog('logout', user)}
-                            disabled={!user.isLoggedIn || actionLoading[`logout-${user._id}`] || !canLogoutUser(user)}
-                            title={!canLogoutUser(user) ? 'Cannot logout this user' : user.isLoggedIn ? 'Logout this user' : 'User is not logged in'}
-                        >
-                            {actionLoading[`logout-${user._id}`] ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <><LogOut className="w-4 h-4 mr-1" /> Logout</>
-                            )}
-                        </Button>
-
-                        {/* Browse Files button for admins */}
-                        {(isOwner || isAdmin) && (
+            {/* Actions Column */}
+            <TableCell>
+                <div className="flex items-center gap-2">
+                    {isDeleted ? (
+                        <>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => navigate(`/admin/files/${user._id}?name=${encodeURIComponent(user.name)}`)}
-                                title="Browse this user's files"
+                                onClick={() => openConfirmDialog('recover', user)}
+                                disabled={actionLoading[`recover-${user._id}`]}
+                                className="text-green-600 border-green-200 hover:bg-green-50 h-8 text-xs"
                             >
-                                <FolderOpen className="w-4 h-4 mr-1" /> Files
+                                {actionLoading[`recover-${user._id}`] ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                    <><RotateCcw className="w-3 h-3 mr-1" /> Recover</>
+                                )}
                             </Button>
-                        )}
-
-                        {canDelete() && (
                             <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => handleDeleteClick(user)}
-                                disabled={isCurrentUser(user._id) || actionLoading[`delete-${user._id}`] || !canModifyUser(user)}
-                                title={isCurrentUser(user._id) ? 'Cannot delete yourself' : !canModifyUser(user) ? 'Cannot delete this user' : 'Delete this user'}
+                                onClick={() => openConfirmDialog('hardDelete', user)}
+                                disabled={actionLoading[`hardDelete-${user._id}`]}
+                                className="h-8 text-xs"
                             >
-                                {actionLoading[`delete-${user._id}`] ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                {actionLoading[`hardDelete-${user._id}`] ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : (
-                                    <><Trash2 className="w-4 h-4 mr-1" /> Delete</>
+                                    <><Trash className="w-3 h-3 mr-1" /> Delete</>
                                 )}
                             </Button>
-                        )}
-                    </>
-                )}
-            </div>
-        </motion.div>
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openConfirmDialog('logout', user)}
+                                disabled={!user.isLoggedIn || actionLoading[`logout-${user._id}`] || !canLogoutUser(user)}
+                                className="h-8 text-xs"
+                            >
+                                {actionLoading[`logout-${user._id}`] ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                    <><LogOut className="w-3 h-3 mr-1" /> Logout</>
+                                )}
+                            </Button>
+
+                            {(isOwner || isAdmin) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => navigate(`/admin/files/${user._id}?name=${encodeURIComponent(user.name)}`)}
+                                    className="h-8 text-xs"
+                                >
+                                    <FolderOpen className="w-3 h-3 mr-1" /> Files
+                                </Button>
+                            )}
+
+                            {canDelete() && (
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteClick(user)}
+                                    disabled={isCurrentUser(user._id) || actionLoading[`delete-${user._id}`] || !canModifyUser(user)}
+                                    className="h-8 text-xs"
+                                >
+                                    {actionLoading[`delete-${user._id}`] ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                        <><Trash2 className="w-3 h-3 mr-1" /> Delete</>
+                                    )}
+                                </Button>
+                            )}
+                        </>
+                    )}
+                </div>
+            </TableCell>
+        </TableRow>
     )
 
     if (loading) {
@@ -438,7 +464,7 @@ export default function UsersPage() {
 
     return (
         <>
-            <div className="p-6 max-w-6xl mx-auto">
+            <div className="p-6 max-w-7xl mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -476,14 +502,28 @@ export default function UsersPage() {
                                         </TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="active">
-                                        <div className="space-y-3">
-                                            {users.map((user) => renderUserCard(user, false))}
-                                            {users.length === 0 && (
-                                                <div className="text-center py-8 text-muted-foreground">
-                                                    <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                                    <p>No active users found</p>
-                                                </div>
-                                            )}
+                                        <div className="rounded-md border overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-[250px]">User</TableHead>
+                                                        <TableHead className="w-[100px]">Status</TableHead>
+                                                        <TableHead className="w-[150px]">Storage</TableHead>
+                                                        <TableHead className="w-[130px]">Role</TableHead>
+                                                        <TableHead>Actions</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {users.map((user) => renderUserRow(user, false))}
+                                                    {users.length === 0 && (
+                                                        <TableRow>
+                                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                                                No active users found
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </TableBody>
+                                            </Table>
                                         </div>
                                     </TabsContent>
                                     <TabsContent value="deleted">
@@ -492,27 +532,55 @@ export default function UsersPage() {
                                                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                             </div>
                                         ) : (
-                                            <div className="space-y-3">
-                                                {deletedUsers.map((user) => renderUserCard(user, true))}
-                                                {deletedUsers.length === 0 && (
-                                                    <div className="text-center py-8 text-muted-foreground">
-                                                        <Trash2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                                        <p>No deleted users found</p>
-                                                    </div>
-                                                )}
+                                            <div className="rounded-md border overflow-x-auto">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead className="w-[250px]">User</TableHead>
+                                                            <TableHead className="w-[100px]">Status</TableHead>
+                                                            <TableHead className="w-[150px]">Storage</TableHead>
+                                                            <TableHead className="w-[130px]">Role</TableHead>
+                                                            <TableHead>Actions</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {deletedUsers.map((user) => renderUserRow(user, true))}
+                                                        {deletedUsers.length === 0 && (
+                                                            <TableRow>
+                                                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                                                    No deleted users found
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                    </TableBody>
+                                                </Table>
                                             </div>
                                         )}
                                     </TabsContent>
                                 </Tabs>
                             ) : (
-                                <div className="space-y-3">
-                                    {users.map((user) => renderUserCard(user, false))}
-                                    {users.length === 0 && (
-                                        <div className="text-center py-8 text-muted-foreground">
-                                            <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                            <p>No users found</p>
-                                        </div>
-                                    )}
+                                <div className="rounded-md border overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-[250px]">User</TableHead>
+                                                <TableHead className="w-[100px]">Status</TableHead>
+                                                <TableHead className="w-[150px]">Storage</TableHead>
+                                                <TableHead className="w-[130px]">Role</TableHead>
+                                                <TableHead>Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {users.map((user) => renderUserRow(user, false))}
+                                            {users.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                                        No users found
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
                                 </div>
                             )}
                         </CardContent>

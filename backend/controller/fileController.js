@@ -1,5 +1,5 @@
 import { WriteStream } from 'fs'
-import { rm} from 'fs/promises'
+import { rm } from 'fs/promises'
 import path from 'path'
 import { Db, ObjectId } from 'mongodb'
 import File from '../models/fileModel.js'
@@ -8,8 +8,8 @@ import Directory from '../models/directoryModel.js'
 
 export const sendFile = async (req, res, next) => {
     const id = req.params.id
-    const fileobj = await File.findOne({_id : id , userId : req.user._id}).lean()
-    if (!fileobj) return res.status(404).send({ error : 'File not found and or you do not have access to it!' })
+    const fileobj = await File.findOne({ _id: id, userId: req.user._id }).lean()
+    if (!fileobj) return res.status(404).send({ error: 'File not found and or you do not have access to it!' })
 
     const filePath = path.join(import.meta.dirname, '..', 'storage', id + (fileobj.extension || ''))
     if (req.query.action === 'download') {
@@ -28,7 +28,7 @@ export const renameFile = async (req, res, next) => {
     const db = req.db
     const id = req.params.id
 
-    const fileobj = await File.findOne({_id : new ObjectId(id), userId : req.user._id})
+    const fileobj = await File.findOne({ _id: new ObjectId(id), userId: req.user._id })
     if (!fileobj) return res.status(404).json({ error: 'File not found or you do not have access to it!' })
 
     try {
@@ -44,7 +44,7 @@ export const deleteFile = async (req, res, next) => {
     const id = req.params.id
 
     try {
-        const fileObj = await File.findOne({_id : id, userId :req.user._id})
+        const fileObj = await File.findOne({ _id: id, userId: req.user._id })
         const filename = id + fileObj.extension
 
         // Check if file exists or user has access
@@ -68,7 +68,7 @@ export const uploadFile = async (req, res, next) => {
     const parentDirId = req.params.parentDirId || req.user.rootDirId.toString() //if no parent id then upload to root
     const filename = req.headers.filename || "untitled" //if no filename in header then untitled
     const extension = path.extname(filename) || '' // Ensure extension is never undefined
-    
+
     // Get content-length header for file size
     const contentLength = parseInt(req.headers['content-length']) || 0
 
@@ -79,7 +79,6 @@ export const uploadFile = async (req, res, next) => {
             return res.status(404).json({ error: "Parent directory not found!" });
         }
 
-
         const result = await File.create({
             name: filename,
             extension: extension,
@@ -87,32 +86,32 @@ export const uploadFile = async (req, res, next) => {
             parentDirId,
             userId: req.user._id
         })
-        
+
         //actual file write in storage folder
         const filePath = path.join(import.meta.dirname, '../storage', result._id + extension)
         const ws = WriteStream(filePath)
-    let bytesWritten = 0
+        let bytesWritten = 0
 
-    req.on('data', (chunk) => {
-        bytesWritten += chunk.length
-    })
+        req.on('data', (chunk) => {
+            bytesWritten += chunk.length
+        })
 
-    // Pipe request to file immediately
-    req.pipe(ws)
+        // Pipe request to file immediately
+        req.pipe(ws)
 
-    // Handle stream completion
-    req.on('end', async () => {
+        // Handle stream completion
+        req.on('end', async () => {
             // Update file size with actual bytes written if different from content-length
             if (bytesWritten > 0 && bytesWritten !== contentLength) {
                 await File.updateOne({ _id: result._id }, { size: bytesWritten })
             }
             return res.status(201).json({ message: 'File uploaded successfully' })
         })
-        req.on('error',async (err)=>{
+        req.on('error', async (err) => {
             await rm(path.join(import.meta.dirname, '../storage', result._id + extension))
-            await File.deleteOne({_id : result._id})
-        next(err)
-    })
+            await File.deleteOne({ _id: result._id })
+            next(err)
+        })
     } catch (err) {
         console.log(err);
         next(err)

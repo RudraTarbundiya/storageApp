@@ -20,12 +20,23 @@ export const getUsers = async (req, res, next) => {
                 }
             },
             {
+                // Lookup files to calculate storage
+                $lookup: {
+                    from: 'files',
+                    localField: '_id',
+                    foreignField: 'userId',
+                    as: 'userFiles'
+                }
+            },
+            {
                 $project: {
                     name: 1,
                     email: 1,
                     picture: 1,
                     role: 1,
-                    isLoggedIn: { $gt: [{ $size: '$sessions' }, 0] }
+                    rootDirId: 1,
+                    isLoggedIn: { $gt: [{ $size: '$sessions' }, 0] },
+                    storageUsed: { $sum: '$userFiles.size' }
                 }
             }
         ]);

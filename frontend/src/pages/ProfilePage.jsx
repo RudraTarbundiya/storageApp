@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { User, Mail, Lock, Camera, Loader2, Check, Eye, EyeOff } from 'lucide-react'
+import { User, Mail, Lock, Camera, Loader2, Check, Eye, EyeOff, HardDrive, LogOut, Monitor, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,16 +16,31 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { authAPI, userAPI } from '@/lib/api'
-import { useAuth, useAlert } from '@/context'
+import { useAuth, useAlert, useFileManager } from '@/context'
+
+// Storage limit in bytes (3 GB)
+const STORAGE_LIMIT = 3 * 1024 * 1024 * 1024
+
+// Format bytes to human readable
+const formatStorage = (bytes) => {
+    if (!bytes || bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
 
 export default function ProfilePage() {
-    const { user, refreshUser } = useAuth()
+    const { user, refreshUser, logout } = useAuth()
     const { showAlert } = useAlert()
+    const { totalStorageUsed } = useFileManager()
 
     const [loading, setLoading] = useState(false)
     const [otpDialogOpen, setOtpDialogOpen] = useState(false)
     const [otpLoading, setOtpLoading] = useState(false)
     const [verifying, setVerifying] = useState(false)
+    const [logoutLoading, setLogoutLoading] = useState(false)
+    const [logoutAllLoading, setLogoutAllLoading] = useState(false)
 
     const [otp, setOtp] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -35,6 +50,16 @@ export default function ProfilePage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [resendCooldown, setResendCooldown] = useState(0)
     const cooldownTimerRef = useRef(null)
+
+    // Storage percentage
+    const storagePercentage = Math.min((totalStorageUsed / STORAGE_LIMIT) * 100, 100)
+
+    // Storage color based on usage
+    const getStorageColor = () => {
+        if (storagePercentage >= 90) return 'from-red-500 to-red-600'
+        if (storagePercentage >= 70) return 'from-yellow-500 to-orange-500'
+        return 'from-green-500 to-emerald-500'
+    }
 
     // Cleanup timer on unmount
     useEffect(() => {
@@ -145,18 +170,45 @@ export default function ProfilePage() {
         setOtp('')
     }
 
+    const handleLogout = async () => {
+        setLogoutLoading(true)
+        try {
+            await logout()
+            showAlert('Logged out successfully', 'default')
+        } catch (err) {
+            showAlert(err.response?.data?.error || 'Failed to logout', 'destructive')
+        } finally {
+            setLogoutLoading(false)
+        }
+    }
+
+    const handleLogoutAll = async () => {
+        setLogoutAllLoading(true)
+        try {
+            await userAPI.logoutAll()
+            showAlert('Logged out from all devices', 'default')
+            // After logout all, the current session is also invalidated
+            window.location.href = '/login'
+        } catch (err) {
+            showAlert(err.response?.data?.error || 'Failed to logout from all devices', 'destructive')
+        } finally {
+            setLogoutAllLoading(false)
+        }
+    }
+
     const hasChanges = newPassword || pictureUrl
     const passwordsMatch = !newPassword || newPassword === confirmPassword
 
     return (
         <>
-            <div className="p-6 max-w-2xl mx-auto">
+            <div className="p-6 max-w-2xl mx-auto space-y-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <Card>
+                    {/* Profile Card */}
+                    <Card className="mb-6">
                         <CardHeader>
                             <div className="flex items-center gap-4">
                                 <Avatar className="h-16 w-16">
@@ -177,7 +229,30 @@ export default function ProfilePage() {
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            {/* Current Info (Read-only) */}
+                            {/* Storage Info */}
+                            <div className="p-4 rounded-lg border bg-muted/30">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <HardDrive className="w-5 h-5 text-muted-foreground" />
+                                    <h3 className="font-medium">Storage Usage</h3>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Used</span>
+                                        <span className="font-medium">{formatStorage(totalStorageUsed)} / {formatStorage(STORAGE_LIMIT)}</span>
+                                    </div>
+                                    <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                                        <div
+                                            className={`h-3 rounded-full transition-all duration-500 bg-linear-to-r ${getStorageColor()}`}
+                                            style={{ width: `${storagePercentage}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {storagePercentage.toFixed(1)}% of your storage is used
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Account Info */}
                             <div className="space-y-3">
                                 <h3 className="font-medium">Account Information</h3>
                                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
@@ -199,7 +274,7 @@ export default function ProfilePage() {
                                 </p>
                             </div>
 
-                            {/* Editable Fields */}
+                            {/* Update Profile */}
                             <div className="border-t pt-6 space-y-4">
                                 <h3 className="font-medium">Update Profile</h3>
 
@@ -287,6 +362,65 @@ export default function ProfilePage() {
                                     'Update Profile'
                                 )}
                             </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* Session Management Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Monitor className="w-5 h-5" />
+                                Session Management
+                            </CardTitle>
+                            <CardDescription>
+                                Manage your active sessions across devices
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                        <Monitor className="w-5 h-5 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium">Current Device</p>
+                                        <p className="text-sm text-muted-foreground">This browser session</p>
+                                    </div>
+                                </div>
+                                <Badge variant="outline" className="text-green-600 border-green-200">Active</Badge>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleLogout}
+                                    disabled={logoutLoading}
+                                    className="w-full"
+                                >
+                                    {logoutLoading ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <LogOut className="w-4 h-4 mr-2" />
+                                    )}
+                                    Logout Current Device
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleLogoutAll}
+                                    disabled={logoutAllLoading}
+                                    className="w-full"
+                                >
+                                    {logoutAllLoading ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <Smartphone className="w-4 h-4 mr-2" />
+                                    )}
+                                    Logout All Devices
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center">
+                                Logging out from all devices will sign you out everywhere, including this browser.
+                            </p>
                         </CardContent>
                     </Card>
                 </motion.div>
