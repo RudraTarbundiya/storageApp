@@ -70,6 +70,38 @@ export const sendPublicFile = async (req, res, next) => {
     if (!fileobj) return res.status(404).send({ error: 'File not found!' })
 
     const filePath = path.join(import.meta.dirname, '..', 'storage', id + (fileobj.extension || ''))
+
+    // Set CORS headers for streaming with credentials
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:5175')
+    res.setHeader('Access-Control-Allow-Credentials', 'true')
+    res.setHeader('Accept-Ranges', 'bytes')
+
+    // Set content type based on extension for proper streaming
+    const mimeTypes = {
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.ogg': 'video/ogg',
+        '.mov': 'video/quicktime',
+        '.avi': 'video/x-msvideo',
+        '.mkv': 'video/x-matroska',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.aac': 'audio/aac',
+        '.flac': 'audio/flac',
+        '.m4a': 'audio/mp4',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml',
+        '.pdf': 'application/pdf'
+    }
+    const ext = (fileobj.extension || '').toLowerCase()
+    if (mimeTypes[ext]) {
+        res.setHeader('Content-Type', mimeTypes[ext])
+    }
+
     if (req.query.action === 'download') {
         res.download(filePath, fileobj.name)
         return

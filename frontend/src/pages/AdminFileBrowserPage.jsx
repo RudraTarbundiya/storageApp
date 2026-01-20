@@ -151,9 +151,20 @@ export default function AdminFileBrowserPage() {
         }
     }
 
-    // Preview file - fetch as blob for authenticated access
+    // Preview file - use streaming for video/audio, blob for images/pdf
     const handlePreview = async (file) => {
+        const fileType = getFileType(file.extension)
         setPreviewFile(file)
+
+        // For video/audio, use direct streaming URL (browser handles range requests)
+        if (fileType === 'video' || fileType === 'audio') {
+            // Use direct URL - the video element will handle streaming with cookies
+            setPreviewUrl(`http://localhost:4000/admin/file/${file._id || file.id}`)
+            setPreviewLoading(false)
+            return
+        }
+
+        // For images/pdf, fetch as blob
         setPreviewLoading(true)
         setPreviewUrl(null)
 
@@ -170,9 +181,11 @@ export default function AdminFileBrowserPage() {
         }
     }
 
-    // Close preview and cleanup blob URL
+    // Close preview and cleanup blob URL (only for non-streaming URLs)
     const handleClosePreview = () => {
-        if (previewUrl) {
+        const fileType = previewFile ? getFileType(previewFile.extension) : null
+        // Only revoke if it's a blob URL (not streaming URL)
+        if (previewUrl && fileType !== 'video' && fileType !== 'audio') {
             window.URL.revokeObjectURL(previewUrl)
         }
         setPreviewFile(null)

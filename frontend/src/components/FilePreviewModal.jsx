@@ -87,7 +87,14 @@ export default function FilePreviewModal({ open, onClose, file, fileUrl, isLoadi
                     )}
 
                     {!isLoading && fileType === 'video' && fileUrl && (
-                        <video src={fileUrl} controls autoPlay preload="metadata" className="max-w-full max-h-[70vh]" />
+                        <video
+                            src={fileUrl}
+                            controls
+                            autoPlay
+                            preload="metadata"
+                            crossOrigin="use-credentials"
+                            className="max-w-full max-h-[70vh]"
+                        />
                     )}
 
                     {!isLoading && fileType === 'audio' && fileUrl && (
@@ -96,7 +103,14 @@ export default function FilePreviewModal({ open, onClose, file, fileUrl, isLoadi
                                 <Music className="h-10 w-10 md:h-12 md:w-12 text-white" />
                             </div>
                             <h4 className="text-white font-medium mb-4 truncate px-4">{file?.name}</h4>
-                            <audio src={fileUrl} controls autoPlay preload="metadata" className="w-full max-w-md mx-auto" />
+                            <audio
+                                src={fileUrl}
+                                controls
+                                autoPlay
+                                preload="metadata"
+                                crossOrigin="use-credentials"
+                                className="w-full max-w-md mx-auto"
+                            />
                         </div>
                     )}
 
