@@ -249,7 +249,7 @@ export default function GoogleDrivePage() {
                     ) : (
                       <div>
                         <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 shadow-sm mb-3">
-                          <File className="w-6 h-6 text-white" />
+                          <FileIcon className="w-6 h-6 text-white" />
                         </div>
                         <h3 className="font-medium text-sm truncate mb-2">{file.name}</h3>
                         <Button
@@ -303,7 +303,7 @@ export default function GoogleDrivePage() {
             {importFile && (
               <div className="mt-4 p-3 bg-secondary rounded-lg flex items-center gap-3">
                 <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600">
-                  <File className="w-5 h-5 text-white" />
+                  <FileIcon className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{importFile.name}</p>

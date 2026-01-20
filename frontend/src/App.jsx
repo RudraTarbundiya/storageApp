@@ -12,6 +12,7 @@ import LandingPage from '@/pages/LandingPage'
 import PublicSharePage from '@/pages/PublicSharePage'
 import SharedWithMePage from '@/pages/SharedWithMePage'
 import SharedByMePage from '@/pages/SharedByMePage'
+import MyPublicSharesPage from '@/pages/MyPublicSharesPage'
 import AdminFileBrowserPage from '@/pages/AdminFileBrowserPage'
 import AppLayout from '@/components/Layout/AppLayout'
 
@@ -36,6 +37,7 @@ function App() {
                   <Route path="/files" element={<DashboardPage />} />
                   <Route path="/shared-with-me" element={<SharedWithMePage />} />
                   <Route path="/shared-by-me" element={<SharedByMePage />} />
+                  <Route path="/my-public-shares" element={<MyPublicSharesPage />} />
                   <Route path="/google-drive" element={<GoogleDrivePage />} />
                   <Route path="/users" element={<UsersPage />} />
                   <Route path="/profile" element={<ProfilePage />} />

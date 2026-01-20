@@ -51,6 +51,11 @@ const getMenuItems = (userRole) => {
       path: '/shared-by-me',
     },
     {
+      title: 'My Public Shares',
+      icon: Globe,
+      path: '/my-public-shares',
+    },
+    {
       title: 'Google Drive',
       icon: Cloud,
       path: '/google-drive',

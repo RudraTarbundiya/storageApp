@@ -3,6 +3,74 @@ import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import { calculateDirSize, getFileSize } from "./directoryController.js";
 
+// Get all public items owned by the current user
+// Returns directories first (top-level public dirs), then standalone public files
+export const getMyPublicItems = async (req, res, next) => {
+    const userId = req.user._id;
+    try {
+        // Get all public directories owned by the user that are "top-level public"
+        // A top-level public dir is one where its parent is NOT public (or has no parent)
+        const allPublicDirs = await Directory.find({ userId, isPublic: true })
+            .populate('userId', 'name picture')
+            .lean();
+
+        // Filter to only top-level public directories
+        // (directories whose parent is either null or not public)
+        const parentIds = allPublicDirs.map(d => d.parentDirId).filter(id => id);
+        const parentDirs = await Directory.find({ _id: { $in: parentIds } }).lean();
+        const parentPublicMap = new Map(parentDirs.map(d => [d._id.toString(), d.isPublic]));
+
+        const topLevelPublicDirs = allPublicDirs.filter(d => {
+            if (!d.parentDirId) return true; // No parent = top level
+            return parentPublicMap.get(d.parentDirId.toString()) !== true; // Parent not public
+        });
+
+        // Add size and item count to directories
+        const directoriesWithStats = await Promise.all(topLevelPublicDirs.map(async (d) => {
+            const totalSize = await calculateDirSize(d._id);
+            const fileCount = await File.countDocuments({ parentDirId: d._id });
+            const subDirCount = await Directory.countDocuments({ parentDirId: d._id });
+            return {
+                ...d,
+                itemCount: fileCount + subDirCount,
+                totalSize
+            };
+        }));
+
+        // Get all public files owned by the user that are "standalone public"
+        // A standalone public file is one in a non-public directory
+        const allPublicFiles = await File.find({ userId, isPublic: true })
+            .populate('userId', 'name picture')
+            .lean();
+
+        // Filter to only standalone public files (parent dir is not public)
+        const fileParentIds = allPublicFiles.map(f => f.parentDirId).filter(id => id);
+        const fileParentDirs = await Directory.find({ _id: { $in: fileParentIds } }).lean();
+        const fileParentPublicMap = new Map(fileParentDirs.map(d => [d._id.toString(), d.isPublic]));
+
+        const standalonePublicFiles = allPublicFiles.filter(f => {
+            if (!f.parentDirId) return true; // No parent = standalone
+            return fileParentPublicMap.get(f.parentDirId.toString()) !== true; // Parent not public
+        });
+
+        // Add file sizes if missing
+        const filesWithSizes = await Promise.all(standalonePublicFiles.map(async (f) => {
+            let size = f.size || 0;
+            if (!size) {
+                size = await getFileSize(f._id.toString(), f.extension);
+            }
+            return { ...f, size };
+        }));
+
+        return res.status(200).json({
+            directories: directoriesWithStats,
+            files: filesWithSizes
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
 //use in public share,share with user,admin view all files but use different middleware for that
 export const getPublicDirData = async (req, res, next) => {
     const _id = req.params.id

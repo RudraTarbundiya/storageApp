@@ -273,6 +273,9 @@ export const googleDriveAPI = {
 
 // Public Sharing API
 export const publicAPI = {
+  // Get current user's public items (requires auth)
+  getMyPublicItems: () => api.get('/public/my-items'),
+
   // Toggle public status (requires auth)
   toggleDirectoryPublic: (id, isPublic) => api.patch(`/public/dir/${id}/toggle`, { isPublic }),
   toggleFilePublic: (id, isPublic) => api.patch(`/public/file/${id}/toggle`, { isPublic }),
