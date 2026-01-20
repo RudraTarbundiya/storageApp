@@ -60,7 +60,7 @@ export const fileAPI = {
     return api.post(parentDirId ? `/file/${parentDirId}` : '/file', file, {
       headers: {
         'Content-Type': 'application/octet-stream',
-        'filename': encodeURIComponent(file.name)
+        'filename': file.name
       },
     })
   },
@@ -98,7 +98,7 @@ export const fileAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/octet-stream',
-        'filename': encodeURIComponent(file.name)
+        'filename': file.name
       },
       body: progressStream,
       credentials: 'include',
@@ -136,7 +136,7 @@ export const fileAPI = {
       xhr.open('POST', url, true)
       xhr.withCredentials = true
       xhr.setRequestHeader('Content-Type', 'application/octet-stream')
-      xhr.setRequestHeader('filename', encodeURIComponent(file.name))
+      xhr.setRequestHeader('filename', file.name)
 
       // Progress event
       xhr.upload.onprogress = (event) => {

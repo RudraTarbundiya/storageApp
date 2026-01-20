@@ -68,7 +68,7 @@ export const uploadFile = async (req, res, next) => {
     const parentDirId = req.params.parentDirId || req.user.rootDirId.toString() //if no parent id then upload to root
     const filename = req.headers.filename || "untitled" //if no filename in header then untitled
     const extension = path.extname(filename) || '' // Ensure extension is never undefined
-
+    console.log({ filename, extension });
     // Get content-length header for file size
     const contentLength = parseInt(req.headers['content-length']) || 0
 
