@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { publicAPI, sharingAPI } from '@/lib/api'
 import { useAlert } from '@/context'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 // Debounce hook
 function useDebounce(value, delay) {
@@ -31,7 +32,8 @@ export default function ShareDialog({
     open,
     onOpenChange,
     item,
-    type = 'file' // 'file' or 'folder'
+    type = 'file', // 'file' or 'folder'
+    onShareSuccess // Callback when sharing succeeds to refresh parent data
 }) {
     const { showAlert } = useAlert()
     const [isPublic, setIsPublic] = useState(false)
@@ -48,21 +50,33 @@ export default function ShareDialog({
     const [sharingUser, setSharingUser] = useState(null)
     const [sharedUsers, setSharedUsers] = useState([])
     const [removingUser, setRemovingUser] = useState(null)
+    const [loadingSharedUsers, setLoadingSharedUsers] = useState(false)
+
+    // Confirm dialog state
+    const [confirmDialog, setConfirmDialog] = useState({
+        open: false,
+        title: '',
+        description: '',
+        userId: null,
+        userName: ''
+    })
 
     const debouncedSearch = useDebounce(searchEmail, 300)
 
-    // Reset state when item changes
+    // Fetch latest item data when dialog opens to ensure shared users are up-to-date
     useEffect(() => {
-        if (item) {
-            setIsPublic(item.isPublic || false)
-            setSharedUsers(item.sharedWith || [])
-            setCopied(false)
-            setSearchEmail('')
-            setSearchResults([])
-            setSearchError('')
-            setSelectedPermission('view')
-        }
-    }, [item])
+        if (!item || !open) return
+
+        // Set data from item prop (which should have sharedWith populated)
+        setIsPublic(item.isPublic || false)
+        setSharedUsers(item.sharedWith || [])
+        setCopied(false)
+        setSearchEmail('')
+        setSearchResults([])
+        setSearchError('')
+        setSelectedPermission('view')
+        setLoadingSharedUsers(false)
+    }, [item, open])
 
     // Search users when email input changes
     useEffect(() => {
@@ -162,6 +176,9 @@ export default function ShareDialog({
             setSearchResults(prev => prev.filter(u => u._id !== user._id))
             setSearchEmail('')
             showAlert(`Shared with ${user.name || user.email}!`)
+            
+            // Call success callback to refresh parent data
+            if (onShareSuccess) onShareSuccess()
         } catch (error) {
             showAlert('Failed to share', 'destructive')
         } finally {
@@ -169,17 +186,25 @@ export default function ShareDialog({
         }
     }
 
-    const handleRemoveShare = async (userId, userName) => {
+    const handleRemoveShare = (userId, userName) => {
         if (!item) return
 
-        // Show confirmation alert
-        const confirmed = window.confirm(
-            `Are you sure you want to remove access for ${userName || 'this user'}?`
-        )
-        
-        if (!confirmed) return
+        // Open confirmation dialog
+        setConfirmDialog({
+            open: true,
+            title: 'Remove Access',
+            description: `Are you sure you want to remove access for ${userName || 'this user'}? They will no longer be able to access this ${type}.`,
+            userId,
+            userName
+        })
+    }
 
+    const confirmRemoveShare = async () => {
+        const { userId } = confirmDialog
+        
+        setConfirmDialog(prev => ({ ...prev, open: false }))
         setRemovingUser(userId)
+        
         try {
             if (type === 'folder') {
                 await sharingAPI.removeDirectoryShare(item._id, userId)
@@ -190,6 +215,9 @@ export default function ShareDialog({
             // Remove from shared users list
             setSharedUsers(prev => prev.filter(s => (s.user?._id || s.user) !== userId))
             showAlert('Access removed successfully')
+            
+            // Call success callback to refresh parent data
+            if (onShareSuccess) onShareSuccess()
         } catch (error) {
             showAlert('Failed to remove access', 'destructive')
         } finally {
@@ -378,7 +406,14 @@ export default function ShareDialog({
                                 </div>
                             )}
 
-                            {sharedUsers.length === 0 && searchEmail.length < 3 && (
+                            {loadingSharedUsers && (
+                                <div className="text-center py-6 text-muted-foreground">
+                                    <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+                                    <p className="text-sm">Loading shared users...</p>
+                                </div>
+                            )}
+
+                            {!loadingSharedUsers && sharedUsers.length === 0 && searchEmail.length < 3 && (
                                 <div className="text-center py-6 text-muted-foreground">
                                     <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
                                     <p className="text-sm">Not shared with anyone yet</p>
@@ -486,6 +521,17 @@ export default function ShareDialog({
                     </Button>
                 </DialogFooter>
             </DialogContent>
+
+            {/* Confirm Dialog for removing access */}
+            <ConfirmDialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+                title={confirmDialog.title}
+                description={confirmDialog.description}
+                onConfirm={confirmRemoveShare}
+                confirmText="Remove Access"
+                variant="destructive"
+            />
         </Dialog>
     )
 }

@@ -10,7 +10,7 @@ export default function HeroSection() {
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 left-10 w-72 h-72 bg-blue-100/40 rounded-full blur-3xl" />
                 <div className="absolute bottom-20 right-10 w-96 h-96 bg-green-100/30 rounded-full blur-3xl" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-3xl" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-blue-50/50 rounded-full blur-3xl" />
             </div>
 
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-28">
@@ -36,7 +36,7 @@ export default function HeroSection() {
                         {/* Headline */}
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight tracking-tight">
                             Cloud storage that{' '}
-                            <span className="text-gradient-primary">actually works</span>{' '}
+                            <span className="bg-linear-to-r from-[#4285F4] via-[#FBBC05] via-[#ff820d] to-[#34A853] bg-clip-text text-transparent">actually works</span>{' '}
                             for you.
                         </h1>
 
@@ -140,7 +140,7 @@ export default function HeroSection() {
                                             <span>8.5 GB / 15 GB</span>
                                         </div>
                                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                            <div className="h-full w-[57%] bg-gradient-to-r from-[#4285F4] to-[#34a853] rounded-full" />
+                                            <div className="h-full w-[57%] bg-linear-to-r from-[#4285F4] to-[#34a853] rounded-full" />
                                         </div>
                                     </div>
 

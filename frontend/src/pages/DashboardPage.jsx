@@ -34,6 +34,7 @@ function DashboardContent() {
     newName,
     deleteItem,
     // Actions
+    fetchDirectory,
     setSearchQuery,
     setViewMode,
     handleOpenFolder,
@@ -356,6 +357,7 @@ function DashboardContent() {
         onOpenChange={setShowShareDialog}
         item={shareItem}
         type={shareType}
+        onShareSuccess={fetchDirectory}
       />
 
       <FilePreviewModal onDownload={handleDownload} />
