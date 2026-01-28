@@ -284,7 +284,7 @@ export default function UsersPage() {
     }
 
     const renderUserRow = (user, isDeleted = false) => (
-        <TableRow key={user._id} className={isCurrentUser(user._id) ? 'bg-primary/5' : isDeleted ? 'bg-red-50/50' : ''}>
+        <TableRow key={user._id} className={isCurrentUser(user._id) ? 'bg-primary/5' : isDeleted ? 'bg-primary/5' : ''}>
             {/* User Column */}
             <TableCell>
                 <div className="flex items-center gap-3">

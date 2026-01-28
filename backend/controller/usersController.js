@@ -1,24 +1,16 @@
 import User from "../models/userModel.js";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
-import Session from "../models/sesssionModel.js"
 import { rm } from "fs/promises";
 import path from "path";
-
+import { deleteAllSession } from "../utils/deleteSessions.js";
+import redisClient from "../config/redis.js";
 
 //admin only
 export const getUsers = async (req, res, next) => {
     try {
         const users = await User.aggregate([
             { $match: { isDelete: false } },
-            {
-                $lookup: {
-                    from: 'sessions', // MongoDB collection name (lowercase plural)
-                    localField: '_id',
-                    foreignField: 'userId',
-                    as: 'sessions'
-                }
-            },
             {
                 // Lookup files to calculate storage
                 $lookup: {
@@ -35,11 +27,22 @@ export const getUsers = async (req, res, next) => {
                     picture: 1,
                     role: 1,
                     rootDirId: 1,
-                    isLoggedIn: { $gt: [{ $size: '$sessions' }, 0] },
                     storageUsed: { $sum: '$userFiles.size' }
                 }
             }
         ]);
+
+        // Determine login state from Redis for each user (sessions are stored in Redis)
+        for (const u of users) {
+            try {
+                const ssnSearch = await redisClient.ft.search('userIdIdx', `@userId:{${u._id.toString()}}`, {
+                    RETURN: [],
+                });
+                u.isLoggedIn = ssnSearch.total > 0;
+            } catch (e) {
+                u.isLoggedIn = false;
+            }
+        }
         res.status(200).json(users);
     } catch (error) {
         next(error);
@@ -73,12 +76,7 @@ export const logOutByUserId = async (req, res, next) => {
         } else {
             return res.status(403).json({ error: 'Access denied.' });
         }
-
-        const userSessions = await Session.find({ userId: userId }).lean();
-        if (userSessions.length === 0) {
-            return res.status(404).json({ error: 'No active sessions found for this user.' });
-        }
-        await Session.deleteMany({ userId: userId });
+        await deleteAllSession(userId);
         return res.status(204).json({ message: 'User logged out from all sessions successfully.' });
     } catch (error) {
         next(error);
@@ -104,7 +102,7 @@ export const deleteByUserId = async (req, res, next) => {
         // Soft delete the user
         user.isDelete = true;
         await user.save();
-        await Session.deleteMany({ userId });
+        await deleteAllSession(userId);
 
         return res.status(200).json({ message: 'User and all associated data deleted successfully', });
     } catch (error) {
@@ -117,11 +115,12 @@ export const getDeletedUsers = async (req, res, next) => {
         const users = await User.aggregate([
             { $match: { isDelete: true } },
             {
+                // Lookup files to calculate storage
                 $lookup: {
-                    from: 'sessions',
+                    from: 'files',
                     localField: '_id',
                     foreignField: 'userId',
-                    as: 'sessions'
+                    as: 'userFiles'
                 }
             },
             {
@@ -130,10 +129,22 @@ export const getDeletedUsers = async (req, res, next) => {
                     email: 1,
                     picture: 1,
                     role: 1,
-                    isLoggedIn: { $gt: [{ $size: '$sessions' }, 0] }
+                    rootDirId: 1,
+                    storageUsed: { $sum: '$userFiles.size' }
                 }
             }
         ]);
+
+        for (const u of users) {
+            try {
+                const ssnSearch = await redisClient.ft.search('userIdIdx', `@userId:{${u._id.toString()}}`, {
+                    RETURN: [],
+                });
+                u.isLoggedIn = ssnSearch.total > 0;
+            } catch (e) {
+                u.isLoggedIn = false;
+            }
+        }
         res.status(200).json(users);
     } catch (error) {
         next(error);
@@ -149,7 +160,7 @@ export const changeUserRole = async (req, res, next) => {
     if (!validRoles.includes(newRole)) {
         return res.status(400).json({ error: 'Invalid role. Must be user, admin, manager, or owner.' });
     }
-    if(userId === req.user._id.toString()){
+    if (userId === req.user._id.toString()) {
         return res.status(400).json({ error: 'Users cannot change their own role.' });
     }
 
@@ -215,7 +226,7 @@ export const deleteByUserIdOwner = async (req, res, next) => {
         }
         await File.deleteMany({ userId });
         await Directory.deleteMany({ userId });
-        await Session.deleteMany({ userId });
+        await deleteAllSession(userId);
         await User.deleteOne({ _id: userId });
 
         return res.status(200).json({ message: 'User and all associated data have been permanently deleted.' });
