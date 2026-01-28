@@ -4,16 +4,16 @@ import { changeUserRole, deleteByUserId, deleteByUserIdOwner, getDeletedUsers, g
 const router = Router();
 
 //manager and above can view users
-router.get('/', checkAuth, checkManager, getUsers)
+router.get('/', checkManager, getUsers)
 //manager can logout users only, admin can logout users/managers
-router.post('/:userId/logout', checkAuth, checkManager, logOutByUserId)
+router.post('/:userId/logout', checkManager, logOutByUserId)
 //admin only - soft delete
-router.delete('/:userId/delete', checkAuth, checkAdmin, deleteByUserId)
+router.delete('/:userId/delete', checkAdmin, deleteByUserId)
 //manager and above can change roles (with hierarchy restrictions in controller)
-router.post('/:userId/role', checkAuth, checkManager, changeUserRole)
+router.post('/:userId/role', checkManager, changeUserRole)
 //owner only
-router.get('/deleted', checkAuth, checkOwner, getDeletedUsers)
-router.delete('/:userId/delete/hard', checkAuth, checkOwner, deleteByUserIdOwner)
-router.post('/:userId/recover', checkAuth, checkOwner, recoverUserByIdOwner)
+router.get('/deleted', checkOwner, getDeletedUsers)
+router.delete('/:userId/delete/hard', checkOwner, deleteByUserIdOwner)
+router.post('/:userId/recover', checkOwner, recoverUserByIdOwner)
 
 export default router;

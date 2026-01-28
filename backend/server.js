@@ -27,14 +27,14 @@ app.use(cors({
     credentials: true
 }))//enable CORS
 
-app.use('/users', usersRouteres)
 app.use('/auth',authRoutes)
+app.use('/admin', checkAuth, adminRoutes)//admin,owner only to show files
+app.use('/users',checkAuth, usersRouteres)//manager,admin,owner only
 app.use('/directory', checkAuth, directoryRoutes)
 app.use('/file', checkAuth, filesRoutes)
 app.use('/gd',checkAuth, gdRoutes)
-app.use('/shared',sharedRoutes)
+app.use('/shared',checkAuth,sharedRoutes)
 app.use('/public',publicRoutes)
-app.use('/admin',adminRoutes)
 
 //this is global middleware for eroor handling
 app.use((err, req, res, next) => {
