@@ -1,7 +1,7 @@
 import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
-import { calculateDirSize, getFileSize } from "./directoryController.js";
+import { calculateDirSize, getFileSize } from "../utils/getSize.js";
 
 // Get all public items owned by the current user
 // Returns directories first (top-level public dirs), then standalone public files
