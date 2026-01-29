@@ -35,7 +35,7 @@ export const getUsers = async (req, res, next) => {
         // Determine login state from Redis for each user (sessions are stored in Redis)
         for (const u of users) {
             try {
-                const ssnSearch = await redisClient.ft.search('userIdIdx', `@userId:{${u._id.toString()}}`, {
+                const ssnSearch = await redisClient.ft.search('sessionIdx', `@userId:{${u._id.toString()}}`, {
                     RETURN: [],
                 });
                 u.isLoggedIn = ssnSearch.total > 0;
@@ -137,7 +137,7 @@ export const getDeletedUsers = async (req, res, next) => {
 
         for (const u of users) {
             try {
-                const ssnSearch = await redisClient.ft.search('userIdIdx', `@userId:{${u._id.toString()}}`, {
+                const ssnSearch = await redisClient.ft.search('sessionIdx', `@userId:{${u._id.toString()}}`, {
                     RETURN: [],
                 });
                 u.isLoggedIn = ssnSearch.total > 0;

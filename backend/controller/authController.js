@@ -99,16 +99,16 @@ export const loginUser = async (req, res, next) => {
         if (!result) {
             return res.status(401).json({ error: 'Invalid email or password !' })
         }
-        const allSessions = await redisClient.ft.search('userIdIdx', `@userId:{${user._id.toString()}}`, {
+        const allSessions = await redisClient.ft.search('sessionIdx', `@userId:{${user._id.toString()}}`, {
             RETURN: [],
         })
         if (allSessions.total >= 2) {//max 2 sessions allowed
             await redisClient.del(allSessions.documents[0].id)//deleting oldest session
         }
-        const ssnKey = `session:${crypto.randomUUID()}`
-        await redisClient.json.set(ssnKey, "$", { userId: user._id.toString() })
-        await redisClient.expire(ssnKey, 60 * 60 * 24 * 7) // 1 week expiration
-        res.cookie('sid', ssnKey, {
+        const ssnId = crypto.randomUUID()
+        await redisClient.hSet(`session:${ssnId}`, { userId: user._id.toString() })
+        await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
+        res.cookie('sid', ssnId, {
             httpOnly: true,
             signed: true,
             maxAge: 60 * 60 * 1000 * 24 * 7//1 week
@@ -122,7 +122,7 @@ export const loginUser = async (req, res, next) => {
 export const logoutUser = async (req, res) => {
     res.clearCookie('sid')
     try {
-        await redisClient.del(req.signedCookies.sid)
+        await redisClient.del(`session:${req.signedCookies.sid}`)
         return res.status(204).json({ message: 'Logout successful' })
     } catch (error) {
         next(error)
@@ -174,10 +174,10 @@ export const googlelogin = async (req, res, next) => {
                 await User.updateOne({ _id: findUser._id }, { picture })
             }
             //create session and set cookie
-            const ssnKey = `session:${crypto.randomUUID()}`
-            await redisClient.json.set(ssnKey, "$", { userId: findUser._id.toString() })
-            await redisClient.expire(ssnKey, 60 * 60 * 24 * 7) // 1 week expiration
-            res.cookie('sid', ssnKey, {
+            const ssnId = crypto.randomUUID()
+            await redisClient.hSet(`session:${ssnId}`, { userId: findUser._id.toString() })
+            await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
+            res.cookie('sid', ssnId, {
                 httpOnly: true,
                 signed: true,
                 maxAge: 60 * 60 * 1000 * 24 * 7//1 week
@@ -199,10 +199,10 @@ export const googlelogin = async (req, res, next) => {
             rootDirId: rootDirId,
         }, { session })
         //create session and set cookie
-        const ssnKey = `session:${crypto.randomUUID()}`
-        await redisClient.json.set(ssnKey, "$", { userId: findUser._id.toString() })
-        await redisClient.expire(ssnKey, 60 * 60 * 24 * 7) // 1 week expiration
-        res.cookie('sid', ssnKey, {
+        const ssnId = crypto.randomUUID()
+        await redisClient.hSet(`session:${ssnId}`, { userId: userId.toString() })
+        await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
+        res.cookie('sid', ssnId, {
             httpOnly: true,
             signed: true,
             maxAge: 60 * 60 * 1000 * 24 * 7//1 week

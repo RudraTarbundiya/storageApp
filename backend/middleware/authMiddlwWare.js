@@ -1,5 +1,6 @@
 import User from "../models/userModel.js";
 import redisClient from "../config/redis.js";
+import { deleteAllSession } from "../utils/deleteSessions.js";
 
 // Middleware to check if user is authenticated with valid session and not soft-deleted
 export default async function checkAuth(req, res, next) {
@@ -7,8 +8,8 @@ export default async function checkAuth(req, res, next) {
     if(!sid){
         return  res.status(401).json({ error: "Not logged!" });
     }
-    const ssn = await redisClient.json.get(sid)
-    if (!ssn) {
+    const ssn = await redisClient.hGetAll(`session:${sid}`)
+    if (!ssn || !ssn.userId) {
         return res.status(401).json({ error: "Not logged!" });
     }
     const user = await User.findOne({ _id : ssn.userId }).lean();
