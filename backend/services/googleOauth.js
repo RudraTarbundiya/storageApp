@@ -5,13 +5,13 @@ import GoogleToken from '../models/googleTokenModel.js'
 
 export const verifyIdTokenAndGetUser = async (idToken) => {
     const client = new OAuth2Client({
-        clientId: process.env.client_id,
-        clientSecret: process.env.client_secret,
-        redirectUri: process.env.redirectUri
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI
     });
     const ticket = await client.verifyIdToken({
         idToken: idToken,
-        audience: process.env.client_id
+        audience: process.env.GOOGLE_CLIENT_ID
     })
     const userData = ticket.getPayload()
     return userData;
@@ -20,9 +20,9 @@ export const verifyIdTokenAndGetUser = async (idToken) => {
 //for explicit oauth flow
 export default async function fetchToken(code) {
     const client = new google.auth.OAuth2({
-        clientId: process.env.client_id,
-        clientSecret: process.env.client_secret,
-        redirectUri: process.env.redirectUri
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI
     });
 
     const { tokens } = await client.getToken(code)
@@ -60,9 +60,9 @@ export async function getDriveClient(userId) {
     }
 
     const client = new google.auth.OAuth2({
-        clientId: process.env.client_id,
-        clientSecret: process.env.client_secret,
-        redirectUri: process.env.redirectUri
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_REDIRECT_URI
     });
 
     client.setCredentials({

@@ -4,7 +4,6 @@
         "bcrypt": "^6.0.0",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
-        "dotenv": "^17.2.3",
         "google-auth-library": "^10.5.0",
         "googleapis": "^170.0.0",
         "mime-types": "^3.0.1",
@@ -14,7 +13,7 @@
         "resend": "^6.6.0"
     },
     "scripts": {
-        "dev": "node --watch server.js",
-        "start": "node server.js"
+        "dev": "node --watch --env-file=.env server.js",
+        "start": "node --env-file=.env server.js"
     }
 }

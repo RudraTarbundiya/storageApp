@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
@@ -18,12 +17,12 @@ await connectDB()
 
 const app = express()
 
-app.use(cookieParser('RudraSecret'))//for parsing cookies
+app.use(cookieParser(process.env.SESSION_SECRET))//for parsing cookies
 
 app.use(express.json())//for json parsing newname in rename handler
 
 app.use(cors({
-    origin: 'http://localhost:5175',
+    origin: process.env.FRONTEND_URL,
     credentials: true
 }))//enable CORS
 
@@ -43,6 +42,7 @@ app.use((err, req, res, next) => {
     return res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
 })
 
-app.listen(4000, () => {
-    console.log('Server is running on http://localhost:4000')
+const PORT = process.env.PORT || 4000
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`)
 })

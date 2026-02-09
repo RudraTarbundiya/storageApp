@@ -1,12 +1,13 @@
 import { createClient } from 'redis';
 
-const redisClient = createClient()
+const redisClient = createClient({
+    password: process.env.REDIS_PASSWORD
+})
 
 redisClient.on('error', (err) => {
     console.log('Redis Client Error', err);
     process.exit(1);
 });
-
 await redisClient.connect();
 
 async function createSessionIndex() {

@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 
 export default async function connectDB() {
     try {
-        await mongoose.connect('mongodb://rudra:rudra@localhost:27017/storageApp?authSource=storageApp')
+        await mongoose.connect(process.env.MONGODB_URI)
         console.log('Connected to DB')
     }catch(err){
         console.error('DB connection error:', err)
