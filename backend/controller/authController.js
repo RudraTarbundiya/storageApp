@@ -6,9 +6,14 @@ import mongoose from "mongoose";
 import OTP from "../models/otpModel.js";
 import redisClient from "../config/redis.js";
 import { deleteAllSession } from "../utils/deleteSessions.js";
+import { changeProfileSchema, loginSchema, registerSchema } from "../validator/authSchema.js";
 
 export const registerUser = async (req, res, next) => {
     const { name, otp, email, password, role, secretKey } = req.body;
+    const { success, error } = registerSchema.safeParse({ name, otp, email, password })
+    if (!success) {
+        return res.status(400).json({ error: error.flatten().fieldErrors })
+    }
     const session = await mongoose.startSession()
     try {
         // Validate role
@@ -85,6 +90,10 @@ export const registerUser = async (req, res, next) => {
 
 export const loginUser = async (req, res, next) => {
     const { email, password } = req.body
+    const { success, error } = loginSchema.safeParse({ email, password })
+    if (!success) {
+        return res.status(400).json({ error: error.flatten().fieldErrors })
+    }
 
     try {
         const user = await User.findOne({ email }).select('password isDelete')
@@ -119,7 +128,7 @@ export const loginUser = async (req, res, next) => {
     }
 }
 
-export const logoutUser = async (req, res) => {
+export const logoutUser = async (req, res, next) => {
     res.clearCookie('sid')
     try {
         await redisClient.del(`session:${req.signedCookies.sid}`)
@@ -148,11 +157,14 @@ export const getUserProfile = (req, res) => {
 }
 
 export const generateOTP = async (req, res, next) => {
-    const { email } = req.body;
+    if (!success) {
+        return res.status(400).json({ error: error.flatten().fieldErrors })
+    }
     const resData = await sendOtpService(email);
     try {
         res.status(201).json(resData);
     } catch (error) {
+        console.log('Error sending OTP:', error);
         next(error)
     }
 };
@@ -218,6 +230,10 @@ export const googlelogin = async (req, res, next) => {
 
 export const changeProfile = async (req, res, next) => {
     const { otp, newPassword, picture } = req.body;
+    const { success, error } = changeProfileSchema.safeParse({ name: req.body.name, password: newPassword })
+    if (!success) {
+        return res.status(400).json({ error: error.flatten().fieldErrors })
+    }
     const { email } = req.user;
     try {
         const otpRecord = await OTP.findOne({ email }).sort({ createdAt: -1 });

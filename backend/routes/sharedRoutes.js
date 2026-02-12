@@ -1,9 +1,14 @@
 import { Router } from "express";
 import { getSharedWithMe, searchUserByEmail, shareDirectory, shareFile, removeShare, getMySharedItems } from "../controller/sharedController.js";
-import checkAuth from "../middleware/authMiddlwWare.js";
 import checkFileShare, { checkDirectoryShare } from "../middleware/checkShare.js";
 import { getPublicDirData, sendPublicFile } from "../controller/publicController.js";
+import idCheck from '../middleware/idCheckMIddleware.js'
+import { id } from "zod/v4/locales";
 const router = Router();
+
+router.param('fileId',idCheck)
+router.param('dirId',idCheck)
+router.param('userId',idCheck)
 
 router.post("/search", searchUserByEmail)
 

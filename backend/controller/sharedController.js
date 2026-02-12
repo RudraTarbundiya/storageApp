@@ -1,11 +1,15 @@
 import File from "../models/fileModel.js"
 import User from "../models/userModel.js"
 import Directory from "../models/directoryModel.js"
+import { loginSchema } from "../validator/authSchema.js"
 
 export const searchUserByEmail = async (req, res, next) => {
     try {
         const { email } = req.body
-
+        const {success} = loginSchema.shape.email.safeParse(email)
+        if(!success){
+            return res.status(400).json({ message: 'Invalid email format' })
+        }
         if (!email || email.length < 3) {
             return res.status(400).json({ message: 'Enter at least 3 characters' })
         }

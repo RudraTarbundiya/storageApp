@@ -25,7 +25,6 @@ export const sendFile = async (req, res, next) => {
 }
 
 export const renameFile = async (req, res, next) => {
-    const db = req.db
     const id = req.params.id
 
     const fileobj = await File.findOne({ _id: new ObjectId(id), userId: req.user._id })
