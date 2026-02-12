@@ -30,7 +30,7 @@ const getFileIcon = (extension) => {
         case 'video': return Video
         case 'audio': return Music
         case 'pdf': return FileText
-        default: return File
+        default: return FileIcon
     }
 }
 
