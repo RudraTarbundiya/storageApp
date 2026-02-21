@@ -4,6 +4,7 @@ import path from 'path'
 import { Db, ObjectId } from 'mongodb'
 import File from '../models/fileModel.js'
 import Directory from '../models/directoryModel.js'
+import { sanitizeString } from '../utils/sanitizeInput.js'
 
 
 export const sendFile = async (req, res, next) => {
@@ -65,7 +66,7 @@ export const deleteFile = async (req, res, next) => {
 export const uploadFile = async (req, res, next) => {
 
     const parentDirId = req.params.parentDirId || req.user.rootDirId.toString() //if no parent id then upload to root
-    const filename = req.headers.filename || "untitled" //if no filename in header then untitled
+    const filename = sanitizeString(req.headers.filename || "untitled") //if no filename in header then untitled
     const extension = path.extname(filename) || '' // Ensure extension is never undefined
     console.log({ filename, extension });
     // Get content-length header for file size

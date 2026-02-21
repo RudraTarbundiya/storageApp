@@ -12,6 +12,7 @@ import publicRoutes from './routes/publicRoutes.js'
 import sharedRoutes from './routes/sharedRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
 import checkAuth from './middleware/authMiddlwWare.js'
+import sanitizeRequest from './middleware/sanitizeRequest.js'
 
 await connectDB()
 
@@ -20,6 +21,8 @@ const app = express()
 app.use(cookieParser(process.env.SESSION_SECRET))//for parsing cookies
 
 app.use(express.json())//for json parsing newname in rename handler
+
+app.use(sanitizeRequest)
 
 app.use(cors({
     origin: process.env.FRONTEND_URL,
