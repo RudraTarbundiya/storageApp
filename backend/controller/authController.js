@@ -120,6 +120,7 @@ export const loginUser = async (req, res, next) => {
         res.cookie('sid', ssnId, {
             httpOnly: true,
             signed: true,
+            sameSite: 'lax',
             maxAge: 60 * 60 * 1000 * 24 * 7//1 week
         })
         return res.status(200).json({ message: 'Login successful', userId: user._id.toString() })
@@ -192,6 +193,7 @@ export const googlelogin = async (req, res, next) => {
             res.cookie('sid', ssnId, {
                 httpOnly: true,
                 signed: true,
+                sameSite: 'lax',
                 maxAge: 60 * 60 * 1000 * 24 * 7//1 week
             })
             return res.status(200).json({ message: "User already exists" })
@@ -217,6 +219,7 @@ export const googlelogin = async (req, res, next) => {
         res.cookie('sid', ssnId, {
             httpOnly: true,
             signed: true,
+            sameSite: 'lax',
             maxAge: 60 * 60 * 1000 * 24 * 7//1 week
         })
         res.status(201).json({ message: "Google login successful" });

@@ -27,6 +27,7 @@ export const codeToToken = async (req, res, next) => {
         res.cookie('sub', sub, {
             httpOnly: true,
             signed: true,
+            sameSite: 'lax',
             maxAge: 60 * 60 * 1000 * 24 * 7//1 week
         })
         return res.status(200).json({ message: "Token fetched and stored successfully" })
