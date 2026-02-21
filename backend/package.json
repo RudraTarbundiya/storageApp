@@ -4,8 +4,10 @@
         "bcrypt": "^6.0.0",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
+        "dompurify": "^3.3.1",
         "google-auth-library": "^10.5.0",
         "googleapis": "^170.0.0",
+        "jsdom": "^28.1.0",
         "mime-types": "^3.0.1",
         "mongoose": "^9.0.1",
         "path": "^0.12.7",
@@ -16,5 +18,8 @@
     "scripts": {
         "dev": "node --watch --env-file=.env server.js",
         "start": "node --env-file=.env server.js"
+    },
+    "overrides": {
+        "minimatch": ">=10.2.1"
     }
 }

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { authAPI, userAPI } from '@/lib/api'
 import { useAuth, useAlert, useFileManager } from '@/context'
+import { sanitizeInput } from '@/lib/utils'
 
 // Storage limit in bytes (3 GB)
 const STORAGE_LIMIT = 3 * 1024 * 1024 * 1024
@@ -93,18 +94,21 @@ export default function ProfilePage() {
     }
 
     const handleUpdateClick = async () => {
+        const safeNewPassword = sanitizeInput(newPassword)
+        const safeConfirmPassword = sanitizeInput(confirmPassword)
+        const safePictureUrl = sanitizeInput(pictureUrl).trim()
         // Validate inputs
-        if (!newPassword && !pictureUrl) {
+        if (!safeNewPassword && !safePictureUrl) {
             showAlert('Please enter a new password or picture URL', 'destructive')
             return
         }
 
-        if (newPassword && newPassword !== confirmPassword) {
+        if (safeNewPassword && safeNewPassword !== safeConfirmPassword) {
             showAlert('Passwords do not match', 'destructive')
             return
         }
 
-        if (newPassword && newPassword.length < 6) {
+        if (safeNewPassword && safeNewPassword.length < 6) {
             showAlert('Password must be at least 6 characters', 'destructive')
             return
         }
@@ -124,16 +128,19 @@ export default function ProfilePage() {
     }
 
     const handleVerifyAndUpdate = async () => {
-        if (!otp) {
+        const safeOtp = sanitizeInput(otp).trim()
+        if (!safeOtp) {
             showAlert('Please enter the OTP', 'destructive')
             return
         }
 
         setVerifying(true)
         try {
-            const data = { otp }
-            if (newPassword) data.newPassword = newPassword
-            if (pictureUrl) data.picture = pictureUrl
+            const safeNewPassword = sanitizeInput(newPassword)
+            const safePictureUrl = sanitizeInput(pictureUrl).trim()
+            const data = { otp: safeOtp }
+            if (safeNewPassword) data.newPassword = safeNewPassword
+            if (safePictureUrl) data.picture = safePictureUrl
 
             await userAPI.updateProfile(data)
             showAlert('Profile updated successfully', 'default')
@@ -196,8 +203,11 @@ export default function ProfilePage() {
         }
     }
 
-    const hasChanges = newPassword || pictureUrl
-    const passwordsMatch = !newPassword || newPassword === confirmPassword
+    const safeNewPassword = sanitizeInput(newPassword)
+    const safeConfirmPassword = sanitizeInput(confirmPassword)
+    const safePictureUrl = sanitizeInput(pictureUrl).trim()
+    const hasChanges = safeNewPassword || safePictureUrl
+    const passwordsMatch = !safeNewPassword || safeNewPassword === safeConfirmPassword
 
     return (
         <>

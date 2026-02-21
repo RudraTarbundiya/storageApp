@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { userAPI, authAPI } from '@/lib/api'
+import { sanitizeInput } from '@/lib/utils'
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1) // Step 1: Email & Name, Step 2: OTP & Password
@@ -43,20 +44,23 @@ export default function RegisterPage() {
     setOtpSending(true)
     setError('')
 
-    if (!formData.name.trim()) {
+    const safeName = sanitizeInput(formData.name).trim()
+    const safeEmail = sanitizeInput(formData.email).trim()
+
+    if (!safeName) {
       setError('Please enter your name')
       setOtpSending(false)
       return
     }
 
-    if (!formData.email.trim()) {
+    if (!safeEmail) {
       setError('Please enter your email')
       setOtpSending(false)
       return
     }
 
     try {
-      await authAPI.sendOTP(formData.email)
+      await authAPI.sendOTP(safeEmail)
       setOtpSent(true)
       setStep(2)
       setResendCooldown(300) // Start 5-minute cooldown (300 seconds)
@@ -73,29 +77,37 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
-    if (formData.password !== formData.confirmPassword) {
+    const safePassword = sanitizeInput(formData.password)
+    const safeConfirmPassword = sanitizeInput(formData.confirmPassword)
+
+    if (safePassword !== safeConfirmPassword) {
       setError('Passwords do not match')
       setLoading(false)
       return
     }
 
-    if (formData.password.length < 6) {
+    if (safePassword.length < 6) {
       setError('Password must be at least 6 characters')
       setLoading(false)
       return
     }
 
     try {
+      const safeName = sanitizeInput(formData.name).trim()
+      const safeEmail = sanitizeInput(formData.email).trim()
+      const safeOtp = sanitizeInput(formData.otp).trim()
+      const safeRole = sanitizeInput(formData.role).trim()
+      const safeSecretKey = sanitizeInput(formData.secretKey).trim()
       const registrationData = {
-        name: formData.name,
-        email: formData.email,
-        otp: formData.otp,
-        password: formData.password,
-        role: formData.role,
+        name: safeName,
+        email: safeEmail,
+        otp: safeOtp,
+        password: safePassword,
+        role: safeRole,
       }
       // Include secretKey for admin or manager registration
-      if (formData.role === 'admin' || formData.role === 'manager') {
-        registrationData.secretKey = formData.secretKey
+      if (safeRole === 'admin' || safeRole === 'manager') {
+        registrationData.secretKey = safeSecretKey
       }
       await userAPI.register(registrationData)
       setSuccess(true)
@@ -113,7 +125,8 @@ export default function RegisterPage() {
     setError('')
 
     try {
-      await authAPI.sendOTP(formData.email)
+      const safeEmail = sanitizeInput(formData.email).trim()
+      await authAPI.sendOTP(safeEmail)
       setError('') // Clear any previous errors
       setResendCooldown(300) // Reset 5-minute cooldown
     } catch (err) {

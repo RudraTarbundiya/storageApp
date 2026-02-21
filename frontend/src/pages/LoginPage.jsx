@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuth } from '@/context'
+import { sanitizeInput } from '@/lib/utils'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -33,7 +34,9 @@ export default function LoginPage() {
     setError('')
 
     try {
-      await login(formData.email, formData.password)
+      const safeEmail = sanitizeInput(formData.email).trim()
+      const safePassword = sanitizeInput(formData.password)
+      await login(safeEmail, safePassword)
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed')

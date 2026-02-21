@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { directoryAPI, fileAPI } from '@/lib/api'
 import { useAlert } from './AlertContext'
+import { sanitizeInput } from '@/lib/utils'
 
 const FileManagerContext = createContext({
     // State
@@ -207,10 +208,11 @@ export function FileManagerProvider({ children }) {
     }, [uploadCancelFns])
 
     const handleCreateFolder = useCallback(async () => {
-        if (!newFolderName.trim()) return
+        const safeFolderName = sanitizeInput(newFolderName).trim()
+        if (!safeFolderName) return
 
         try {
-            await directoryAPI.create(newFolderName, currentFolder)
+            await directoryAPI.create(safeFolderName, currentFolder)
             showAlert('Folder created successfully')
             setShowCreateFolderDialog(false)
             setNewFolderName('')
@@ -221,13 +223,14 @@ export function FileManagerProvider({ children }) {
     }, [newFolderName, currentFolder, showAlert, fetchDirectory])
 
     const handleRename = useCallback(async () => {
-        if (!newName.trim()) return
+        const safeNewName = sanitizeInput(newName).trim()
+        if (!safeNewName) return
 
         try {
             if (renameItem.type === 'folder') {
-                await directoryAPI.rename(renameItem._id, newName)
+                await directoryAPI.rename(renameItem._id, safeNewName)
             } else {
-                await fileAPI.rename(renameItem._id, newName)
+                await fileAPI.rename(renameItem._id, safeNewName)
             }
             showAlert('Renamed successfully')
             setShowRenameDialog(false)
