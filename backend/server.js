@@ -14,6 +14,7 @@ import sharedRoutes from './routes/sharedRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
 import checkAuth from './middleware/authMiddlwWare.js'
 import sanitizeRequest from './middleware/sanitizeRequest.js'
+import { createRateLimiter, lenientRateLimiter } from './middleware/rateLimiter.js'
 
 await connectDB()
 
@@ -51,19 +52,22 @@ app.use(express.json())//for json parsing newname in rename handler
 
 app.use(sanitizeRequest)
 
+// Apply global rate limiter middleware - BEFORE CORS for security
+app.use(createRateLimiter())
+
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials: true
 }))//enable CORS
 
 app.use('/auth',authRoutes)
-app.use('/admin', checkAuth, adminRoutes)//admin,owner only to show files
-app.use('/users',checkAuth, usersRouteres)//manager,admin,owner only
-app.use('/directory', checkAuth, directoryRoutes)
-app.use('/file', checkAuth, filesRoutes)
-app.use('/gd',checkAuth, gdRoutes)
-app.use('/shared',checkAuth,sharedRoutes)
-app.use('/public',publicRoutes)
+app.use('/admin', checkAuth, createRateLimiter({ max: 50, windowMs: 15 * 60 * 1000 }), adminRoutes)//admin,owner only to show files
+app.use('/users',checkAuth, createRateLimiter({ max: 100, windowMs: 15 * 60 * 1000 }), usersRouteres)//manager,admin,owner only
+app.use('/directory', checkAuth, createRateLimiter({ max: 100, windowMs: 15 * 60 * 1000 }), directoryRoutes)
+app.use('/file', checkAuth, createRateLimiter({ max: 100, windowMs: 15 * 60 * 1000 }), filesRoutes)
+app.use('/gd',checkAuth, createRateLimiter({ max: 50, windowMs: 60 * 60 * 1000 }), gdRoutes)
+app.use('/shared',checkAuth, createRateLimiter({ max: 50, windowMs: 15 * 60 * 1000 }), sharedRoutes)
+app.use('/public', lenientRateLimiter(), publicRoutes)
 
 //this is global middleware for eroor handling
 app.use((err, req, res, next) => {
