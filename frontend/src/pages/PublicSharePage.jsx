@@ -107,7 +107,7 @@ function PublicFolderCard({ folder, onOpen }) {
                             <Folder className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-xs text-muted-foreground font-medium">
-                            {formatFileSize(folder.totalSize)}
+                            {formatFileSize(folder.size)}
                         </span>
                     </div>
 

@@ -90,7 +90,7 @@ function PublicFolderCard({ folder, viewMode, onMakePrivate, onCopyLink }) {
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{folder.itemCount || 0} items</span>
                         <span>•</span>
-                        <span>{formatFileSize(folder.totalSize)}</span>
+                        <span>{formatFileSize(folder.size)}</span>
                         <span>•</span>
                         <Badge variant="outline" className="text-green-600 border-green-300">
                             <Globe className="h-3 w-3 mr-1" />
@@ -128,7 +128,7 @@ function PublicFolderCard({ folder, viewMode, onMakePrivate, onCopyLink }) {
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                     <span>{folder.itemCount || 0} items</span>
                     <span>•</span>
-                    <span>{formatFileSize(folder.totalSize)}</span>
+                    <span>{formatFileSize(folder.size)}</span>
                 </div>
 
                 <div className="pt-3 border-t space-y-2">
