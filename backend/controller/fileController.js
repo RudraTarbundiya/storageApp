@@ -82,7 +82,7 @@ export const uploadFile = async (req, res, next) => {
         if (!parentDirData) {
             return res.status(404).json({ error: "Parent directory not found!" });
         }
-        if(contentLength > 1000 * 1024 * 1024) { //1gb limit
+        if(filesize > 1000 * 1024 * 1024) { //1gb limit
             res.set('Connection', 'close') // Close connection
             return res.status(413).json({ error: "File size exceeds 1GB limit" });
         }
