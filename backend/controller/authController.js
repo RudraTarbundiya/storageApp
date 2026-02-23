@@ -152,6 +152,7 @@ export const logoutAllDevice = async (req, res, next) => {
 export const getUserProfile = (req, res) => {
     res.status(200).json({
         name: req.user.name,
+        maxStorage: req.user.maxStorageInBytes,
         email: req.user.email,
         picture: req.user.picture,
         role: req.user.role

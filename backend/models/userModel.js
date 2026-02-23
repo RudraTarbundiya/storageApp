@@ -29,6 +29,10 @@ const userSchema = new Schema({
         required: true,
         ref: 'Directory'
     },
+    maxStorageInBytes:{
+        type: Number,
+        default : 1 * (1024 ** 3) // Default to 1GB
+    },
     role : {
         type : String,
         enum : ['user', 'admin' , 'manager','owner'],//owner role only change manually in db

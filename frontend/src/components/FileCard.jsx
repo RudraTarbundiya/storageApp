@@ -28,6 +28,7 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
     >
       <Card
         className="group cursor-pointer hover:shadow-lg transition-all border-slate-200 dark:border-slate-800"
+        title={`name: ${file.name}\nSize: ${formatFileSize(file.size)}`}
       >
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">

@@ -87,10 +87,13 @@ export const uploadFile = async (req, res, next) => {
         if (!parentDirData) {
             return res.status(404).json({ error: "Parent directory not found!" });
         }
-        if(filesize > 1000 * 1024 * 1024) { //1gb limit
+        //calculate available storage by checking root directory size and user's max storage limit
+        const rootDirData = await Directory.findOne({ _id: req.user.rootDirId, userId: req.user._id }).select('size')
+        const availableStorage = req.user.maxStorageInBytes - rootDirData.size
+        if (filesize > availableStorage) {
             res.set('Connection', 'close') // Close connection
-            return res.status(413).json({ error: "File size exceeds 1GB limit" });
-        } 
+            return res.status(413).json({ error: "Insufficient storage space for this file" });
+        }
         const file = await File.create({
             name: filename,
             extension: extension,
@@ -156,6 +159,7 @@ export const uploadFile = async (req, res, next) => {
         })
     } catch (err) {
         console.log(err);
-        next(err)
+        return res.status(200).json( err)
+        // next(err)
     }
 }

@@ -42,6 +42,9 @@ try {
           rootDirId: {
             bsonType: 'objectId'
           },
+          maxStorageInBytes : {
+            bsonType : 'long'
+          },
           role: {
             enum: ["user", "admin", "manager", "owner"],
             bsonType: 'string'
@@ -79,7 +82,7 @@ try {
             bsonType: 'string'
           },
           size : {
-            bsonType: 'number'
+            bsonType: ['int', 'long', 'double']
           },
           parentDirId: {
             bsonType: [
@@ -158,7 +161,7 @@ try {
             bsonType: 'string'
           },
           size: {
-            bsonType: 'number'
+            bsonType: ['int', 'long', 'double']
           },
           parentDirId: {
             bsonType: 'objectId'

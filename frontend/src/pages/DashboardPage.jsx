@@ -11,11 +11,12 @@ import ShareDialog from '@/components/ShareDialog'
 import FilePreviewModal from '@/components/FilePreviewModal'
 import FileDetailsModal from '@/components/FileDetailsModal'
 import FolderDetailsModal from '@/components/FolderDetailsModal'
-import { useFileManager, usePreview } from '@/context'
+import { useFileManager, usePreview, useAuth } from '@/context'
 import { fileAPI } from '@/lib/api'
 
 
 function DashboardContent() {
+  const { user } = useAuth()
   const {
     files,
     folders,
@@ -35,6 +36,7 @@ function DashboardContent() {
     renameItem,
     newName,
     deleteItem,
+    totalStorageUsed,
     // Actions
     fetchDirectory,
     setSearchQuery,
@@ -62,6 +64,11 @@ function DashboardContent() {
     cancelFileUpload,
     cancelAllUploads,
   } = useFileManager()
+
+  // Calculate available storage
+  const maxStorage = user?.maxStorage || 3 * 1024 * 1024 * 1024 // Default 3GB
+  const availableStorage = maxStorage - totalStorageUsed
+  const hasNoStorage = availableStorage <= 0
 
   // Share dialog state
   const [showShareDialog, setShowShareDialog] = React.useState(false)
@@ -123,7 +130,11 @@ function DashboardContent() {
               <FolderPlus className="h-4 w-4 mr-2" />
               New Folder
             </Button>
-            <Button onClick={() => setShowUploadDialog(true)}>
+            <Button 
+              onClick={() => setShowUploadDialog(true)}
+              disabled={hasNoStorage}
+              title={hasNoStorage ? 'No storage space available' : 'Upload files'}
+            >
               <Upload className="h-4 w-4 mr-2" />
               Upload
             </Button>
@@ -221,6 +232,11 @@ function DashboardContent() {
               <p className="text-xs text-muted-foreground mt-1">
                 Files are uploaded in parallel (3 at a time) for faster performance
               </p>
+              {availableStorage > 0 && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  Available storage: {(availableStorage / 1024 / 1024).toFixed(2)} MB
+                </p>
+              )}
             </div>
 
             {/* Selected files list with enhanced progress */}

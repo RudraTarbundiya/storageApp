@@ -16,9 +16,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useAuth, useFileManager } from '@/context'
 
-// Storage limit in bytes (3 GB)
-const STORAGE_LIMIT = 3 * 1024 * 1024 * 1024
-
 // Format bytes to human readable
 const formatStorage = (bytes) => {
   if (bytes === 0) return '0 B'
@@ -88,7 +85,9 @@ export default function AppSidebar() {
   // Get storage info from FileManager context
   const { totalStorageUsed } = useFileManager()
 
-  const storagePercentage = Math.min((totalStorageUsed / STORAGE_LIMIT) * 100, 100)
+  // Get user's storage limit from their profile (default 3GB if not set)
+  const storageLimit = user?.maxStorage || 3 * 1024 * 1024 * 1024
+  const storagePercentage = Math.min((totalStorageUsed / storageLimit) * 100, 100)
 
   const handleNavigation = (path) => {
     navigate(path)
@@ -170,7 +169,7 @@ export default function AppSidebar() {
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          {formatStorage(totalStorageUsed)} of {formatStorage(STORAGE_LIMIT)} used
+          {formatStorage(totalStorageUsed)} of {formatStorage(storageLimit)} used
         </p>
       </div>
 

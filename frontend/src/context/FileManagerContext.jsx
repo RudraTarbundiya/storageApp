@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { directoryAPI, fileAPI } from '@/lib/api'
 import { useAlert } from './AlertContext'
+import { useAuth } from './AuthContext'
 import { sanitizeInput } from '@/lib/utils'
 
 const FileManagerContext = createContext({
@@ -53,6 +54,7 @@ const FileManagerContext = createContext({
 
 export function FileManagerProvider({ children }) {
     const { showAlert } = useAlert()
+    const { user } = useAuth()
 
     // Main state
     const [files, setFiles] = useState([])
@@ -129,7 +131,35 @@ export function FileManagerProvider({ children }) {
     const handleUpload = useCallback(async () => {
         if (uploadFiles.length === 0) return
 
-        // Validate file sizes before upload (1GB limit)
+        // Calculate available storage
+        const maxStorage = user?.maxStorage || 3 * 1024 * 1024 * 1024
+        const availableStorage = maxStorage - totalStorageUsed
+
+        // Check if user has any storage space available
+        if (availableStorage <= 0) {
+            showAlert('No storage space available. Please delete some files.', 'destructive')
+            setShowUploadDialog(false)
+            setUploadFiles([])
+            setUploadProgress({})
+            return
+        }
+
+        // Calculate total size of files to upload
+        const totalUploadSize = uploadFiles.reduce((acc, file) => acc + file.size, 0)
+
+        // Check if total upload size exceeds available storage
+        if (totalUploadSize > availableStorage) {
+            showAlert(
+                `Upload size (${(totalUploadSize / 1024 / 1024).toFixed(2)} MB) exceeds available storage (${(availableStorage / 1024 / 1024).toFixed(2)} MB)`,
+                'destructive'
+            )
+            setShowUploadDialog(false)
+            setUploadFiles([])
+            setUploadProgress({})
+            return
+        }
+
+        // Validate individual file sizes (1GB limit per file)
         const MAX_FILE_SIZE = 1000 * 1024 * 1024 // 1GB
         const oversizedFiles = uploadFiles.filter(file => file.size > MAX_FILE_SIZE)
 
@@ -196,7 +226,7 @@ export function FileManagerProvider({ children }) {
         } finally {
             setIsUploading(false)
         }
-    }, [uploadFiles, currentFolder, showAlert, fetchDirectory])
+    }, [uploadFiles, currentFolder, showAlert, fetchDirectory, user, totalStorageUsed])
 
     // Cancel a single file upload
     const cancelFileUpload = useCallback((fileName) => {

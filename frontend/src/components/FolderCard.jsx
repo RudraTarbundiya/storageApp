@@ -28,7 +28,7 @@ export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="group cursor-pointer hover:shadow-lg transition-all border-slate-200 dark:border-slate-800">
+      <Card className="group cursor-pointer hover:shadow-lg transition-all border-slate-200 dark:border-slate-800" title={`name: ${folder.name}\nSize: ${formatFileSize(folder.size)}`}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="relative">

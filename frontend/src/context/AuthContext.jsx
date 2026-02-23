@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
         email: response.data.email || 'user@example.com',
         picture: response.data.picture || null,
         role: response.data.role || 'user',
+        maxStorage: response.data.maxStorage || 3 * 1024 * 1024 * 1024, // Default 3GB
       })
       setIsAuthenticated(true)
       return true
