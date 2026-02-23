@@ -2,8 +2,17 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
-import rateLimit from 'express-rate-limit'
 import connectDB from './config/db.js'
+import {
+    authLimiter,
+    // authThrottle,
+    generalLimiter,
+    // generalThrottle,
+    publicLimiter,
+    // publicThrottle,
+    uploadLimiter,
+    // uploadThrottle,
+} from './utils/trafficControl.js'
 //importing routes
 import filesRoutes from './routes/filesRoutes.js'
 import authRoutes from './routes/authRoutes.js'
@@ -17,47 +26,6 @@ import checkAuth from './middleware/authMiddlwWare.js'
 import sanitizeRequest from './middleware/sanitizeRequest.js'
 
 await connectDB()
-
-// Rate limiters with different configurations
-// Strict rate limiter for authentication endpoints
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 requests per windowMs
-    message: 'Too many login attempts, please try again later',
-    standardHeaders: true,
-    legacyHeaders: false,
-    // skip: (req) => process.env.NODE_ENV === 'development', // Skip in development
-})
-
-// General rate limiter for authenticated routes
-const generalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: 'Too many requests, please try again later',
-    standardHeaders: true,
-    legacyHeaders: false,
-    // skip: (req) => process.env.NODE_ENV === 'development',
-})
-
-// Relaxed rate limiter for public routes
-const publicLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 50, // Limit each IP to 50 requests per windowMs
-    message: 'Too many requests, please try again later',
-    standardHeaders: true,
-    legacyHeaders: false,
-    // skip: (req) => process.env.NODE_ENV === 'development',
-})
-
-// File upload limiter (stricter)
-const uploadLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 20, // Limit each IP to 20 uploads per hour
-    message: 'Too many file uploads, please try again later',
-    standardHeaders: true,
-    legacyHeaders: false,
-    // skip: (req) => process.env.NODE_ENV === 'development',
-})
 
 const app = express()
 
@@ -91,7 +59,7 @@ app.use(cookieParser(process.env.SESSION_SECRET))//for parsing cookies
 
 app.use(express.json())//for json parsing newname in rename handler
 
-app.use(sanitizeRequest)
+app.use(sanitizeRequest)//for sanitizing inputs to prevent XSS and injection attacks
 
 app.use(cors({
     origin: process.env.FRONTEND_URL,
