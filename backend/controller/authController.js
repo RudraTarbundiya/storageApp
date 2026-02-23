@@ -56,6 +56,7 @@ export const registerUser = async (req, res, next) => {
             name: `root -${email}`,
             parentDirId: null,
             userId,
+            size : 0
         }, { session })
         await User.insertOne({
             _id: userId,
@@ -204,6 +205,7 @@ export const googlelogin = async (req, res, next) => {
             name: `root -${email}`,
             parentDirId: null,
             userId,
+            size : 0
         }, { session })
         await User.insertOne({
             _id: userId,

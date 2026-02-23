@@ -78,6 +78,9 @@ try {
           name: {
             bsonType: 'string'
           },
+          size : {
+            bsonType: 'number'
+          },
           parentDirId: {
             bsonType: [
               'null',
@@ -109,6 +112,14 @@ try {
               },
               additionalProperties: false
             }
+          },
+          createdAt: {
+            bsonType: 'date',
+            description: 'Document creation time'
+          },
+          updatedAt: {
+            bsonType: 'date',
+            description: 'Document last update time'
           },
           isPublic: {
             bsonType: 'bool'

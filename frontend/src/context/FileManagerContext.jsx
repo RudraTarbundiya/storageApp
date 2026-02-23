@@ -89,13 +89,9 @@ export function FileManagerProvider({ children }) {
             setFolders(response.data.directories || [])
             setFiles(response.data.files || [])
 
-            // Calculate total storage when at root
+            // Use the root directory's size from the API response directly
             if (!currentFolder) {
-                const dirs = response.data.directories || []
-                const filesData = response.data.files || []
-                const dirSizes = dirs.reduce((acc, d) => acc + (d.totalSize || 0), 0)
-                const fileSizes = filesData.reduce((acc, f) => acc + (f.size || 0), 0)
-                setTotalStorageUsed(dirSizes + fileSizes)
+                setTotalStorageUsed(response.data.size || 0)
             }
         } catch (error) {
             showAlert('Failed to load directory', 'destructive')
@@ -136,7 +132,7 @@ export function FileManagerProvider({ children }) {
         // Validate file sizes before upload (1GB limit)
         const MAX_FILE_SIZE = 1000 * 1024 * 1024 // 1GB
         const oversizedFiles = uploadFiles.filter(file => file.size > MAX_FILE_SIZE)
-        
+
         if (oversizedFiles.length > 0) {
             const fileNames = oversizedFiles.map(f => f.name).join(', ')
             showAlert(`File(s) exceed 1GB limit: ${fileNames}`, 'destructive')

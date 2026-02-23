@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Folder, MoreVertical, Edit2, Trash2, Link2, FolderOpen } from 'lucide-react'
+import { Folder, MoreVertical, Edit2, Trash2, Link2, FolderOpen, Info } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,7 +19,7 @@ const formatFileSize = (bytes) => {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
-export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare }) {
+export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare, onDetails }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -44,7 +44,7 @@ export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare
             <div className="flex items-center gap-1">
               {/* Show folder size */}
               <span className="text-xs text-muted-foreground font-medium">
-                {formatFileSize(folder.totalSize)}
+                {formatFileSize(folder.size)}
               </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -57,6 +57,10 @@ export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDetails?.(folder) }}>
+                    <Info className="mr-2 h-4 w-4" />
+                    Details
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onShare?.(folder) }}>
                     <Link2 className="mr-2 h-4 w-4" />
                     Share

@@ -5,6 +5,7 @@ import { Db, ObjectId } from 'mongodb'
 import File from '../models/fileModel.js'
 import Directory from '../models/directoryModel.js'
 import { sanitizeString } from '../utils/sanitizeInput.js'
+import { updateParentDirectorySize } from '../utils/changeDirectorySize.js'
 
 
 export const sendFile = async (req, res, next) => {
@@ -56,6 +57,10 @@ export const deleteFile = async (req, res, next) => {
         await fileObj.deleteOne()
         //delete from storage
         await rm(path.join(import.meta.dirname, '../storage', filename))
+        //decrement parent dir size
+        await updateParentDirectorySize(fileObj.parentDirId, -fileObj.size).catch(err => {
+            next(err)
+        })
         return res.status(200).json({ message: 'File deleted successfully' })
     } catch (err) {
         console.log(err);
@@ -85,7 +90,7 @@ export const uploadFile = async (req, res, next) => {
         if(filesize > 1000 * 1024 * 1024) { //1gb limit
             res.set('Connection', 'close') // Close connection
             return res.status(413).json({ error: "File size exceeds 1GB limit" });
-        }
+        } 
         const file = await File.create({
             name: filename,
             extension: extension,
@@ -93,13 +98,12 @@ export const uploadFile = async (req, res, next) => {
             parentDirId,
             userId: req.user._id
         })
-
         //actual file write in storage folder
         const filePath = path.join(import.meta.dirname, '../storage', file._id + extension)
         const ws = createWriteStream(filePath)
         let bytesWritten = 0
         let aborted = false
-
+        //abortupload when filesize header is smaller than actual data 
         const abortUpload = async (status, message) => {
             console.log(`Aborting upload: ${message}`)
             if (aborted) return
@@ -109,12 +113,12 @@ export const uploadFile = async (req, res, next) => {
             try {
                 await rm(filePath, { force: true })
             } catch (cleanupErr) {
-                console.log('Cleanup error:', cleanupErr.message)
+                next(cleanupErr)
             }
             try {
                 await file.deleteOne()
             } catch (cleanupErr) {
-                console.log('Cleanup error:', cleanupErr.message)
+                next(cleanupErr)
             }
             res.set('Connection', 'close')
             return res.status(status).json({ error: message })
@@ -131,10 +135,13 @@ export const uploadFile = async (req, res, next) => {
         })
 
         // Handle stream completion
-        req.on('end', () => {
-            if (aborted) return
+        req.on('end', async () => {
             ws.end()
-            res.status(201).json({ message: 'File uploaded successfully' })
+            //increment parent dir size
+            await updateParentDirectorySize(parentDirId, filesize).catch(err => {
+                next(err)
+            })
+            return res.status(201).json({ message: 'File uploaded successfully', fileId: file._id })
         })
 
         req.on('error', (err) => {

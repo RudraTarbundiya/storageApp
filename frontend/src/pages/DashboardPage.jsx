@@ -10,6 +10,7 @@ import BreadcrumbNav from '@/components/BreadcrumbNav'
 import ShareDialog from '@/components/ShareDialog'
 import FilePreviewModal from '@/components/FilePreviewModal'
 import FileDetailsModal from '@/components/FileDetailsModal'
+import FolderDetailsModal from '@/components/FolderDetailsModal'
 import { useFileManager, usePreview } from '@/context'
 import { fileAPI } from '@/lib/api'
 
@@ -71,9 +72,18 @@ function DashboardContent() {
   const [showDetailsModal, setShowDetailsModal] = React.useState(false)
   const [detailsFile, setDetailsFile] = React.useState(null)
 
+  // Folder details modal state
+  const [showFolderDetailsModal, setShowFolderDetailsModal] = React.useState(false)
+  const [detailsFolder, setDetailsFolder] = React.useState(null)
+
   const handleShowDetails = (file) => {
     setDetailsFile(file)
     setShowDetailsModal(true)
+  }
+
+  const handleShowFolderDetails = (folder) => {
+    setDetailsFolder(folder)
+    setShowFolderDetailsModal(true)
   }
 
   // Preview management
@@ -166,6 +176,7 @@ function DashboardContent() {
                 onRename={(f) => { setRenameItem({ ...f, type: 'folder' }); setNewName(f.name); setShowRenameDialog(true) }}
                 onDelete={(f) => { setDeleteItem({ ...f, type: 'folder' }); setShowDeleteDialog(true) }}
                 onShare={(f) => handleShare(f, 'folder')}
+                onDetails={handleShowFolderDetails}
               />
             ))}
             {filteredFiles.map(file => (
@@ -377,6 +388,12 @@ function DashboardContent() {
         file={detailsFile}
         open={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
+      />
+
+      <FolderDetailsModal
+        folder={detailsFolder}
+        open={showFolderDetailsModal}
+        onClose={() => setShowFolderDetailsModal(false)}
       />
     </div>
   )

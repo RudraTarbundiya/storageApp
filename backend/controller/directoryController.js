@@ -3,6 +3,7 @@ import path from 'path'
 import Directory from '../models/directoryModel.js'
 import File from '../models/fileModel.js'
 import { calculateDirSize, getFileSize } from "../utils/getSize.js";
+import { updateParentDirectorySize } from '../utils/changeDirectorySize.js';
 
 export const getDirectoryById = async (req, res, next) => {
 
@@ -81,7 +82,8 @@ export const createDirectory = async (req, res, next) => {
         await Directory.insertOne({
             name: name,
             userId: req.user._id,
-            parentDirId: parentId
+            parentDirId: parentId,
+            size: 0
         })
         res.status(201).json({ message: 'Directory created' })
     } catch (err) {
@@ -118,9 +120,10 @@ export const deleteDirectory = async (req, res, next) => {
     }
 
     try {
-        const dirObj = await Directory.findOne({ _id: id, userId: req.user._id }, { projection: { _id: 1 } }).lean()
+        const dirObj = await Directory.findOne(
+            { _id: id, userId: req.user._id }
+        )
         if (!dirObj) return res.status(404).json({ error: 'dir is not found or you are not authorise' })
-
         const { files, directories } = await collectContentDir(id)
         directories.push({ _id: id }) //include the directory itself for deletion
 
@@ -133,7 +136,10 @@ export const deleteDirectory = async (req, res, next) => {
 
         //delete form directory collection
         await Directory.deleteMany({ _id: { $in: directories.map(d => d._id) } })
-
+        //decrement parent dir size
+        await updateParentDirectorySize(dirObj.parentDirId, -dirObj.size).catch(err => {
+            next(err)
+        })
         return res.status(200).json({ message: 'Directory and all its contents deleted' })
     } catch (err) {
         next(err)

@@ -6,6 +6,10 @@ const directorySchema = new Schema({
         required: true,
         trim: true
     },
+    size: {
+        type: Number,
+        default: 0
+    },
     userId: {
         type: Schema.Types.ObjectId,
         required: true,
@@ -29,6 +33,7 @@ const directorySchema = new Schema({
     }
 }, {
     strict: 'throw',
+    timestamps: true
 })
 
 const Directory = model('Directory', directorySchema)
