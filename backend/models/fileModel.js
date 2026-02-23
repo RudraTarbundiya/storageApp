@@ -38,7 +38,8 @@ const fileSchema = new Schema({
         default: false
     }
 }, {
-    strict: 'throw'
+    strict: 'throw',
+    timestamps: true
 })
 
 const File = model('File', fileSchema)

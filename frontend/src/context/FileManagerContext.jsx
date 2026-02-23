@@ -133,6 +133,19 @@ export function FileManagerProvider({ children }) {
     const handleUpload = useCallback(async () => {
         if (uploadFiles.length === 0) return
 
+        // Validate file sizes before upload (1GB limit)
+        const MAX_FILE_SIZE = 1000 * 1024 * 1024 // 1GB
+        const oversizedFiles = uploadFiles.filter(file => file.size > MAX_FILE_SIZE)
+        
+        if (oversizedFiles.length > 0) {
+            const fileNames = oversizedFiles.map(f => f.name).join(', ')
+            showAlert(`File(s) exceed 1GB limit: ${fileNames}`, 'destructive')
+            setShowUploadDialog(false)
+            setUploadFiles([])
+            setUploadProgress({})
+            return
+        }
+
         setIsUploading(true)
         // Initialize progress with status for each file
         const initialProgress = {}

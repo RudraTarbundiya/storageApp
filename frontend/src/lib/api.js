@@ -121,6 +121,12 @@ export const fileAPI = {
     // Keeping XHR for now as it works reliably on HTTP/1.1
     // The streamUploadWithProgress function is available if you switch to HTTP/2 server
 
+    // Validate file size (1GB limit)
+    const MAX_FILE_SIZE = 1000 * 1024 * 1024 // 1GB
+    if (file.size > MAX_FILE_SIZE) {
+      return Promise.reject(new Error('File size exceeds 1GB limit'))
+    }
+
     // Use XHR (works on HTTP/1.1, reliable progress tracking)
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
@@ -135,8 +141,8 @@ export const fileAPI = {
 
       xhr.open('POST', url, true)
       xhr.withCredentials = true
-      xhr.setRequestHeader('Content-Type', 'application/octet-stream')
       xhr.setRequestHeader('filename', file.name)
+      xhr.setRequestHeader('filesize', file.size)
 
       // Progress event
       xhr.upload.onprogress = (event) => {
@@ -149,8 +155,11 @@ export const fileAPI = {
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(JSON.parse(xhr.responseText))
+        } else if (xhr.status === 413) {
+          reject(new Error('File size exceeds 1GB limit'))
         } else {
-          reject(new Error(xhr.responseText || 'Upload failed'))
+          const errorResponse = xhr.responseText ? JSON.parse(xhr.responseText) : {}
+          reject(new Error(errorResponse.error || 'Upload failed'))
         }
       }
 

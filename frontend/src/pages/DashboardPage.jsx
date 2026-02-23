@@ -1,4 +1,4 @@
-import React,{ useState, useEffect } from 'react'
+import React from 'react'
 import { Upload, FolderPlus, Search, Grid3x3, List, Download, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,7 @@ import FolderCard from '@/components/FolderCard'
 import BreadcrumbNav from '@/components/BreadcrumbNav'
 import ShareDialog from '@/components/ShareDialog'
 import FilePreviewModal from '@/components/FilePreviewModal'
+import FileDetailsModal from '@/components/FileDetailsModal'
 import { useFileManager, usePreview } from '@/context'
 import { fileAPI } from '@/lib/api'
 
@@ -65,6 +66,15 @@ function DashboardContent() {
   const [showShareDialog, setShowShareDialog] = React.useState(false)
   const [shareItem, setShareItem] = React.useState(null)
   const [shareType, setShareType] = React.useState('file')
+
+  // Details modal state
+  const [showDetailsModal, setShowDetailsModal] = React.useState(false)
+  const [detailsFile, setDetailsFile] = React.useState(null)
+
+  const handleShowDetails = (file) => {
+    setDetailsFile(file)
+    setShowDetailsModal(true)
+  }
 
   // Preview management
   const { handlePreview } = usePreview()
@@ -168,6 +178,7 @@ function DashboardContent() {
                 onRename={(f) => { setRenameItem({ ...f, type: 'file' }); setNewName(f.name); setShowRenameDialog(true) }}
                 onDelete={(f) => { setDeleteItem({ ...f, type: 'file' }); setShowDeleteDialog(true) }}
                 onShare={(f) => handleShare(f, 'file')}
+                onDetails={handleShowDetails}
               />
             ))}
             {filteredFolders.length === 0 && filteredFiles.length === 0 && (
@@ -361,6 +372,12 @@ function DashboardContent() {
       />
 
       <FilePreviewModal onDownload={handleDownload} />
+
+      <FileDetailsModal
+        file={detailsFile}
+        open={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+      />
     </div>
   )
 }

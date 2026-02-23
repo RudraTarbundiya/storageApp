@@ -1,4 +1,4 @@
-import { WriteStream } from 'fs'
+import { createWriteStream } from 'fs'
 import { rm } from 'fs/promises'
 import path from 'path'
 import { Db, ObjectId } from 'mongodb'
@@ -66,11 +66,15 @@ export const deleteFile = async (req, res, next) => {
 export const uploadFile = async (req, res, next) => {
 
     const parentDirId = req.params.parentDirId || req.user.rootDirId.toString() //if no parent id then upload to root
-    const filename = sanitizeString(req.headers.filename || "untitled") //if no filename in header then untitled
-    const extension = path.extname(filename) || '' // Ensure extension is never undefined
-    console.log({ filename, extension });
-    // Get content-length header for file size
-    const contentLength = parseInt(req.headers['content-length']) || 0
+    
+    // Remove quotes and get clean filename
+    let rawFilename = req.headers.filename || "untitled.txt"
+    const filename = sanitizeString(rawFilename)
+    
+    // Extract extension using regex - matches .ext at end of string (ignoring trailing quotes/spaces)
+    const extensionMatch = filename.match(/\.(\w+)(?:["'\s]*)$/)
+    const extension = extensionMatch ? `.${extensionMatch[1]}` : ''
+    const filesize = parseInt(req.headers['filesize']) || 0
 
     try {
         // Check if parent directory exists
@@ -78,38 +82,69 @@ export const uploadFile = async (req, res, next) => {
         if (!parentDirData) {
             return res.status(404).json({ error: "Parent directory not found!" });
         }
-
-        const result = await File.create({
+        if(contentLength > 1000 * 1024 * 1024) { //1gb limit
+            res.set('Connection', 'close') // Close connection
+            return res.status(413).json({ error: "File size exceeds 1GB limit" });
+        }
+        const file = await File.create({
             name: filename,
             extension: extension,
-            size: contentLength,
+            size: filesize,
             parentDirId,
             userId: req.user._id
         })
 
         //actual file write in storage folder
-        const filePath = path.join(import.meta.dirname, '../storage', result._id + extension)
-        const ws = WriteStream(filePath)
+        const filePath = path.join(import.meta.dirname, '../storage', file._id + extension)
+        const ws = createWriteStream(filePath)
         let bytesWritten = 0
+        let aborted = false
 
-        req.on('data', (chunk) => {
+        const abortUpload = async (status, message) => {
+            console.log(`Aborting upload: ${message}`)
+            if (aborted) return
+            aborted = true
+            req.destroy()
+            ws.destroy()
+            try {
+                await rm(filePath, { force: true })
+            } catch (cleanupErr) {
+                console.log('Cleanup error:', cleanupErr.message)
+            }
+            try {
+                await file.deleteOne()
+            } catch (cleanupErr) {
+                console.log('Cleanup error:', cleanupErr.message)
+            }
+            res.set('Connection', 'close')
+            return res.status(status).json({ error: message })
+        }
+
+        req.on('data', async (chunk) => {
+            if (aborted) return // If already aborted, ignore further data
             bytesWritten += chunk.length
+            if (filesize > 0 && bytesWritten > filesize) {
+                await abortUpload(413, 'File size exceeds declared filesize')
+            } else {
+                ws.write(chunk)
+            }
         })
-
-        // Pipe request to file immediately
-        req.pipe(ws)
 
         // Handle stream completion
-        req.on('end', async () => {
-            // Update file size with actual bytes written if different from content-length
-            if (bytesWritten > 0 && bytesWritten !== contentLength) {
-                await File.updateOne({ _id: result._id }, { size: bytesWritten })
-            }
-            return res.status(201).json({ message: 'File uploaded successfully' })
+        req.on('end', () => {
+            if (aborted) return
+            ws.end()
+            res.status(201).json({ message: 'File uploaded successfully' })
         })
-        req.on('error', async (err) => {
-            await rm(path.join(import.meta.dirname, '../storage', result._id + extension))
-            await File.deleteOne({ _id: result._id })
+
+        req.on('error', (err) => {
+            console.log("Request error:", err.message)
+            ws.destroy()
+            next(err)
+        })
+
+        ws.on('error', (err) => {
+            console.log("WriteStream error:", err.message)
             next(err)
         })
     } catch (err) {

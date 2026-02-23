@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { MoreVertical, Download, Edit2, Trash2, ExternalLink, Link2, Eye } from 'lucide-react'
+import { MoreVertical, Download, Edit2, Trash2, ExternalLink, Link2, Eye, Info } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { getFileType, getFileIcon, getGradient, formatFileSize } from '@/lib/fileUtils'
 
 
-export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare, onPreview }) {
+export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare, onPreview, onDetails }) {
   const IconComponent = getFileIcon(file.extension)
   const fileType = getFileType(file.extension)
   const isPreviewable = ['image', 'video', 'audio', 'pdf', 'code', 'document'].includes(fileType)
@@ -56,6 +56,10 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onDetails?.(file)}>
+                    <Info className="mr-2 h-4 w-4" />
+                    Details
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onOpen?.(file)}>
                     <ExternalLink className="mr-2 h-4 w-4" />
                     Open in New Tab

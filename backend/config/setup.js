@@ -155,6 +155,14 @@ try {
           userId: {
             bsonType: 'objectId'
           },
+          createdAt: {
+            bsonType: 'date',
+            description: 'Document creation time'
+          },
+          updatedAt: {
+            bsonType: 'date',
+            description: 'Document last update time'
+          },
           sharedWith: {
             bsonType: "array",
             description: "Array of users with permissions",
