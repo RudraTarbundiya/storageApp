@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
+import rateLimit from 'express-rate-limit'
 import connectDB from './config/db.js'
 //importing routes
 import filesRoutes from './routes/filesRoutes.js'
@@ -16,6 +17,47 @@ import checkAuth from './middleware/authMiddlwWare.js'
 import sanitizeRequest from './middleware/sanitizeRequest.js'
 
 await connectDB()
+
+// Rate limiters with different configurations
+// Strict rate limiter for authentication endpoints
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit each IP to 5 requests per windowMs
+    message: 'Too many login attempts, please try again later',
+    standardHeaders: true,
+    legacyHeaders: false,
+    // skip: (req) => process.env.NODE_ENV === 'development', // Skip in development
+})
+
+// General rate limiter for authenticated routes
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests, please try again later',
+    standardHeaders: true,
+    legacyHeaders: false,
+    // skip: (req) => process.env.NODE_ENV === 'development',
+})
+
+// Relaxed rate limiter for public routes
+const publicLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // Limit each IP to 50 requests per windowMs
+    message: 'Too many requests, please try again later',
+    standardHeaders: true,
+    legacyHeaders: false,
+    // skip: (req) => process.env.NODE_ENV === 'development',
+})
+
+// File upload limiter (stricter)
+const uploadLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 20, // Limit each IP to 20 uploads per hour
+    message: 'Too many file uploads, please try again later',
+    standardHeaders: true,
+    legacyHeaders: false,
+    // skip: (req) => process.env.NODE_ENV === 'development',
+})
 
 const app = express()
 
@@ -56,14 +98,15 @@ app.use(cors({
     credentials: true
 }))//enable CORS
 
-app.use('/auth',authRoutes)
-app.use('/admin', checkAuth, adminRoutes)//admin,owner only to show files
-app.use('/users',checkAuth, usersRouteres)//manager,admin,owner only
-app.use('/directory', checkAuth, directoryRoutes)
-app.use('/file', checkAuth, filesRoutes)
-app.use('/gd',checkAuth, gdRoutes)
-app.use('/shared',checkAuth,sharedRoutes)
-app.use('/public',publicRoutes)
+// Apply rate limiters to routes
+app.use('/auth', authLimiter, authRoutes) // Strict rate limiting for auth
+app.use('/admin', checkAuth, generalLimiter, adminRoutes) //admin,owner only to show files
+app.use('/users', checkAuth, generalLimiter, usersRouteres) //manager,admin,owner only
+app.use('/directory', checkAuth, generalLimiter, directoryRoutes)
+app.use('/file', checkAuth, uploadLimiter, filesRoutes) // Stricter for file operations
+app.use('/gd', checkAuth, generalLimiter, gdRoutes)
+app.use('/shared', checkAuth, generalLimiter, sharedRoutes)
+app.use('/public', publicLimiter, publicRoutes) // Relaxed for public routes
 
 //this is global middleware for eroor handling
 app.use((err, req, res, next) => {
