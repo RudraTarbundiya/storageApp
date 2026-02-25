@@ -47,7 +47,7 @@ export const shareFile = async (req, res, next) => {
 
         // Add to sharedWith array (avoid duplicates)
         if (!file.sharedWith.some(share => share.user.toString() === shareUserId)) {
-            file.sharedWith.push({ user: shareUserId, permission })
+            file.sharedWith.push({ user: shareUserId, permission: permission || 'view' })
             await file.save()
         }
 
@@ -252,6 +252,8 @@ export const getMySharedItems = async (req, res, next) => {
             'sharedWith.0': { $exists: true } // Has at least one share
         })
             .populate('sharedWith.user', 'name email picture')
+            .select('-__v')
+            .lean()
 
         // Get all directories shared by current user
         const allSharedDirectories = await Directory.find({
@@ -259,6 +261,8 @@ export const getMySharedItems = async (req, res, next) => {
             'sharedWith.0': { $exists: true } // Has at least one share
         })
             .populate('sharedWith.user', 'name email picture')
+            .select('-__v')
+            .lean()
 
         // Get IDs of all shared directories
         const sharedDirIds = allSharedDirectories.map(dir => dir._id.toString())

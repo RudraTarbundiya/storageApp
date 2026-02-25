@@ -2,7 +2,6 @@ import { rm } from 'fs/promises'
 import path from 'path'
 import Directory from '../models/directoryModel.js'
 import File from '../models/fileModel.js'
-import { calculateDirSize, getFileSize } from "../utils/getSize.js";
 import { updateParentDirectorySize } from '../utils/changeDirectorySize.js';
 
 export const getDirectoryById = async (req, res, next) => {
@@ -19,18 +18,8 @@ export const getDirectoryById = async (req, res, next) => {
         const directories = await Directory.find({ parentDirId: _id }, { '__v': 0 })
             .populate('sharedWith.user', 'name email picture')
             .lean()
-
-        // Get file sizes - either from DB or from filesystem
-        const filesWithSizes = await Promise.all(files.map(async (f) => {
-            let size = f.size || 0;
-            // If size is 0 or not stored, get it from filesystem
-            if (!size) {
-                size = await getFileSize(f._id.toString(), f.extension);
-            }
-            return { id: f._id, ...f, size };
-        }));
-
-        // Compute child counts for each directory (files + subdirectories)
+         
+        // Compute child counts for each Subdirectory (files + subdirectories)
         const dirIds = directories.map(d => d._id)
         let fileCounts = []
         let dirCounts = []
@@ -51,20 +40,16 @@ export const getDirectoryById = async (req, res, next) => {
         fileCounts.forEach(fc => dirCountMap.set(fc._id.toString(), (dirCountMap.get(fc._id.toString()) || 0) + fc.count))
         dirCounts.forEach(dc => dirCountMap.set(dc._id.toString(), (dirCountMap.get(dc._id.toString()) || 0) + dc.count))
 
-        // Calculate total size for each directory (in parallel for better performance)
-        const directoriesWithCounts = await Promise.all(directories.map(async (d) => {
-            const totalSize = await calculateDirSize(d._id);
-            return {
-                id: d._id,
-                ...d,
-                itemCount: dirCountMap.get(d._id.toString()) || 0,
-                totalSize
-            };
+        // Add item count and id to directories (size is already stored in MongoDB)
+        const directoriesWithCounts = directories.map(d => ({
+            id: d._id,
+            ...d,
+            itemCount: dirCountMap.get(d._id.toString()) || 0
         }));
 
         return res.status(200).json({
             ...directoryData,
-            files: filesWithSizes,
+            files,
             directories: directoriesWithCounts
         })
     } catch (err) {

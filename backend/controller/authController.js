@@ -61,6 +61,7 @@ export const registerUser = async (req, res, next) => {
         await User.insertOne({
             _id: userId,
             name,
+            maxStorageInBytes : 1 * (1024 ** 3),//1GB default storage
             email,
             password,
             picture: null,
@@ -86,6 +87,7 @@ export const registerUser = async (req, res, next) => {
 
         console.error('Registration error:', err)
         return res.status(500).json({ error: 'Registration failed. Please try again.' })
+        // return res.status(200).json({ err })//temporary response to debug registration errors without crashing the server
     }
 }
 
@@ -160,8 +162,9 @@ export const getUserProfile = (req, res) => {
 }
 
 export const generateOTP = async (req, res, next) => {
-    if (!success) {
-        return res.status(400).json({ error: error.flatten().fieldErrors })
+    const email = req.body.email
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required to generate OTP.' })
     }
     const resData = await sendOtpService(email);
     try {
@@ -211,6 +214,7 @@ export const googlelogin = async (req, res, next) => {
         await User.insertOne({
             _id: userId,
             name,
+            maxStorageInBytes : 1 * (1024 ** 3),//1GB default storage
             email,
             picture,
             rootDirId: rootDirId,

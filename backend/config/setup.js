@@ -43,7 +43,7 @@ try {
             bsonType: 'objectId'
           },
           maxStorageInBytes : {
-            bsonType : 'long'
+            bsonType : ['int', 'long', 'double']
           },
           role: {
             enum: ["user", "admin", "manager", "owner"],

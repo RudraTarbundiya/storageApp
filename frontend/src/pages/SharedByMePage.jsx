@@ -76,7 +76,7 @@ function MySharedFileCard({ file, viewMode, onRemoveShare }) {
                                     </Avatar>
                                     <div className="flex flex-col min-w-0">
                                         <span className="text-xs font-medium truncate">{user.name || user.email}</span>
-                                        <span className="text-[11px] text-muted-foreground truncate">{share.permission === 'edit' ? 'Can edit' : 'Can view'}</span>
+                                        <span className="text-[11px] text-muted-foreground truncate">Can view</span>
                                     </div>
                                 </div>
                                 <Button
@@ -131,8 +131,8 @@ function MySharedFileCard({ file, viewMode, onRemoveShare }) {
                                     <div className="flex flex-col min-w-0">
                                         <span className="text-xs font-medium truncate">{user.name || 'User'}</span>
                                         <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                            {share.permission === 'edit' ? <Pencil className="h-3 w-3 text-blue-500" /> : <Eye className="h-3 w-3 text-slate-500" />}
-                                            <span className="truncate">{share.permission === 'edit' ? 'Can edit' : 'Can view'}</span>
+                                            <Eye className="h-3 w-3 text-slate-500" />
+                                            <span className="truncate">Can view</span>
                                         </div>
                                     </div>
                                 </div>
@@ -185,7 +185,7 @@ function MySharedFolderCard({ folder, viewMode, onRemoveShare }) {
                                     </Avatar>
                                     <div className="flex flex-col min-w-0">
                                         <span className="text-xs font-medium truncate">{user.name || user.email}</span>
-                                        <span className="text-[11px] text-muted-foreground truncate">{share.permission === 'edit' ? 'Can edit' : 'Can view'}</span>
+                                        <span className="text-[11px] text-muted-foreground truncate">Can view</span>
                                     </div>
                                 </div>
                                 <Button
@@ -240,8 +240,8 @@ function MySharedFolderCard({ folder, viewMode, onRemoveShare }) {
                                     <div className="flex flex-col min-w-0">
                                         <span className="text-xs font-medium truncate">{user.name || 'User'}</span>
                                         <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                            {share.permission === 'edit' ? <Pencil className="h-3 w-3 text-blue-500" /> : <Eye className="h-3 w-3 text-slate-500" />}
-                                            <span className="truncate">{share.permission === 'edit' ? 'Can edit' : 'Can view'}</span>
+                                            <Eye className="h-3 w-3 text-slate-500" />
+                                            <span className="truncate">Can view</span>
                                         </div>
                                     </div>
                                 </div>

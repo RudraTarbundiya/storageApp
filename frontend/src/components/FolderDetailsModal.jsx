@@ -84,11 +84,15 @@ export default function FolderDetailsModal({ folder, open, onClose }) {
                                     <p className="text-sm text-muted-foreground">Not shared with anyone</p>
                                 ) : (
                                     <div className="flex flex-wrap gap-1 mt-1">
-                                        {folder.sharedWith.map((entry, i) => (
-                                            <Badge key={i} variant="outline" className="text-xs">
-                                                {entry.email || entry.userId || entry}
-                                            </Badge>
-                                        ))}
+                                        {folder.sharedWith.map((entry, i) => {
+                                            const user = entry.user || {}
+                                            const displayName = user.name || user.email || 'Unknown User'
+                                            return (
+                                                <Badge key={i} variant="outline" className="text-xs">
+                                                    {displayName}
+                                                </Badge>
+                                            )
+                                        })}
                                     </div>
                                 )}
                             </DetailRow>

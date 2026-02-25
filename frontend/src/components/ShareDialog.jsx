@@ -46,7 +46,6 @@ export default function ShareDialog({
     const [searchResults, setSearchResults] = useState([])
     const [searching, setSearching] = useState(false)
     const [searchError, setSearchError] = useState('')
-    const [selectedPermission, setSelectedPermission] = useState('view')
     const [sharingUser, setSharingUser] = useState(null)
     const [sharedUsers, setSharedUsers] = useState([])
     const [removingUser, setRemovingUser] = useState(null)
@@ -74,7 +73,6 @@ export default function ShareDialog({
         setSearchEmail('')
         setSearchResults([])
         setSearchError('')
-        setSelectedPermission('view')
         setLoadingSharedUsers(false)
     }, [item, open])
 
@@ -166,13 +164,13 @@ export default function ShareDialog({
         setSharingUser(user._id)
         try {
             if (type === 'folder') {
-                await sharingAPI.shareDirectory(item._id, user._id, selectedPermission)
+                await sharingAPI.shareDirectory(item._id, user._id, 'view')
             } else {
-                await sharingAPI.shareFile(item._id, user._id, selectedPermission)
+                await sharingAPI.shareFile(item._id, user._id, 'view')
             }
 
             // Add to shared users list
-            setSharedUsers(prev => [...prev, { user, permission: selectedPermission }])
+            setSharedUsers(prev => [...prev, { user, permission: 'view' }])
             setSearchResults(prev => prev.filter(u => u._id !== user._id))
             setSearchEmail('')
             showAlert(`Shared with ${user.name || user.email}!`)
@@ -284,15 +282,8 @@ export default function ShareDialog({
                                             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
                                         )}
                                     </div>
-                                    <select
-                                        value={selectedPermission}
-                                        onChange={(e) => setSelectedPermission(e.target.value)}
-                                        className="h-10 px-3 rounded-md border border-input bg-background text-sm"
-                                    >
-                                        <option value="view">Can view</option>
-                                        <option value="edit">Can edit</option>
-                                    </select>
                                 </div>
+                                <p className="text-xs text-muted-foreground">Users will have view-only access</p>
                             </div>
 
                             {/* Search Results */}
@@ -375,15 +366,8 @@ export default function ShareDialog({
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${share.permission === 'edit'
-                                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                                                            }`}>
-                                                            {share.permission === 'edit' ? (
-                                                                <><Pencil className="h-3 w-3" /> Edit</>
-                                                            ) : (
-                                                                <><Eye className="h-3 w-3" /> View</>
-                                                            )}
+                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                                            <Eye className="h-3 w-3" /> View
                                                         </span>
                                                         <Button
                                                             variant="ghost"

@@ -1,7 +1,6 @@
 import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
-import { calculateDirSize, getFileSize } from "../utils/getSize.js";
 
 // Get all public items owned by the current user
 // Returns directories first (top-level public dirs), then standalone public files
@@ -25,15 +24,13 @@ export const getMyPublicItems = async (req, res, next) => {
             return parentPublicMap.get(d.parentDirId.toString()) !== true; // Parent not public
         });
 
-        // Add size and item count to directories
+        // Add item count to directories (size is already stored in MongoDB)
         const directoriesWithStats = await Promise.all(topLevelPublicDirs.map(async (d) => {
-            const totalSize = await calculateDirSize(d._id);
             const fileCount = await File.countDocuments({ parentDirId: d._id });
             const subDirCount = await Directory.countDocuments({ parentDirId: d._id });
             return {
                 ...d,
-                itemCount: fileCount + subDirCount,
-                totalSize
+                itemCount: fileCount + subDirCount
             };
         }));
 
@@ -53,18 +50,9 @@ export const getMyPublicItems = async (req, res, next) => {
             return fileParentPublicMap.get(f.parentDirId.toString()) !== true; // Parent not public
         });
 
-        // Add file sizes if missing
-        const filesWithSizes = await Promise.all(standalonePublicFiles.map(async (f) => {
-            let size = f.size || 0;
-            if (!size) {
-                size = await getFileSize(f._id.toString(), f.extension);
-            }
-            return { ...f, size };
-        }));
-
         return res.status(200).json({
             directories: directoriesWithStats,
-            files: filesWithSizes
+            files: standalonePublicFiles
         });
     } catch (err) {
         next(err);
@@ -79,16 +67,6 @@ export const getPublicDirData = async (req, res, next) => {
         if (!directoryData) return res.status(404).json({ error: "Directory not found!" });
         const files = await File.find({ parentDirId: _id }, { '__v': 0 }).populate('userId', 'name picture').lean()
         const directories = await Directory.find({ parentDirId: _id }, { '__v': 0 }).populate('userId', 'name picture').lean()
-
-        // Get file sizes - either from DB or from filesystem
-        const filesWithSizes = await Promise.all(files.map(async (f) => {
-            let size = f.size || 0;
-            // If size is 0 or not stored, get it from filesystem
-            if (!size) {
-                size = await getFileSize(f._id.toString(), f.extension);
-            }
-            return { id: f._id, ...f, size };
-        }));
 
         // Compute child counts for each directory (files + subdirectories)
         const dirIds = directories.map(d => d._id)
@@ -111,20 +89,16 @@ export const getPublicDirData = async (req, res, next) => {
         fileCounts.forEach(fc => dirCountMap.set(fc._id.toString(), (dirCountMap.get(fc._id.toString()) || 0) + fc.count))
         dirCounts.forEach(dc => dirCountMap.set(dc._id.toString(), (dirCountMap.get(dc._id.toString()) || 0) + dc.count))
 
-        // Calculate total size for each directory
-        const directoriesWithCounts = await Promise.all(directories.map(async (d) => {
-            const totalSize = await calculateDirSize(d._id);
-            return {
-                id: d._id,
-                ...d,
-                itemCount: dirCountMap.get(d._id.toString()) || 0,
-                totalSize
-            };
+        // Add item count and id to directories (size is already stored in MongoDB)
+        const directoriesWithCounts = directories.map(d => ({
+            id: d._id,
+            ...d,
+            itemCount: dirCountMap.get(d._id.toString()) || 0
         }));
 
         return res.status(200).json({
             ...directoryData,
-            files: filesWithSizes,
+            files,
             directories: directoriesWithCounts
         })
     } catch (err) {
