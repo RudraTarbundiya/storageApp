@@ -22,22 +22,18 @@ const GOOGLE_MIME_TYPE_MAP = {
 
 export const codeToToken = async (req, res, next) => {
     const code = req.body.code
+    const userId = req.user._id;
     try {
-        const sub = await fetchToken(code)
-        res.cookie('sub', sub, {
-            httpOnly: true,
-            signed: true,
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 1000 * 24 * 7//1 week
-        })
+        await fetchToken(code, userId)
         return res.status(200).json({ message: "Token fetched and stored successfully" })
     } catch (error) {
-        next(error)
+        res.status(200).json(error)
+        // next(error)
     }
 }
 
 export const listData = async (req, res, next) => {
-    const userId = req.signedCookies.sub;
+    const userId = req.user._id;
     const folderId = req.query.folderId || 'root';
     const pageToken = req.query.pageToken || null;
     if (!userId) {
@@ -63,15 +59,14 @@ export const listData = async (req, res, next) => {
 
 export const importFromGoogleDrive = async (req, res, next) => {
     try {
-        const googleUserId = req.signedCookies.sub;
+        const userId = req.user._id;
         const { fileId } = req.body;
 
-        if (!googleUserId) {
-            return res.status(401).json({ error: "Google Drive not authorized" });
+        if (!userId) {
+            return res.status(401).json({ error: "User not authenticated" });
         }
 
         // Get authenticated user from session
-        const userId = req.user._id;
         const userRootDirId = req.user.rootDirId;
         if (!userRootDirId) {
             return res.status(404).json({ error: "root directory not found!" });
@@ -90,14 +85,20 @@ export const importFromGoogleDrive = async (req, res, next) => {
 
 
         // Get Google Drive client
-        const drive = await getDriveClient(googleUserId);
+        const drive = await getDriveClient(userId);
 
         // Get file metadata from Google Drive
         const fileMetadata = await drive.files.get({
             fileId: fileId,
             fields: 'id, name, mimeType, size'
         });
+        const fileSize = +fileMetadata.data.size || 0;
 
+        // Check if user has enough storage space
+        const rootDirectory = await Directory.findById(userRootDirId);
+        if (rootDirectory.size + fileSize > req.user.maxStorageInBytes) {
+            return res.status(400).json({ error: "Importing this file would exceed your storage limit" });
+        }
         // Skip folders
         if (fileMetadata.data.mimeType === 'application/vnd.google-apps.folder') {
             return res.status(400).json({ error: "Cannot import folders" });
@@ -134,8 +135,23 @@ export const importFromGoogleDrive = async (req, res, next) => {
             name: originalFileName,
             extension: extension,
             parentDirId: existingGdFolder ? existingGdFolder._id : newGoogleDriveFolder._id,
-            userId: userId
+            userId: userId,
+            size: fileSize
         });
+        //increse the size og GoogleDriveFolder
+        if (existingGdFolder) {
+            existingGdFolder.size += fileSize;
+            await existingGdFolder.save();
+        } else {
+            newGoogleDriveFolder.size = fileSize;
+            await newGoogleDriveFolder.save();
+        }
+
+        // Also increase the size of user's root directory
+        if (rootDirectory) {
+            rootDirectory.size += fileSize
+            await rootDirectory.save();
+        }
 
         try {
             let response;

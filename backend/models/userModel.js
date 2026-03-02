@@ -41,6 +41,24 @@ const userSchema = new Schema({
     isDelete : {
         type : Boolean,
         default : false
+    },
+    googleTokens: {
+        type: new Schema({
+            sub: {
+                type: String,
+            },
+            refreshToken: {
+                type: String,
+            },
+            accessToken: {
+                type: String,
+            },
+            expiryDate: {
+                type: Number, // epoch ms
+            }
+        }, { _id: false }),
+        default: null,
+        select: false
     }
 }, {
     strict: 'throw'

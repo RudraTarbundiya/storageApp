@@ -52,6 +52,30 @@ try {
           isDelete: {
             bsonType: 'bool'
           },
+          googleTokens: {
+            bsonType: ['object', 'null'],
+            description: 'Google OAuth tokens for Drive integration',
+            properties: {
+              sub: {
+                bsonType: 'string',
+                description: 'Google user identifier'
+              },
+              refreshToken: {
+                bsonType: 'string',
+                description: 'Google OAuth refresh token'
+              },
+              accessToken: {
+                bsonType: 'string',
+                description: 'Google OAuth access token'
+              },
+              expiryDate: {
+                bsonType: ['int', 'long', 'double'],
+                description: 'Token expiry date in epoch milliseconds'
+              }
+            },
+            required: ['sub', 'refreshToken', 'expiryDate'],
+            additionalProperties: false
+          },
           __v: {
             bsonType: 'int'
           }

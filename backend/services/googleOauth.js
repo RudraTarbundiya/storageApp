@@ -1,6 +1,6 @@
 import { OAuth2Client } from 'google-auth-library'
 import { google } from 'googleapis'
-import GoogleToken from '../models/googleTokenModel.js'
+import User from '../models/userModel.js'
 
 
 export const verifyIdTokenAndGetUser = async (idToken) => {
@@ -18,7 +18,7 @@ export const verifyIdTokenAndGetUser = async (idToken) => {
 }
 
 //for explicit oauth flow
-export default async function fetchToken(code) {
+export default async function fetchToken(code, userId) {
     const client = new google.auth.OAuth2({
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -28,36 +28,42 @@ export default async function fetchToken(code) {
     const { tokens } = await client.getToken(code)
     client.setCredentials(tokens);
     const userData = await verifyIdTokenAndGetUser(tokens.id_token);
-    const existingToken = await GoogleToken.findOne({ userId: userData.sub });
-    if (existingToken) {
-        await GoogleToken.updateOne(
-            { userId: userData.sub },
-            {
-                refreshToken: tokens.refresh_token,
-                accessToken: tokens.access_token,
-                expiryDate: tokens.expiry_date,
-            }
-        );
-    } else {
-        await GoogleToken.create({
-            userId: userData.sub,
-            refreshToken: tokens.refresh_token,
-            accessToken: tokens.access_token,
-            expiryDate: tokens.expiry_date,
-        })
+
+    if (!userId) {
+        throw new Error("Authenticated user ID is required to store Google tokens");
     }
 
-    return userData.sub;
+    const user = await User.findById(userId).select("+googleTokens");
+    if (!user) {
+        throw new Error("User not found");
+    }
+    const newUser =await User.findByIdAndUpdate(
+        userId,
+        {
+            $set: {
+                googleTokens: {
+                    sub: userData.sub,
+                    refreshToken: tokens.refresh_token,
+                    accessToken: tokens.access_token,
+                    expiryDate: tokens.expiry_date,
+                }
+            }
+        },
+        { new: true }
+    );
 };
 
 export async function getDriveClient(userId) {
-    const tokenDoc = await GoogleToken
-        .findOne({ userId })
-        .select("+refreshToken +accessToken");
-    
-    if (!tokenDoc) {
+    const user = await User
+        .findById(userId)
+        .select("+googleTokens");
+
+    if (!user || !user.googleTokens) {
         throw new Error("Google Drive not authorized");
     }
+
+    const { refreshToken, accessToken, expiryDate } = user.googleTokens;
+    const googleTokens = user.googleTokens;
 
     const client = new google.auth.OAuth2({
         clientId: process.env.GOOGLE_CLIENT_ID,
@@ -66,18 +72,24 @@ export async function getDriveClient(userId) {
     });
 
     client.setCredentials({
-        refresh_token: tokenDoc.refreshToken,
-        access_token: tokenDoc.accessToken,
-        expiry_date: tokenDoc.expiryDate,
+        refresh_token: refreshToken,
+        access_token: accessToken,
+        expiry_date: expiryDate,
     });
 
     client.on("tokens", async (tokens) => {
         if (tokens.access_token) {
-            await GoogleToken.updateOne(
-                { userId },
+            await User.findByIdAndUpdate(
+                userId,
                 {
-                    accessToken: tokens.access_token,
-                    expiryDate: tokens.expiry_date,
+                    $set: {
+                        googleTokens: {
+                            sub: googleTokens.sub,
+                            refreshToken: googleTokens.refreshToken,
+                            accessToken: tokens.access_token,
+                            expiryDate: tokens.expiry_date,
+                        }
+                    }
                 }
             );
         }
