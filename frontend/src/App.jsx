@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AuthProvider, AlertProvider, PreviewProvider } from '@/context'
 import LoginPage from '@/pages/LoginPage'
@@ -8,7 +8,6 @@ import GoogleDrivePage from '@/pages/GoogleDrivePage'
 import UsersPage from '@/pages/UsersPage'
 import ProfilePage from '@/pages/ProfilePage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
-import LandingPage from '@/pages/LandingPage'
 import PublicSharePage from '@/pages/PublicSharePage'
 import SharedWithMePage from '@/pages/SharedWithMePage'
 import SharedByMePage from '@/pages/SharedByMePage'
@@ -24,7 +23,7 @@ function App() {
           <PreviewProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />

@@ -28,11 +28,6 @@ const formatStorage = (bytes) => {
 const getMenuItems = (userRole) => {
   const items = [
     {
-      title: 'Landing Page',
-      icon: Globe,
-      path: '/',
-    },
-    {
       title: 'My Files',
       icon: Home,
       path: '/dashboard',
