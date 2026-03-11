@@ -12,7 +12,6 @@ import FilePreviewModal from '@/components/FilePreviewModal'
 import FileDetailsModal from '@/components/FileDetailsModal'
 import FolderDetailsModal from '@/components/FolderDetailsModal'
 import { useFileManager, usePreview, useAuth } from '@/context'
-import { fileAPI } from '@/lib/api'
 
 
 function DashboardContent() {
@@ -62,7 +61,6 @@ function DashboardContent() {
     handleOpenFile,
     // Cancel functions
     cancelFileUpload,
-    cancelAllUploads,
   } = useFileManager()
 
   // Calculate available storage
@@ -103,10 +101,7 @@ function DashboardContent() {
   }
 
   const handlePreviewFile = (file) => {
-    handlePreview(file, {
-      fetcher: (id, signal) => fileAPI.get(id, { signal, responseType: 'blob' }),
-      streamUrl: `http://localhost:4000/file/${file._id}`
-    })
+    handlePreview(file)
   }
 
   const filteredFolders = folders.filter(f =>
@@ -133,7 +128,7 @@ function DashboardContent() {
             <Button 
               onClick={() => setShowUploadDialog(true)}
               disabled={hasNoStorage}
-              title={hasNoStorage ? 'No storage space available' : 'Upload files'}
+              title={hasNoStorage ? 'No storage space available' : 'Upload file'}
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload
@@ -216,21 +211,23 @@ function DashboardContent() {
       <Dialog open={showUploadDialog} onOpenChange={(open) => { if (!isUploading) setShowUploadDialog(open) }}>
         <DialogContent className="w-[94vw] sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Upload Files</DialogTitle>
+            <DialogTitle>Upload File</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="file">Select Files</Label>
+              <Label htmlFor="file">Select File</Label>
               <Input
                 id="file"
                 type="file"
-                multiple
-                onChange={(e) => setUploadFiles(Array.from(e.target.files))}
+                onChange={(e) => {
+                  const selectedFile = e.target.files?.[0]
+                  setUploadFiles(selectedFile ? [selectedFile] : [])
+                }}
                 className="mt-2"
                 disabled={isUploading}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Files are uploaded in parallel (3 at a time) for faster performance
+                Only one file can be uploaded at a time
               </p>
               {availableStorage > 0 && (
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">

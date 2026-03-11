@@ -55,6 +55,7 @@ const FileManagerContext = createContext({
 export function FileManagerProvider({ children }) {
     const { showAlert } = useAlert()
     const { user } = useAuth()
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
 
     // Main state
     const [files, setFiles] = useState([])
@@ -125,11 +126,14 @@ export function FileManagerProvider({ children }) {
         }
     }, [])
 
-    // Store cancel functions for uploads
-    const [uploadCancelFns, setUploadCancelFns] = useState({ cancelUpload: null, cancelAll: null })
+    // Store abort controller for the current upload
+    const [uploadAbortController, setUploadAbortController] = useState(null)
 
     const handleUpload = useCallback(async () => {
         if (uploadFiles.length === 0) return
+        if (isUploading) return
+
+        const selectedFile = uploadFiles[0]
 
         // Calculate available storage
         const maxStorage = user?.maxStorage || 3 * 1024 * 1024 * 1024
@@ -144,13 +148,10 @@ export function FileManagerProvider({ children }) {
             return
         }
 
-        // Calculate total size of files to upload
-        const totalUploadSize = uploadFiles.reduce((acc, file) => acc + file.size, 0)
-
-        // Check if total upload size exceeds available storage
-        if (totalUploadSize > availableStorage) {
+        // Check if selected file size exceeds available storage
+        if (selectedFile.size > availableStorage) {
             showAlert(
-                `Upload size (${(totalUploadSize / 1024 / 1024).toFixed(2)} MB) exceeds available storage (${(availableStorage / 1024 / 1024).toFixed(2)} MB)`,
+                `Upload size (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB) exceeds available storage (${(availableStorage / 1024 / 1024).toFixed(2)} MB)`,
                 'destructive'
             )
             setShowUploadDialog(false)
@@ -159,92 +160,67 @@ export function FileManagerProvider({ children }) {
             return
         }
 
-        // Validate individual file sizes (1GB limit per file)
-        const MAX_FILE_SIZE = 1000 * 1024 * 1024 // 1GB
-        const oversizedFiles = uploadFiles.filter(file => file.size > MAX_FILE_SIZE)
-
-        if (oversizedFiles.length > 0) {
-            const fileNames = oversizedFiles.map(f => f.name).join(', ')
-            showAlert(`File(s) exceed 1GB limit: ${fileNames}`, 'destructive')
-            setShowUploadDialog(false)
-            setUploadFiles([])
-            setUploadProgress({})
-            return
-        }
-
         setIsUploading(true)
-        // Initialize progress with status for each file
-        const initialProgress = {}
-        uploadFiles.forEach(file => {
-            initialProgress[file.name] = { percent: 0, status: 'pending' }
+        setUploadProgress({
+            [selectedFile.name]: { percent: 0, status: 'uploading' }
         })
-        setUploadProgress(initialProgress)
+
+        const abortController = new AbortController()
+        setUploadAbortController(abortController)
 
         try {
-            // Use parallel uploads for better performance (max 3 concurrent)
-            const uploadResult = await fileAPI.uploadMultipleParallel(
-                uploadFiles,
+            await fileAPI.uploadWithProgress(
+                selectedFile,
                 currentFolder,
-                (fileName, percent, status) => {
+                (percent) => {
                     setUploadProgress(prev => ({
                         ...prev,
-                        [fileName]: { percent, status }
+                        [selectedFile.name]: { percent, status: 'uploading' }
                     }))
                 },
-                (completed, total) => {
-                    // Optional: track overall progress
-                },
-                // onStart callback - receive cancel functions immediately
-                (cancelFns) => {
-                    setUploadCancelFns({
-                        cancelUpload: cancelFns.cancelUpload,
-                        cancelAll: cancelFns.cancelAll
-                    })
-                }
+                abortController.signal
             )
 
-            const { results } = uploadResult
-            const successCount = results.filter(r => r.success).length
-            const failCount = results.filter(r => !r.success && r.status !== 'cancelled').length
-            const cancelledCount = results.filter(r => r.status === 'cancelled').length
-
-            if (failCount === 0 && cancelledCount === 0) {
-                showAlert(`${successCount} file(s) uploaded successfully`)
-            } else if (cancelledCount > 0) {
-                showAlert(`${successCount} uploaded, ${cancelledCount} cancelled`, 'warning')
-            } else {
-                showAlert(`${successCount} succeeded, ${failCount} failed`, 'destructive')
-            }
+            setUploadProgress({
+                [selectedFile.name]: { percent: 100, status: 'completed' }
+            })
+            showAlert('File uploaded successfully')
 
             setShowUploadDialog(false)
             setUploadFiles([])
             setUploadProgress({})
-            setUploadCancelFns({ cancelUpload: null, cancelAll: null })
             fetchDirectory()
         } catch (error) {
-            showAlert('Upload failed', 'destructive')
+            if (error?.message === 'Upload cancelled') {
+                setUploadProgress({
+                    [selectedFile.name]: { percent: 0, status: 'cancelled' }
+                })
+                showAlert('Upload cancelled', 'warning')
+            } else if (error?.message === 'Another file upload is already in progress') {
+                showAlert('Another upload is already in progress', 'warning')
+            } else {
+                setUploadProgress({
+                    [selectedFile.name]: { percent: 0, status: 'failed' }
+                })
+                showAlert('Upload failed', 'destructive')
+            }
         } finally {
+            setUploadAbortController(null)
             setIsUploading(false)
         }
-    }, [uploadFiles, currentFolder, showAlert, fetchDirectory, user, totalStorageUsed])
+    }, [uploadFiles, currentFolder, showAlert, fetchDirectory, user, totalStorageUsed, isUploading])
 
     // Cancel a single file upload
     const cancelFileUpload = useCallback((fileName) => {
-        if (uploadCancelFns.cancelUpload) {
-            uploadCancelFns.cancelUpload(fileName)
+        const selectedFile = uploadFiles[0]
+        if (uploadAbortController && selectedFile && selectedFile.name === fileName) {
+            uploadAbortController.abort()
             setUploadProgress(prev => ({
                 ...prev,
                 [fileName]: { percent: 0, status: 'cancelled' }
             }))
         }
-    }, [uploadCancelFns])
-
-    // Cancel all uploads
-    const cancelAllUploads = useCallback(() => {
-        if (uploadCancelFns.cancelAll) {
-            uploadCancelFns.cancelAll()
-        }
-    }, [uploadCancelFns])
+    }, [uploadAbortController, uploadFiles])
 
     const handleCreateFolder = useCallback(async () => {
         const safeFolderName = sanitizeInput(newFolderName).trim()
@@ -297,39 +273,24 @@ export function FileManagerProvider({ children }) {
         }
     }, [deleteItem, showAlert, fetchDirectory])
 
-    const handleDownload = useCallback(async (file) => {
+    const handleDownload = useCallback((file) => {
         try {
-            const response = await fileAPI.get(file._id)
-            const url = window.URL.createObjectURL(response.data)
-            const link = document.createElement('a')
-            link.href = url
-            link.download = file.name
-            link.click()
-            window.URL.revokeObjectURL(url)
+            const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
+            const downloadUrl = `${apiBaseUrl}/file/${file._id}?action=download`
+            window.open(downloadUrl, '_blank')
         } catch (error) {
             showAlert('Download failed', 'destructive')
         }
     }, [showAlert])
 
-    const handleOpenFile = useCallback(async (file) => {
+    const handleOpenFile = useCallback((file) => {
         try {
-            // Check file type for streaming vs blob download
-            const ext = (file.extension || '').toLowerCase().replace('.', '')
-            const streamableExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'aac', 'flac', 'm4a']
-
-            if (streamableExts.includes(ext)) {
-                // For video/audio, open the streaming URL directly (more efficient)
-                window.open(`http://localhost:4000/file/${file._id}`, '_blank')
-            } else {
-                // For other files, download blob and open
-                const response = await fileAPI.get(file._id)
-                const url = window.URL.createObjectURL(response.data)
-                window.open(url, '_blank')
-            }
+            // Open backend endpoint directly so redirect to pre-signed URL happens via navigation, not XHR.
+            window.open(`${apiBaseUrl}/file/${file._id}`, '_blank')
         } catch (error) {
             showAlert('Failed to open file', 'destructive')
         }
-    }, [showAlert])
+    }, [apiBaseUrl, showAlert])
 
     const value = {
         // State
@@ -380,7 +341,6 @@ export function FileManagerProvider({ children }) {
         handleOpenFile,
         // Upload cancel functions
         cancelFileUpload,
-        cancelAllUploads,
     }
 
     return (

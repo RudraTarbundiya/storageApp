@@ -1,6 +1,6 @@
-import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
+import { makeSignedUrl } from "../services/s3.service.js";
 
 // Get all public items owned by the current user
 // Returns directories first (top-level public dirs), then standalone public files
@@ -108,57 +108,20 @@ export const getPublicDirData = async (req, res, next) => {
 
 export const sendPublicFile = async (req, res, next) => {
     const id = req.params.id
-    const fileobj = await File.findById(id).populate('userId', 'name picture').lean()
-    if (!fileobj) return res.status(404).send({ error: 'File not found!' })
-
-    const filePath = path.join(import.meta.dirname, '..', 'storage', id + (fileobj.extension || ''))
-
-    // Set CORS headers for streaming with credentials
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:5175')
-    res.setHeader('Access-Control-Allow-Credentials', 'true')
-    res.setHeader('Accept-Ranges', 'bytes')
-
-    // Set content type based on extension for proper streaming
-    const mimeTypes = {
-        '.mp4': 'video/mp4',
-        '.webm': 'video/webm',
-        '.ogg': 'video/ogg',
-        '.mov': 'video/quicktime',
-        '.avi': 'video/x-msvideo',
-        '.mkv': 'video/x-matroska',
-        '.mp3': 'audio/mpeg',
-        '.wav': 'audio/wav',
-        '.aac': 'audio/aac',
-        '.flac': 'audio/flac',
-        '.m4a': 'audio/mp4',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
-        '.svg': 'image/svg+xml',
-        '.pdf': 'application/pdf'
-    }
-    const ext = (fileobj.extension || '').toLowerCase()
-    if (mimeTypes[ext]) {
-        res.setHeader('Content-Type', mimeTypes[ext])
-    }
-
-    // Set Content-Disposition header with filename for the frontend to extract
-    const encodedFilename = encodeURIComponent(fileobj.name)
-    res.setHeader('Content-Disposition', `inline; filename="${encodedFilename}"`)
-    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type')
-
-    if (req.query.action === 'download') {
-        res.download(filePath, fileobj.name)
-        return
-    }
-    res.sendFile(filePath, (err) => {
-        // Ignore aborted connections (client closed before file finished sending)
-        if (err && err.code !== 'ECONNABORTED' && !res.headersSent) {
-            next(err)
+    try {
+        const fileobj = await File.findById(id).lean()
+        if (!fileobj) return res.status(404).send({ error: 'File not found!' })
+        let signUrl
+        if (req.query.action === 'download') {
+            signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name, download: true })
+            return res.status(302).redirect(signUrl)
         }
-    })
+        signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name })
+        // For previews/streaming, redirect to S3
+        return res.status(302).redirect(signUrl)
+    } catch (err) {
+        next(err)
+    }
 }
 
 // Helper function to update public status recursively for both public and unpublic operations

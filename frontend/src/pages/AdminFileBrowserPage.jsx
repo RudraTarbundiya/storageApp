@@ -88,29 +88,18 @@ export default function AdminFileBrowserPage() {
     }
 
     // Download file
-    const handleDownload = async (file) => {
+    const handleDownload = (file) => {
         try {
-            const response = await adminAPI.downloadFile(file._id || file.id)
-            const blob = new Blob([response.data])
-            const url = window.URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = file.name
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            window.URL.revokeObjectURL(url)
-        } catch (err) {
-            showAlert('Failed to download file', 'destructive')
+            const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
+            window.open(`${apiBaseUrl}/admin/file/${file._id || file.id}?action=download`, '_blank')
+        } catch (error) {
+            console.error('Download failed:', error)
         }
     }
 
     // Preview file using centralized logic
     const handlePreviewFile = (file) => {
-        handlePreview(file, {
-            fetcher: (id, signal) => adminAPI.getFile(id, { signal, responseType: 'blob' }),
-            streamUrl: `http://localhost:4000/admin/file/${file._id || file.id}`
-        })
+        handlePreview(file)
     }
 
     if (loading && !currentDir) {

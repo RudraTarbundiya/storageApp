@@ -9,6 +9,7 @@ export function PreviewProvider({ children }) {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [previewText, setPreviewText] = useState('');
     const [previewLoading, setPreviewLoading] = useState(false);
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '');
 
     // Ref for aborting preview requests
     const previewAbortController = useRef(null);
@@ -28,19 +29,20 @@ export function PreviewProvider({ children }) {
         setPreviewText('');
 
         try {
-            // Revoke previous URL if exists (but not for streaming URLs)
-            if (previewUrl && !previewUrl.startsWith('http://localhost')) {
+            // Revoke previous blob URL if exists
+            if (previewUrl && previewUrl.startsWith('blob:')) {
                 URL.revokeObjectURL(previewUrl);
                 setPreviewUrl(null);
             }
 
-            // For video and audio, use direct streaming URL for better performance
-            if (fileType === 'video' || fileType === 'audio') {
-                const streamUrl = fetchConfig.streamUrl || `http://localhost:4000/file/${file._id}`;
-                setPreviewUrl(streamUrl);
+            const directFileUrl = fetchConfig?.streamUrl || `${apiBaseUrl}/file/${file._id}`;
+
+            // For browser-previewable content, use direct URL to avoid XHR->redirect CORS issues.
+            if (fileType === 'image' || fileType === 'video' || fileType === 'audio' || fileType === 'pdf') {
+                setPreviewUrl(directFileUrl);
                 setPreviewLoading(false);
             } else if (fileType === 'document') {
-                const docUrl = fetchConfig.streamUrl || `http://localhost:4000/file/${file._id}`;
+                const docUrl = directFileUrl;
                 const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(docUrl)}&embedded=true`;
                 setPreviewUrl(viewerUrl);
                 setPreviewLoading(false);
@@ -50,7 +52,13 @@ export function PreviewProvider({ children }) {
 
                 // For other file types, fetch using the provided fetcher
                 // fetchConfig.fetcher should return a promise that resolves to { data: blob }
-                const response = await fetchConfig.fetcher(file._id, previewAbortController.current.signal);
+                const response = await fetchConfig?.fetcher?.(file._id, previewAbortController.current.signal);
+
+                if (!response?.data) {
+                    setPreviewText('Preview is not available for this file type. Please download to view.');
+                    setPreviewLoading(false);
+                    return;
+                }
 
                 const blob = response.data;
                 const blobUrl = URL.createObjectURL(blob);
@@ -74,29 +82,17 @@ export function PreviewProvider({ children }) {
     }, [previewUrl]);
 
     const closePreview = useCallback(() => {
-        if (previewAbortController.current) {
-            previewAbortController.current.abort();
-        }
         setPreviewOpen(false);
-        setPreviewLoading(false);
-
-        // Cleanup after a small delay to allow animation
         setTimeout(() => {
-            if (previewUrl && !previewUrl.startsWith('http://localhost')) {
-                URL.revokeObjectURL(previewUrl);
-            }
             setPreviewUrl(null);
             setPreviewFile(null);
-            setPreviewText('');
         }, 200);
-    }, [previewUrl]);
+    }, []);
 
     const value = {
         previewOpen,
         previewFile,
         previewUrl,
-        previewText,
-        previewLoading,
         handlePreview,
         closePreview
     };

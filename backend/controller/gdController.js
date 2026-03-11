@@ -1,10 +1,17 @@
 import fetchToken, { listDriveFiles, getDriveClient } from "../services/googleOauth.js"
 import File from "../models/fileModel.js"
 import Directory from "../models/directoryModel.js"
-import { WriteStream } from 'fs'
 import path from 'path'
-import { rm } from 'fs/promises'
 import mime from 'mime-types'
+import { deleteS3File ,  uploadToS3 } from "../services/s3.service.js"
+
+const streamToBuffer = async (stream) => {
+    const chunks = [];
+    for await (const chunk of stream) {
+        chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+}
 
 // Google Drive special MIME types mapping to export MIME types and extensions
 // These are native Google formats that need to be exported (not downloaded directly)
@@ -130,13 +137,16 @@ export const importFromGoogleDrive = async (req, res, next) => {
             }
         }
 
+        const targetGoogleDriveFolder = existingGdFolder || newGoogleDriveFolder;
+
         // Create file record in database
         const fileRecord = await File.create({
             name: originalFileName,
             extension: extension,
-            parentDirId: existingGdFolder ? existingGdFolder._id : newGoogleDriveFolder._id,
+            parentDirId: targetGoogleDriveFolder._id,
             userId: userId,
-            size: fileSize
+            size: fileSize,
+            isUploading: true
         });
         //increse the size og GoogleDriveFolder
         if (existingGdFolder) {
@@ -151,6 +161,22 @@ export const importFromGoogleDrive = async (req, res, next) => {
         if (rootDirectory) {
             rootDirectory.size += fileSize
             await rootDirectory.save();
+        }
+
+        const rollbackImport = async (s3Key) => {
+            const sizeToRollback = fileRecord.size || fileSize;
+            await File.deleteOne({ _id: fileRecord._id }).catch(() => { });
+            if (s3Key) {
+                await deleteS3File(s3Key).catch(() => { });
+            }
+
+            targetGoogleDriveFolder.size = Math.max(0, targetGoogleDriveFolder.size - sizeToRollback);
+            await targetGoogleDriveFolder.save().catch(() => { });
+
+            if (rootDirectory) {
+                rootDirectory.size = Math.max(0, rootDirectory.size - sizeToRollback);
+                await rootDirectory.save().catch(() => { });
+            }
         }
 
         try {
@@ -170,44 +196,54 @@ export const importFromGoogleDrive = async (req, res, next) => {
                 );
             }
 
-            // Save to storage
-            const storagePath = path.join(import.meta.dirname, '../storage', fileRecord._id + extension);
-            const writeStream = WriteStream(storagePath);
+            const s3Key = fileRecord._id + extension;
+            const contentType = googleFormatInfo?.exportMimeType || fileMimeType || 'application/octet-stream';
+            const responseContentLength = Number(response?.headers?.['content-length']) || 0;
+            const knownContentLength = responseContentLength > 0 ? responseContentLength : fileSize;
 
-            response.data.pipe(writeStream);
-
-            // Handle write completion
-            writeStream.on('finish', () => {
-                return res.status(201).json({
-                    message: 'File imported successfully from Google Drive',
-                    file: {
-                        _id: fileRecord._id,
-                        name: originalFileName,
-                        extension: extension
-                    }
+            // Stream downloaded bytes directly to S3 instead of writing local temp files.
+            if (knownContentLength > 0) {
+                await uploadToS3({
+                    key: s3Key,
+                    body: response.data,
+                    contentType: contentType,
+                    contentLength: knownContentLength
                 });
-            });
+            } else {
+                // Some Google export streams do not provide size; buffer once to provide deterministic length.
+                const bufferedData = await streamToBuffer(response.data);
+                await uploadToS3({
+                    key: s3Key,
+                    body: bufferedData,
+                    contentType: contentType,
+                    contentLength: bufferedData.length
+                });
+                fileRecord.size = bufferedData.length;
+                await fileRecord.save();
 
-            // Handle errors
-            writeStream.on('error', async (err) => {
-                console.error('Write stream error:', err);
-                await rm(storagePath).catch(() => { });
-                await File.deleteOne({ _id: fileRecord._id });
-                next(err);
-            });
+                targetGoogleDriveFolder.size += bufferedData.length;
+                await targetGoogleDriveFolder.save();
 
-            response.data.on('error', async (err) => {
-                console.error('Download error:', err);
-                await rm(storagePath).catch(() => { });
-                await File.deleteOne({ _id: fileRecord._id });
-                next(err);
+                if (rootDirectory) {
+                    rootDirectory.size += bufferedData.length;
+                    await rootDirectory.save();
+                }
+            }
+            fileRecord.isUploading = false;
+            await fileRecord.save();
+
+            return res.status(201).json({
+                message: 'File imported successfully from Google Drive',
+                file: {
+                    _id: fileRecord._id,
+                    name: originalFileName,
+                    extension: extension
+                }
             });
 
         } catch (err) {
             // Clean up on error
-            await File.deleteOne({ _id: fileRecord._id });
-            const storagePath = path.join(import.meta.dirname, '../storage', fileRecord._id + extension);
-            await rm(storagePath).catch(() => { });
+            await rollbackImport(fileRecord._id + extension);
             next(err);
         }
 

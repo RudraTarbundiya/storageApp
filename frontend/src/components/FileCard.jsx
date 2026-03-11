@@ -16,7 +16,7 @@ import { getFileType, getFileIcon, getGradient, formatFileSize } from '@/lib/fil
 export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare, onPreview, onDetails }) {
   const IconComponent = getFileIcon(file.extension)
   const fileType = getFileType(file.extension)
-  const isPreviewable = ['image', 'video', 'audio', 'pdf', 'code', 'document'].includes(fileType)
+  const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
 
   return (
     <motion.div

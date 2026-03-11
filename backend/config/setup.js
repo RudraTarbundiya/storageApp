@@ -227,6 +227,9 @@ try {
           isPublic: {
             bsonType: 'bool'
           },
+          isUploading: {
+            bsonType: 'bool'
+          },
           __v: {
             bsonType: 'int'
           }

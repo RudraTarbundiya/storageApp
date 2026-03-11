@@ -40,6 +40,6 @@ async function createSessionIndex() {
 //this is the index creation for redis search
 //1)by redis-cli command --> FT.CREATE sessionIdx ON HASH PREFIX 1 session: SCHEMA userId TAG SORTABLE 
 //2) Call once at app startup by nodejs
-await createSessionIndex();
+// await createSessionIndex();
 
 export default redisClient;

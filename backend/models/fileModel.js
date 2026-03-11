@@ -36,6 +36,9 @@ const fileSchema = new Schema({
     isPublic: {
         type: Boolean,
         default: false
+    },isUploading: {
+        type: Boolean,
+        default: true
     }
 }, {
     strict: 'throw',

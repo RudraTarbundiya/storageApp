@@ -1,8 +1,7 @@
-import { rm } from 'fs/promises'
-import path from 'path'
 import Directory from '../models/directoryModel.js'
 import File from '../models/fileModel.js'
 import { updateParentDirectorySize } from '../utils/changeDirectorySize.js';
+import { deleteS3Files } from '../services/s3.service.js';
 
 export const getDirectoryById = async (req, res, next) => {
 
@@ -113,9 +112,9 @@ export const deleteDirectory = async (req, res, next) => {
         directories.push({ _id: id }) //include the directory itself for deletion
 
         //delete form actual storage folder
-        for (const file of files) {
-            await rm(path.join(import.meta.dirname, '../storage', file._id.toString() + file.extension))
-        }
+        const keys = files.map(f=>({Key: f._id.toString() + f.extension}))
+        console.log(keys)
+        await deleteS3Files(keys)
         //delete form filecollection 
         await File.deleteMany({ _id: { $in: files.map(f => f._id) } })
 

@@ -2,7 +2,7 @@ import express from 'express'
 
 import idCheck from '../middleware/idCheckMIddleware.js'
 
-import { deleteFile, renameFile, sendFile, uploadFile } from '../controller/fileController.js'
+import { deleteFile, initateUpload, renameFile, sendFile, completeUpload } from '../controller/fileController.js'
 
 const router = express.Router()
 
@@ -15,6 +15,7 @@ router.patch('/:id', renameFile)
 
 router.delete('/:id', deleteFile)
 
-router.post(['/', '/:parentDirId'], uploadFile)
+router.post(['/upload/init', '/upload/init/:parentDirId'], initateUpload)
+router.post('/upload/complete/:fileId', completeUpload)
 
 export default router

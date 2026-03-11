@@ -328,24 +328,13 @@ export default function SharedWithMePage() {
 
 
     const handlePreviewFile = (file) => {
-        handlePreview(file, {
-            fetcher: (id, signal) => sharingAPI.getSharedFile(id, { signal, responseType: 'blob' }),
-            streamUrl: `http://localhost:4000/shared/file/${file._id}`
-        })
+        handlePreview(file)
     }
 
-    const handleDownload = async (file) => {
+    const handleDownload = (file) => {
         try {
-            const response = await sharingAPI.getSharedFile(file._id)
-            const url = URL.createObjectURL(response.data)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = file.name
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url)
-            showAlert('File downloaded successfully')
+            const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
+            window.open(`${apiBaseUrl}/shared/file/${file._id}?action=download`, '_blank')
         } catch (error) {
             showAlert('Failed to download file', 'destructive')
         }

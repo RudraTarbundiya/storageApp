@@ -1,4 +1,3 @@
-import { createWriteStream } from 'fs'
 import { rm } from 'fs/promises'
 import path from 'path'
 import { Db, ObjectId } from 'mongodb'
@@ -6,6 +5,7 @@ import File from '../models/fileModel.js'
 import Directory from '../models/directoryModel.js'
 import { sanitizeString } from '../utils/sanitizeInput.js'
 import { updateParentDirectorySize } from '../utils/changeDirectorySize.js'
+import { deleteS3File, getFileMetadata, makeSignedUrl } from '../services/s3.service.js'
 
 
 export const sendFile = async (req, res, next) => {
@@ -13,17 +13,19 @@ export const sendFile = async (req, res, next) => {
     const fileobj = await File.findOne({ _id: id, userId: req.user._id }).lean()
     if (!fileobj) return res.status(404).send({ error: 'File not found and or you do not have access to it!' })
 
-    const filePath = path.join(import.meta.dirname, '..', 'storage', id + (fileobj.extension || ''))
-    if (req.query.action === 'download') {
-        res.download(filePath, fileobj.name)
-        return
-    }
+    try {
+        let signUrl
 
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            next(err)
+        if (req.query.action === 'download') {
+            signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name , download: true })
+            return res.status(302).redirect(signUrl)
         }
-    })
+        signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name })
+        // For previews/streaming, redirect to S3
+        return res.status(302).redirect(signUrl)
+    } catch (err) {
+        next(err)
+    }
 }
 
 export const renameFile = async (req, res, next) => {
@@ -52,11 +54,10 @@ export const deleteFile = async (req, res, next) => {
         if (!fileObj) {
             return res.status(404).json({ error: "File not found! or you do not have access to it!" });
         }
-
+        //delete from actual s3 bucket
+        await deleteS3File(filename)
         //delete from filedata
         await fileObj.deleteOne()
-        //delete from storage
-        await rm(path.join(import.meta.dirname, '../storage', filename))
         //decrement parent dir size
         await updateParentDirectorySize(fileObj.parentDirId, -fileObj.size).catch(err => {
             next(err)
@@ -68,98 +69,57 @@ export const deleteFile = async (req, res, next) => {
     }
 }
 
-export const uploadFile = async (req, res, next) => {
-
-    const parentDirId = req.params.parentDirId || req.user.rootDirId.toString() //if no parent id then upload to root
-    
-    // Remove quotes and get clean filename
-    let rawFilename = req.headers.filename || "untitled.txt"
-    const filename = sanitizeString(rawFilename)
-    
-    // Extract extension using regex - matches .ext at end of string (ignoring trailing quotes/spaces)
-    const extensionMatch = filename.match(/\.(\w+)(?:["'\s]*)$/)
-    const extension = extensionMatch ? `.${extensionMatch[1]}` : ''
-    const filesize = parseInt(req.headers['filesize']) || 0
-
+export const initateUpload = async (req, res, next) => {
+    const pid = req.params.parentDirId || req.user.rootDirId.toString() //if no parent id then upload to root
+    const filename = sanitizeString(req.body.filename || "untitled")
+    const filesize = parseInt(req.body.filesize) || 0
+    const filetype = req.body.filetype || 'application/octet-stream'
+    const extension = path.extname(filename)
+    console.log("Initiating upload for file:", filename, "with size:", filesize, "bytes");
     try {
-        // Check if parent directory exists
-        const parentDirData = await Directory.findOne({ _id: parentDirId, userId: req.user._id }).lean()
-        if (!parentDirData) {
-            return res.status(404).json({ error: "Parent directory not found!" });
-        }
-        //calculate available storage by checking root directory size and user's max storage limit
-        const rootDirData = await Directory.findOne({ _id: req.user.rootDirId, userId: req.user._id }).select('size')
-        const availableStorage = req.user.maxStorageInBytes - rootDirData.size
+        const parant = await Directory.findOne({ _id: pid, userId: req.user._id }).lean()
+        if (!parant) return res.status(404).json({ error: "Parent directory not found!" })
+
+        const rootDir = await Directory.findOne({ _id: req.user.rootDirId, userId: req.user._id }).select('size')
+        const availableStorage = req.user.maxStorageInBytes - rootDir.size
+
         if (filesize > availableStorage) {
-            res.set('Connection', 'close') // Close connection
-            return res.status(413).json({ error: "Insufficient storage space for this file" });
+            return res.status(507).json({ error: "Insufficient storage space for this file" });
         }
+
         const file = await File.create({
             name: filename,
-            extension: extension,
+            extension,
             size: filesize,
-            parentDirId,
-            userId: req.user._id
+            parentDirId: pid,
+            userId: req.user._id,
+            isUploading: true
         })
-        //actual file write in storage folder
-        const filePath = path.join(import.meta.dirname, '../storage', file._id + extension)
-        const ws = createWriteStream(filePath)
-        let bytesWritten = 0
-        let aborted = false
-        //abortupload when filesize header is smaller than actual data 
-        const abortUpload = async (status, message) => {
-            console.log(`Aborting upload: ${message}`)
-            if (aborted) return
-            aborted = true
-            req.destroy()
-            ws.destroy()
-            try {
-                await rm(filePath, { force: true })
-            } catch (cleanupErr) {
-                next(cleanupErr)
-            }
-            try {
-                await file.deleteOne()
-            } catch (cleanupErr) {
-                next(cleanupErr)
-            }
-            res.set('Connection', 'close')
-            return res.status(status).json({ error: message })
-        }
-
-        req.on('data', async (chunk) => {
-            if (aborted) return // If already aborted, ignore further data
-            bytesWritten += chunk.length
-            if (filesize > 0 && bytesWritten > filesize) {
-                await abortUpload(413, 'File size exceeds declared filesize')
-            } else {
-                ws.write(chunk)
-            }
-        })
-
-        // Handle stream completion
-        req.on('end', async () => {
-            ws.end()
-            //increment parent dir size
-            await updateParentDirectorySize(parentDirId, filesize).catch(err => {
-                next(err)
-            })
-            return res.status(201).json({ message: 'File uploaded successfully', fileId: file._id })
-        })
-
-        req.on('error', (err) => {
-            console.log("Request error:", err.message)
-            ws.destroy()
-            next(err)
-        })
-
-        ws.on('error', (err) => {
-            console.log("WriteStream error:", err.message)
-            next(err)
-        })
+        const key = file._id.toString() + extension
+        const signedUrl = await makeSignedUrl({ key, filetype, method: 'put' })
+        res.status(200).json({ uploadUrl: signedUrl, fileId: file._id })
     } catch (err) {
-        console.log(err);
-        return res.status(200).json( err)
-        // next(err)
+        next(err)
+    }
+}
+
+export const completeUpload = async (req, res, next) => {
+    const fileId = req.params.fileId
+    try {
+        const file = await File.findOne({ _id: fileId, userId: req.user._id })
+        if (!file) return res.status(404).json({ error: "File not found!" })
+        const metadata = await getFileMetadata(fileId + file.extension)
+        if(file.size !== metadata.ContentLength){
+            // File size mismatch, delete the incomplete upload
+            await file.deleteOne()
+            return res.status(400).json({ error: "Uploaded file size does not match the expected size. Please try uploading again." })
+        }
+        file.isUploading = false
+        await file.save()
+        await updateParentDirectorySize(file.parentDirId, file.size)
+        res.status(200).json({ message: "Upload completed" })
+    } catch (err) {
+        await File.deleteOne({ _id: fileId, userId: req.user._id })
+        next(err)
     }
 }
