@@ -19,8 +19,6 @@ import { authAPI, userAPI } from '@/lib/api'
 import { useAuth, useAlert, useFileManager } from '@/context'
 import { sanitizeInput } from '@/lib/utils'
 
-// Storage limit in bytes (3 GB)
-const STORAGE_LIMIT = 3 * 1024 * 1024 * 1024
 
 // Format bytes to human readable
 const formatStorage = (bytes) => {
@@ -53,6 +51,8 @@ export default function ProfilePage() {
     const cooldownTimerRef = useRef(null)
 
     // Storage percentage
+    // Storage limit in bytes (3 GB)
+    const STORAGE_LIMIT = user?.maxStorage || 3 * 1024 * 1024 * 1024
     const storagePercentage = Math.min((totalStorageUsed / STORAGE_LIMIT) * 100, 100)
 
     // Storage color based on usage

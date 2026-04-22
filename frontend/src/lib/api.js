@@ -191,6 +191,7 @@ export const publicAPI = {
 
   // Access public content (no auth required)
   getPublicDirectory: (id) => api.get(`/public/dir/${id}`),
+  getPublicFileInfo: (id) => api.get(`/public/file/${id}?info=1`),
   getPublicFile: (id, config = {}) => api.get(`/public/file/${id}`, { responseType: 'blob', ...config }),
   downloadPublicFile: (id) => api.get(`/public/file/${id}?action=download`, { responseType: 'blob' }),
 }

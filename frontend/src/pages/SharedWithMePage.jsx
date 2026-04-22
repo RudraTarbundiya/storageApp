@@ -246,6 +246,7 @@ function SharedFolderCard({ folder, viewMode, onOpen }) {
 
 export default function SharedWithMePage() {
     const { showAlert } = useAlert()
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
     const [loading, setLoading] = useState(true)
     const [files, setFiles] = useState([])
     const [directories, setDirectories] = useState([])
@@ -328,12 +329,14 @@ export default function SharedWithMePage() {
 
 
     const handlePreviewFile = (file) => {
-        handlePreview(file)
+        handlePreview(file, {
+            fetcher: (id, signal) => sharingAPI.getSharedFile(id, { signal }),
+            streamUrl: `${apiBaseUrl}/shared/file/${file._id}`
+        })
     }
 
     const handleDownload = (file) => {
         try {
-            const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
             window.open(`${apiBaseUrl}/shared/file/${file._id}?action=download`, '_blank')
         } catch (error) {
             showAlert('Failed to download file', 'destructive')

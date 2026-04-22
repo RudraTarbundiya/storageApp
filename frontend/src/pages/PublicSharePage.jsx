@@ -163,6 +163,7 @@ function PublicBreadcrumb({ items, onNavigate }) {
 export default function PublicSharePage() {
     const { type, id } = useParams()
     const navigate = useNavigate()
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
 
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -185,52 +186,11 @@ export default function PublicSharePage() {
 
         try {
             if (type === 'file') {
-                // For single file, fetch file info and prepare for preview
-                const response = await publicAPI.getPublicFile(id)
-                const blobUrl = URL.createObjectURL(response.data)
-
-                // Extract file info from the response headers or use defaults
-                // We'll create a minimal file object for display
-                const contentType = response.headers?.['content-type'] || ''
-                const contentDisposition = response.headers?.['content-disposition'] || ''
-
-                // Try to extract filename from content-disposition
-                let fileName = `file_${id}`
-                let extension = ''
-                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-                if (filenameMatch) {
-                    // Decode the URL-encoded filename
-                    fileName = decodeURIComponent(filenameMatch[1].replace(/['"]/g, ''))
-                }
-
-                // Get extension from content type or filename
-                if (fileName.includes('.')) {
-                    extension = '.' + fileName.split('.').pop()
-                } else if (contentType) {
-                    const extMap = {
-                        'image/jpeg': '.jpg',
-                        'image/png': '.png',
-                        'image/gif': '.gif',
-                        'image/webp': '.webp',
-                        'video/mp4': '.mp4',
-                        'video/webm': '.webm',
-                        'audio/mpeg': '.mp3',
-                        'audio/wav': '.wav',
-                        'application/pdf': '.pdf'
-                    }
-                    extension = extMap[contentType] || ''
-                }
-
-                const fileObj = {
-                    _id: id,
-                    name: fileName,
-                    extension: extension,
-                    size: response.data.size || 0,
-                    blobUrl: blobUrl
-                }
-
+                // Fetch metadata separately so public file pages don't depend on XHR following an S3 redirect.
+                const response = await publicAPI.getPublicFileInfo(id)
+                const fileObj = response.data
                 setSingleFileData(fileObj)
-                setData({ type: 'file', url: blobUrl, id, fileInfo: fileObj })
+                setData({ type: 'file', id, fileInfo: fileObj })
             } else if (type === 'folder') {
                 // For folder, fetch the directory content
                 const targetId = folderId || id
@@ -278,22 +238,14 @@ export default function PublicSharePage() {
     const handlePreviewFile = (file) => {
         handlePreview(file, {
             fetcher: (id, signal) => publicAPI.getPublicFile(id, { signal }),
-            streamUrl: `http://localhost:4000/public/file/${file._id}`
+            streamUrl: `${apiBaseUrl}/public/file/${file._id}`
         })
     }
 
 
     const handleDownloadFile = async (file) => {
         try {
-            const response = await publicAPI.downloadPublicFile(file._id)
-            const url = window.URL.createObjectURL(response.data)
-            const link = document.createElement('a')
-            link.href = url
-            link.download = file.name
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            window.URL.revokeObjectURL(url)
+            window.open(`${apiBaseUrl}/public/file/${file._id}?action=download`, '_blank')
         } catch (err) {
             console.error('Download failed:', err)
         }

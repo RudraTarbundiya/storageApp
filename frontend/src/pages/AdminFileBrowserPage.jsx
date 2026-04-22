@@ -20,6 +20,7 @@ export default function AdminFileBrowserPage() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
     const { showAlert } = useAlert()
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
 
     const userName = searchParams.get('name') || 'User'
 
@@ -90,7 +91,6 @@ export default function AdminFileBrowserPage() {
     // Download file
     const handleDownload = (file) => {
         try {
-            const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000').replace(/\/+$/, '')
             window.open(`${apiBaseUrl}/admin/file/${file._id || file.id}?action=download`, '_blank')
         } catch (error) {
             console.error('Download failed:', error)
@@ -99,7 +99,10 @@ export default function AdminFileBrowserPage() {
 
     // Preview file using centralized logic
     const handlePreviewFile = (file) => {
-        handlePreview(file)
+        handlePreview(file, {
+            fetcher: (id, signal) => adminAPI.getFile(id, { signal }),
+            streamUrl: `${apiBaseUrl}/admin/file/${file._id || file.id}`
+        })
     }
 
     if (loading && !currentDir) {

@@ -111,6 +111,17 @@ export const sendPublicFile = async (req, res, next) => {
     try {
         const fileobj = await File.findById(id).lean()
         if (!fileobj) return res.status(404).send({ error: 'File not found!' })
+        if (req.query.info === '1') {
+            return res.status(200).json({
+                _id: fileobj._id,
+                name: fileobj.name,
+                extension: fileobj.extension,
+                size: fileobj.size,
+                parentDirId: fileobj.parentDirId,
+                userId: fileobj.userId,
+                isPublic: fileobj.isPublic
+            })
+        }
         let signUrl
         if (req.query.action === 'download') {
             signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name, download: true })
