@@ -13,8 +13,8 @@ import { sanitizeInput } from '@/lib/utils'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    email: 'user@example.com',
-    password: 'password123',
+    email: '',
+    password: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

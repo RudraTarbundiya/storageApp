@@ -14,8 +14,8 @@ import { sanitizeInput } from '@/lib/utils'
 export default function RegisterPage() {
   const [step, setStep] = useState(1) // Step 1: Email & Name, Step 2: OTP & Password
   const [formData, setFormData] = useState({
-    name: 'xyz',
-    email: 'user@example.com',
+    name: '',
+    email: '',
     otp: '',
     password: 'password123',
     confirmPassword: 'password123',
