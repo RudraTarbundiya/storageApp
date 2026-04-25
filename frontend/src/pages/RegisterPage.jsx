@@ -14,11 +14,11 @@ import { sanitizeInput } from '@/lib/utils'
 export default function RegisterPage() {
   const [step, setStep] = useState(1) // Step 1: Email & Name, Step 2: OTP & Password
   const [formData, setFormData] = useState({
-    name: 'Tarbundiya Rudra',
-    email: 'rudra@gmail.com',
+    name: 'xyz',
+    email: 'user@example.com',
     otp: '',
-    password: 'sjnipj9isjb',
-    confirmPassword: 'sjnipj9isjb',
+    password: 'password123',
+    confirmPassword: 'password123',
     role: 'user',
     secretKey: '',
   })
