@@ -58,11 +58,15 @@ let isFileUploadInProgress = false
 
 // File API
 export const fileAPI = {
-  initUpload: (filename, filesize, parentDirId = null) => {
+  initUpload: (filename, filesize, fileType, parentDirId = null) => {
     const endpoint = parentDirId ? `/file/upload/init/${parentDirId}` : '/file/upload/init'
     return api.post(
       endpoint,
-      { filename, filesize , filetype: file.type }
+      {
+        filename,
+        filesize,
+        filetype: fileType || 'application/octet-stream',
+      }
     )
   },
 
@@ -91,7 +95,7 @@ export const fileAPI = {
 
       const startUpload = async () => {
         try {
-          const initResponse = await fileAPI.initUpload(file.name, file.size, parentDirId)
+          const initResponse = await fileAPI.initUpload(file.name, file.size, file.type, parentDirId)
           const { uploadUrl, fileId } = initResponse.data || {}
           if (!uploadUrl || !fileId) {
             cleanup()
