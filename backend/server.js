@@ -29,6 +29,11 @@ await connectDB()
 
 const app = express()
 
+if (process.env.NODE_ENV === 'production') {
+    // Render/Netlify sit behind proxies; this ensures secure cookies and IP handling work correctly.
+    app.set('trust proxy', 1)
+}
+
 // Security headers with helmet
 app.use(helmet({
     contentSecurityPolicy: {
@@ -61,8 +66,20 @@ app.use(express.json())//for json parsing newname in rename handler
 
 app.use(sanitizeRequest)//for sanitizing inputs to prevent XSS and injection attacks
 
+const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean)
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true)
+        const normalizedOrigin = origin.replace(/\/$/, '')
+        if (allowedOrigins.includes(normalizedOrigin)) {
+            return callback(null, true)
+        }
+        return callback(new Error('CORS blocked: origin not allowed'))
+    },
     credentials: true
 }))//enable CORS
 

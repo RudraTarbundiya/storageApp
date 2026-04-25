@@ -8,6 +8,19 @@ import redisClient from "../config/redis.js";
 import { deleteAllSession } from "../utils/deleteSessions.js";
 import { changeProfileSchema, loginSchema, registerSchema } from "../validator/authSchema.js";
 
+const sessionMaxAge = 60 * 60 * 1000 * 24 * 7 // 1 week
+
+const getSessionCookieOptions = () => {
+    const isProd = process.env.NODE_ENV === 'production'
+    return {
+        httpOnly: true,
+        signed: true,
+        sameSite: isProd ? 'none' : 'lax',
+        secure: isProd,
+        maxAge: sessionMaxAge,
+    }
+}
+
 export const registerUser = async (req, res, next) => {
     const { name, otp, email, password, role, secretKey } = req.body;
     const { success, error } = registerSchema.safeParse({ name, otp, email, password })
@@ -120,13 +133,7 @@ export const loginUser = async (req, res, next) => {
         const ssnId = crypto.randomUUID()
         await redisClient.hSet(`session:${ssnId}`, { userId: user._id.toString() })
         await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
-        res.cookie('sid', ssnId, {
-            httpOnly: true,
-            signed: true,
-            // sameSite: 'lax',
-            sameSite: 'none',
-            maxAge: 60 * 60 * 1000 * 24 * 7//1 week
-        })
+        res.cookie('sid', ssnId, getSessionCookieOptions())
         return res.status(200).json({ message: 'Login successful', userId: user._id.toString() })
     } catch (error) {
         next(error)
@@ -196,13 +203,7 @@ export const googlelogin = async (req, res, next) => {
             const ssnId = crypto.randomUUID()
             await redisClient.hSet(`session:${ssnId}`, { userId: findUser._id.toString() })
             await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
-            res.cookie('sid', ssnId, {
-                httpOnly: true,
-                signed: true,
-                // sameSite: 'lax',
-                sameSite: 'none',
-                maxAge: 60 * 60 * 1000 * 24 * 7//1 week
-            })
+            res.cookie('sid', ssnId, getSessionCookieOptions())
             return res.status(200).json({ message: "User already exists" })
         }
         session.startTransaction()
@@ -225,13 +226,7 @@ export const googlelogin = async (req, res, next) => {
         const ssnId = crypto.randomUUID()
         await redisClient.hSet(`session:${ssnId}`, { userId: userId.toString() })
         await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
-        res.cookie('sid', ssnId, {
-            httpOnly: true,
-            signed: true,
-            // sameSite: 'lax',
-            sameSite: 'none',
-            maxAge: 60 * 60 * 1000 * 24 * 7//1 week
-        })
+        res.cookie('sid', ssnId, getSessionCookieOptions())
         res.status(201).json({ message: "Google login successful" });
         await session.commitTransaction()
         await session.endSession()
