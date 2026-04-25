@@ -2,10 +2,15 @@ import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, Delete
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const bktName = process.env.AWS_BUCKET_NAME
+const awsRegion = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID || process.env.aws_access_key_id
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || process.env.aws_secret_access_key
+
 const s3Client = new S3Client({
+    region: awsRegion,
     credentials : {
-        accessKeyId: process.env.aws_access_key_id,
-        secretAccessKey: process.env.aws_secret_access_key
+        accessKeyId,
+        secretAccessKey
     },
     requestStreamBufferSize: 64 * 1024,
 })
