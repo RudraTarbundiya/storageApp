@@ -3,7 +3,10 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const bktName = process.env.AWS_BUCKET_NAME
 const s3Client = new S3Client({
-    profile: process.env.AWS_PROFILE,
+    credentials : {
+        accessKeyId: process.env.aws_access_key_id,
+        secretAccessKey: process.env.aws_secret_access_key
+    },
     requestStreamBufferSize: 64 * 1024,
 })
 

@@ -79,8 +79,8 @@ app.use('/public', publicLimiter, publicRoutes) // Relaxed for public routes
 //this is global middleware for eroor handling
 app.use((err, req, res, next) => {
     console.log(err)
-    // return res.status(200).json(err)//for testing
-    return res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
+    return res.status(200).json(err)//for testing
+    // return res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
 })
 
 const PORT = process.env.PORT || 4000

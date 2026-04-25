@@ -21,8 +21,9 @@
     },
     "scripts": {
         "dev": "node --watch --env-file=.env server.js",
-        "start": "node --env-file=.env server.js",
-        "setup": "node --env-file=.env config/setup.js"
+        "start": "node server.js",
+        "setup": "node --env-file=.env config/setup.js",
+        "build": "echo 'No build step required for this project'"
     },
     "overrides": {
         "minimatch": ">=10.2.1",
