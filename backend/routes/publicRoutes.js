@@ -2,7 +2,7 @@ import express from 'express'
 import { getPublicDirData, sendPublicFile, toggleDirectoryPublicStatus, toggleFilePublicStatus, getMyPublicItems } from '../controller/publicController.js';
 import { checkPublicDir, checkPublicFile } from '../middleware/checkPublick.js';
 import checkAuth from '../middleware/authMiddlwWare.js';
-import idCheck from '../middleware/idCheckMIddleware.js';
+import idCheck from '../middleware/idCheckMiddleware.js';
 const router = express.Router()
 
 router.param('id', idCheck)

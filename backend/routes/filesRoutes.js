@@ -1,6 +1,6 @@
 import express from 'express'
 
-import idCheck from '../middleware/idCheckMIddleware.js'
+import idCheck from '../middleware/idCheckMiddleware.js'
 
 import { deleteFile, initateUpload, renameFile, sendFile, completeUpload } from '../controller/fileController.js'
 

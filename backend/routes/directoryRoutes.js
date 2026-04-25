@@ -1,5 +1,5 @@
 import express from 'express'
-import idCheck from '../middleware/idCheckMIddleware.js'
+import idCheck from '../middleware/idCheckMiddleware.js'
 import { createDirectory, deleteDirectory, getDirectoryById, renameDirectorry } from '../controller/directoryController.js'
 const router = express.Router()
 

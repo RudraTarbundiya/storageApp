@@ -2,7 +2,7 @@ import { Router } from "express";
 import { getSharedWithMe, searchUserByEmail, shareDirectory, shareFile, removeShare, getMySharedItems } from "../controller/sharedController.js";
 import checkFileShare, { checkDirectoryShare } from "../middleware/checkShare.js";
 import { getPublicDirData, sendPublicFile } from "../controller/publicController.js";
-import idCheck from '../middleware/idCheckMIddleware.js'
+import idCheck from '../middleware/idCheckMiddleware.js'
 import { id } from "zod/v4/locales";
 const router = Router();
 

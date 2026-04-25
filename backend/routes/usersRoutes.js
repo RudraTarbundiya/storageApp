@@ -1,7 +1,7 @@
 import { Router } from "express";
 import checkAuth, { checkAdmin, checkManager, checkOwner } from "../middleware/authMiddlwWare.js";
 import { changeUserRole, deleteByUserId, deleteByUserIdOwner, getDeletedUsers, getUsers,  logOutByUserId, recoverUserByIdOwner } from "../controller/usersController.js";
-import idCheck from '../middleware/idCheckMIddleware.js'
+import idCheck from '../middleware/idCheckMiddleware.js'
 const router = Router();
 
 router.param('userId', idCheck) 
