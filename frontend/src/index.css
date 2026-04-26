@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -121,7 +122,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Marker Felt', cursive;
     letter-spacing: 0.01em;
   }
 
@@ -131,19 +132,19 @@
   h4,
   h5,
   h6 {
-    font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Marker Felt', cursive;
     letter-spacing: 0.02em;
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Marker Felt', cursive;
     letter-spacing: 0.025em;
   }
 
   .font-body {
-    font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Marker Felt', cursive;
   }
 
   .glass-navy {
