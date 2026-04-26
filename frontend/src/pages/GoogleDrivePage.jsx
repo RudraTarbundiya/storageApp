@@ -172,7 +172,7 @@ export default function GoogleDrivePage() {
             </div>
             <h1 className="text-3xl font-bold mb-4">Connect Google Drive</h1>
             <p className="text-muted-foreground mb-8 max-w-md">
-              Import files from your Google Drive to your cloud storage. Quick, easy, and secure.
+              Import files from your Google Drive to your Storix. Quick, easy, and secure.
             </p>
             <Button size="lg" onClick={handleConnect} className="h-12 px-8">
               <Cloud className="mr-2 h-5 w-5" />
@@ -298,7 +298,7 @@ export default function GoogleDrivePage() {
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to import this file to your cloud storage?
+              Are you sure you want to import this file to your Storix?
             </p>
             {importFile && (
               <div className="mt-4 p-3 bg-secondary rounded-lg flex items-center gap-3">

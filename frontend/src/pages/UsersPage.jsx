@@ -33,8 +33,8 @@ import {
 import { adminAPI, ownerAPI } from '@/lib/api'
 import { useAuth, useAlert } from '@/context'
 
-// Storage limit in bytes (3 GB)
-const STORAGE_LIMIT = 3 * 1024 * 1024 * 1024
+// Storage limit in bytes (1 GB)
+const STORAGE_LIMIT = 1 * 1024 * 1024 * 1024
 
 // Format bytes to human readable
 const formatStorage = (bytes) => {
@@ -328,7 +328,7 @@ export default function UsersPage() {
                 <div className="w-32">
                     <div className="flex items-center justify-between text-xs mb-1">
                         <span className="text-muted-foreground">{formatStorage(user.storageUsed || 0)}</span>
-                        <span className="text-muted-foreground">/ 3 GB</span>
+                        <span className="text-muted-foreground">/ {formatStorage(STORAGE_LIMIT)} ({(((user.storageUsed || 0) / STORAGE_LIMIT) * 100).toFixed(3)}%)</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
                         <div
@@ -506,10 +506,10 @@ export default function UsersPage() {
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
-                                                        <TableHead className="w-[250px]">User</TableHead>
-                                                        <TableHead className="w-[100px]">Status</TableHead>
-                                                        <TableHead className="w-[150px]">Storage</TableHead>
-                                                        <TableHead className="w-[130px]">Role</TableHead>
+                                                        <TableHead className="w-62.5">User</TableHead>
+                                                        <TableHead className="w-25">Status</TableHead>
+                                                        <TableHead className="w-37.5">Storage</TableHead>
+                                                        <TableHead className="w-32.5">Role</TableHead>
                                                         <TableHead>Actions</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
@@ -536,10 +536,10 @@ export default function UsersPage() {
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
-                                                            <TableHead className="w-[250px]">User</TableHead>
-                                                            <TableHead className="w-[100px]">Status</TableHead>
-                                                            <TableHead className="w-[150px]">Storage</TableHead>
-                                                            <TableHead className="w-[130px]">Role</TableHead>
+                                                            <TableHead className="w-62.5">User</TableHead>
+                                                            <TableHead className="w-25">Status</TableHead>
+                                                            <TableHead className="w-37.5">Storage</TableHead>
+                                                            <TableHead className="w-32.5">Role</TableHead>
                                                             <TableHead>Actions</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
@@ -563,10 +563,10 @@ export default function UsersPage() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead className="w-[250px]">User</TableHead>
-                                                <TableHead className="w-[100px]">Status</TableHead>
-                                                <TableHead className="w-[150px]">Storage</TableHead>
-                                                <TableHead className="w-[130px]">Role</TableHead>
+                                                <TableHead className="w-62.5">User</TableHead>
+                                                <TableHead className="w-25">Status</TableHead>
+                                                <TableHead className="w-37.5">Storage</TableHead>
+                                                <TableHead className="w-32.5">Role</TableHead>
                                                 <TableHead>Actions</TableHead>
                                             </TableRow>
                                         </TableHeader>

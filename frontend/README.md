@@ -1,4 +1,4 @@
-# Cloud Storage Frontend
+# Storix Frontend
 
 A professional and modern frontend application for Google Drive storage management.
 

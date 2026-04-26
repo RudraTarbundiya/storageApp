@@ -77,8 +77,8 @@ export default function Header({ user }) {
           )}
 
           <div className="flex items-center gap-2 font-semibold">
-            <img src="/logo.png" alt="Cloud Storage" className="h-8 w-8 rounded-lg" />
-            <span className="hidden sm:inline-block">Cloud Storage</span>
+            <img src="/logo.png" alt="Storix" className="h-8 w-8 rounded-lg" />
+            <span className="hidden sm:inline-block">Storix</span>
           </div>
         </div>
 

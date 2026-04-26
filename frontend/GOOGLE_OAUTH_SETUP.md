@@ -1,6 +1,6 @@
 # Google OAuth Setup Guide
 
-This guide will help you configure Google OAuth for the Cloud Storage application.
+This guide will help you configure Google OAuth for the Storix application.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ This guide will help you configure Google OAuth for the Cloud Storage applicatio
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Click on the project dropdown (top-left)
 3. Click "New Project"
-4. Enter project name (e.g., "Cloud Storage App")
+4. Enter project name (e.g., "Storix App")
 5. Click "Create"
 
 ### 2. Enable Required APIs
@@ -34,7 +34,7 @@ This guide will help you configure Google OAuth for the Cloud Storage applicatio
    - **External** (for public users)
 3. Click "Create"
 4. Fill in the required information:
-   - **App name**: Cloud Storage App
+   - **App name**: Storix App
    - **User support email**: Your email
    - **Developer contact email**: Your email
 5. Click "Save and Continue"
@@ -55,7 +55,7 @@ This guide will help you configure Google OAuth for the Cloud Storage applicatio
 1. Go to "APIs & Services" > "Credentials"
 2. Click "Create Credentials" > "OAuth 2.0 Client ID"
 3. Select application type: **Web application**
-4. Enter a name (e.g., "Cloud Storage Web Client")
+4. Enter a name (e.g., "Storix Web Client")
 5. Add **Authorized JavaScript origins**:
    ```
    http://localhost:5173

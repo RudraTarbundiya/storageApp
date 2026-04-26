@@ -28,7 +28,7 @@ const formatStorage = (bytes) => {
 const getMenuItems = (userRole) => {
   const items = [
     {
-      title: 'My Files',
+      title: 'Storage ',
       icon: Home,
       path: '/dashboard',
     },
@@ -80,8 +80,8 @@ export default function AppSidebar() {
   // Get storage info from FileManager context
   const { totalStorageUsed } = useFileManager()
 
-  // Get user's storage limit from their profile (default 3GB if not set)
-  const storageLimit = user?.maxStorage || 3 * 1024 * 1024 * 1024
+  // Get user's storage limit from their profile (default 1GB if not set)
+  const storageLimit = user?.maxStorage || 1 * 1024 * 1024 * 1024
   const storagePercentage = Math.min((totalStorageUsed / storageLimit) * 100, 100)
 
   const handleNavigation = (path) => {
@@ -104,8 +104,8 @@ export default function AppSidebar() {
       <SidebarHeader className="px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Cloud Storage" className="h-8 w-8 rounded-lg" />
-            <span className="font-semibold text-lg">Cloud Storage</span>
+            <img src="/logo.png" alt="Storix" className="h-8 w-8 rounded-lg" />
+            <span className="font-semibold text-lg">Storix</span>
           </div>
           <Button
             variant="ghost"

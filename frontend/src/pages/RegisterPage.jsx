@@ -173,10 +173,10 @@ export default function RegisterPage() {
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
             className="inline-flex items-center justify-center w-16 h-16 mb-4"
           >
-            <img src="/logo.png" alt="Cloud Storage" className="w-16 h-16 rounded-2xl shadow-lg" />
+            <img src="/logo.png" alt="Storix" className="w-16 h-16 rounded-2xl shadow-lg" />
           </motion.div>
           <h1 className="text-3xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            Join Cloud Storage
+            Join Storix
           </h1>
           <p className="text-muted-foreground mt-2">Create your account and start organizing</p>
         </div>
