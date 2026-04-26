@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Mail, CheckCircle2, KeyRound, Lock, ArrowLeft, Loader2, Shield } from 'lucide-react'
+import { User, Mail, KeyRound, Lock, ArrowLeft, Loader2, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { userAPI, authAPI } from '@/lib/api'
+import { useAuth, useAlert } from '@/context'
 import { sanitizeInput } from '@/lib/utils'
 
 export default function RegisterPage() {
@@ -24,11 +24,17 @@ export default function RegisterPage() {
   })
   const [loading, setLoading] = useState(false)
   const [otpSending, setOtpSending] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [otpSent, setOtpSent] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0) // Cooldown in seconds
   const navigate = useNavigate()
+  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { showAlert } = useAlert()
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true })
+      showAlert('Welcome back', 'success')
+    }
+  }, [authLoading, isAuthenticated, navigate])
 
   // Cooldown timer effect
   useEffect(() => {
@@ -42,30 +48,29 @@ export default function RegisterPage() {
   const handleSendOtp = async (e) => {
     e.preventDefault()
     setOtpSending(true)
-    setError('')
 
     const safeName = sanitizeInput(formData.name).trim()
     const safeEmail = sanitizeInput(formData.email).trim()
 
     if (!safeName) {
-      setError('Please enter your name')
+      showAlert('Please enter your name', 'destructive')
       setOtpSending(false)
       return
     }
 
     if (!safeEmail) {
-      setError('Please enter your email')
+      showAlert('Please enter your email', 'destructive')
       setOtpSending(false)
       return
     }
 
     try {
       await authAPI.sendOTP(safeEmail)
-      setOtpSent(true)
+      showAlert('OTP sent to your email', 'success')
       setStep(2)
       setResendCooldown(300) // Start 5-minute cooldown (300 seconds)
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send OTP. Please try again.')
+      showAlert(err.response?.data?.error || 'Failed to send OTP. Please try again.', 'destructive')
     } finally {
       setOtpSending(false)
     }
@@ -75,19 +80,18 @@ export default function RegisterPage() {
   const handleRegister = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setError('')
 
     const safePassword = sanitizeInput(formData.password)
     const safeConfirmPassword = sanitizeInput(formData.confirmPassword)
 
     if (safePassword !== safeConfirmPassword) {
-      setError('Passwords do not match')
+      showAlert('Passwords do not match', 'destructive')
       setLoading(false)
       return
     }
 
     if (safePassword.length < 6) {
-      setError('Password must be at least 6 characters')
+      showAlert('Password must be at least 6 characters', 'destructive')
       setLoading(false)
       return
     }
@@ -110,10 +114,10 @@ export default function RegisterPage() {
         registrationData.secretKey = safeSecretKey
       }
       await userAPI.register(registrationData)
-      setSuccess(true)
+      showAlert('Registration successful. Redirecting to login...', 'success')
       setTimeout(() => navigate('/login'), 2000)
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed')
+      showAlert(err.response?.data?.error || 'Registration failed', 'destructive')
     } finally {
       setLoading(false)
     }
@@ -122,15 +126,14 @@ export default function RegisterPage() {
   // Resend OTP
   const handleResendOtp = async () => {
     setOtpSending(true)
-    setError('')
 
     try {
       const safeEmail = sanitizeInput(formData.email).trim()
       await authAPI.sendOTP(safeEmail)
-      setError('') // Clear any previous errors
+      showAlert('OTP resent successfully', 'success')
       setResendCooldown(300) // Reset 5-minute cooldown
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to resend OTP')
+      showAlert(err.response?.data?.error || 'Failed to resend OTP', 'destructive')
     } finally {
       setOtpSending(false)
     }
@@ -153,8 +156,6 @@ export default function RegisterPage() {
 
   const goBack = () => {
     setStep(1)
-    setOtpSent(false)
-    setError('')
     setFormData(prev => ({ ...prev, otp: '', password: '', confirmPassword: '', secretKey: '' }))
   }
 
@@ -215,21 +216,6 @@ export default function RegisterPage() {
           </CardHeader>
 
           <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {success && (
-              <Alert className="mb-4 border-green-500 bg-green-50 dark:bg-green-950">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-600 dark:text-green-400">
-                  Registration successful! Redirecting to login...
-                </AlertDescription>
-              </Alert>
-            )}
-
             <AnimatePresence mode="wait">
               {step === 1 ? (
                 <motion.form
@@ -407,7 +393,7 @@ export default function RegisterPage() {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full h-11" disabled={loading || success}>
+                  <Button type="submit" className="w-full h-11" disabled={loading}>
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />

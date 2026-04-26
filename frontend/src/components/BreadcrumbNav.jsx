@@ -8,9 +8,10 @@ export default function BreadcrumbNav({ items, onNavigate }) {
         variant="ghost"
         size="sm"
         onClick={() => onNavigate(null)}
-        className="h-8 px-2 hover:bg-accent"
+        className="h-8 px-2 hover:bg-accent flex items-center gap-1"
       >
         <Home className="h-4 w-4" />
+        <span>Root</span>
       </Button>
 
       {items.map((item, index) => (

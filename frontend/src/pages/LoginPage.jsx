@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { motion } from 'framer-motion'
@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useAuth } from '@/context'
+import { useAuth, useAlert } from '@/context'
 import { sanitizeInput } from '@/lib/utils'
 
 export default function LoginPage() {
@@ -17,9 +16,16 @@ export default function LoginPage() {
     password: '',
   })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const navigate = useNavigate()
-  const { login, loginWithGoogle } = useAuth()
+  const { login, loginWithGoogle, isAuthenticated, loading: authLoading } = useAuth()
+  const { showAlert } = useAlert()
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true })
+      showAlert('Welcome back', 'success')
+    }
+  }, [authLoading, isAuthenticated, navigate])
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -31,15 +37,15 @@ export default function LoginPage() {
   const handleEmailLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setError('')
 
     try {
       const safeEmail = sanitizeInput(formData.email).trim()
       const safePassword = sanitizeInput(formData.password)
       await login(safeEmail, safePassword)
+      showAlert('Signed in successfully', 'success')
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed')
+      showAlert(err.response?.data?.error || 'Login failed', 'destructive')
     } finally {
       setLoading(false)
     }
@@ -49,12 +55,12 @@ export default function LoginPage() {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       setLoading(true)
-      setError('')
       await loginWithGoogle(credentialResponse.credential)
+      showAlert('Signed in with Google', 'success')
       navigate('/dashboard')
     } catch (error) {
       console.error('Google login error:', error)
-      setError(error.response?.data?.error || 'Google sign-in failed')
+      showAlert(error.response?.data?.error || 'Google sign-in failed', 'destructive')
     } finally {
       setLoading(false)
     }
@@ -62,7 +68,7 @@ export default function LoginPage() {
 
   const handleGoogleError = () => {
     console.error('Google login failed')
-    setError('Google sign-in failed')
+    showAlert('Google sign-in failed', 'destructive')
   }
 
   return (
@@ -100,12 +106,6 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

@@ -52,10 +52,18 @@ export const deleteS3File = async (key) =>{
     return await s3Client.send(command)
 }
 export const deleteS3Files = async (keys) => {
+    const safeKeys = Array.isArray(keys)
+        ? keys.filter(item => item && typeof item.Key === 'string' && item.Key.trim().length > 0)
+        : []
+
+    if (safeKeys.length === 0) {
+        return { $metadata: { httpStatusCode: 200 }, skipped: true }
+    }
+
     const command = new DeleteObjectsCommand({
         Bucket: bktName,
         Delete : {
-            Objects : keys
+            Objects : safeKeys
         }
     })
 

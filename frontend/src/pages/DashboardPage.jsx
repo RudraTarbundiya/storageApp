@@ -1,5 +1,5 @@
 import React from 'react'
-import { Upload, FolderPlus, Search, Grid3x3, List, Download, X } from 'lucide-react'
+import { Upload, FolderPlus, Search, Download, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -22,7 +22,6 @@ function DashboardContent() {
     breadcrumbs,
     loading,
     searchQuery,
-    viewMode,
     // Dialog states
     showUploadDialog,
     showCreateFolderDialog,
@@ -39,7 +38,6 @@ function DashboardContent() {
     // Actions
     fetchDirectory,
     setSearchQuery,
-    setViewMode,
     handleOpenFolder,
     handleNavigateBreadcrumb,
     // Dialog actions
@@ -118,7 +116,6 @@ function DashboardContent() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Storage</h1>
-            <p className="text-muted-foreground mt-1">Manage your files and folders</p>
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={() => setShowCreateFolderDialog(true)} variant="outline">
@@ -136,6 +133,8 @@ function DashboardContent() {
           </div>
         </div>
 
+        <BreadcrumbNav items={breadcrumbs} onNavigate={handleNavigateBreadcrumb} />
+
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -148,14 +147,12 @@ function DashboardContent() {
           </div>
         </div>
 
-        <BreadcrumbNav items={breadcrumbs} onNavigate={handleNavigateBreadcrumb} />
-
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-muted-foreground">Loading...</div>
           </div>
         ) : (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' : 'flex flex-col gap-2'}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredFolders.map(folder => (
               <FolderCard
                 key={folder._id}

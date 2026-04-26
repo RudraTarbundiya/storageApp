@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Grid3x3, List, Globe, Folder, Link2, Eye, Copy, Check, Lock } from 'lucide-react'
+import { Search, Globe, Folder, Copy, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -152,7 +152,7 @@ export default function MyPublicSharesPage() {
     const [files, setFiles] = useState([])
     const [directories, setDirectories] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
-    const [viewMode, setViewMode] = useState('grid')
+    const viewMode = 'grid'
     const [copiedLink, setCopiedLink] = useState(null)
 
     // Confirmation dialog state
@@ -247,7 +247,7 @@ export default function MyPublicSharesPage() {
                     </p>
                 </div>
 
-                {/* Search and View Toggle */}
+                {/* Search */}
                 <div className="flex items-center gap-4">
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -257,24 +257,6 @@ export default function MyPublicSharesPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-10"
                         />
-                    </div>
-                    <div className="flex items-center gap-1 border rounded-lg p-1">
-                        <Button
-                            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setViewMode('grid')}
-                        >
-                            <Grid3x3 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setViewMode('list')}
-                        >
-                            <List className="h-4 w-4" />
-                        </Button>
                     </div>
                 </div>
 

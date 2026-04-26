@@ -112,9 +112,13 @@ export const deleteDirectory = async (req, res, next) => {
         directories.push({ _id: id }) //include the directory itself for deletion
 
         //delete form actual storage folder
-        const keys = files.map(f=>({Key: f._id.toString() + f.extension}))
-        console.log(keys)
-        await deleteS3Files(keys)
+        const keys = files
+            .map(f => ({ Key: `${f._id.toString()}${f.extension || ''}` }))
+            .filter(item => item.Key)
+
+        if (keys.length > 0) {
+            await deleteS3Files(keys)
+        }
         //delete form filecollection 
         await File.deleteMany({ _id: { $in: files.map(f => f._id) } })
 
