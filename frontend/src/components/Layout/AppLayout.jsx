@@ -33,11 +33,11 @@ export default function AppLayout() {
   return (
     <FileManagerProvider>
       <SidebarProvider>
-        <div className="flex min-h-screen w-full">
+        <div className="flex min-h-screen w-full bg-linear-to-br from-background via-background to-muted/60">
           <AppSidebar />
-          <div className="flex-1 flex flex-col">
+          <div className="flex min-w-0 flex-1 flex-col">
             <Header user={user} loading={loading} />
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto px-1 pb-2 sm:px-2 sm:pb-3">
               <Outlet />
             </main>
           </div>

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { getFileType, getFileIcon, getGradient, formatFileSize } from '@/lib/fileUtils'
+import { getFileType, getFileIcon, formatFileSize } from '@/lib/fileUtils'
 
 
 export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare, onPreview, onDetails }) {
@@ -23,18 +23,18 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -3 }}
       transition={{ duration: 0.2 }}
     >
       <Card
-        className="group cursor-pointer hover:shadow-lg transition-all border-slate-200 dark:border-slate-800"
+        className="group cursor-pointer rounded-2xl border-border/80 bg-card/90 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
         title={`name: ${file.name}\nSize: ${formatFileSize(file.size)}`}
       >
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-3">
+        <CardContent className="p-3.5">
+          <div className="mb-2.5 flex items-start justify-between">
             <div className="relative">
-              <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br ${getGradient(file.extension)} shadow-sm`}>
-                <IconComponent className="w-6 h-6 text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-[#13315c] via-[#134074] to-[#397bd6] shadow-sm">
+                <IconComponent className="h-5 w-5 text-[#eef4ed]" />
               </div>
               {file.isPublic && (
                 <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-white dark:border-slate-900 flex items-center justify-center" title="Public">
@@ -43,7 +43,7 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
               )}
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground font-medium">
+              <span className="text-[11px] font-medium text-muted-foreground">
                 {formatFileSize(file.size)}
               </span>
               <DropdownMenu>
@@ -51,14 +51,14 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-7 w-7 rounded-lg cursor-pointer"
                   >
-                    <MoreVertical className="h-4 w-4" />
+                    <MoreVertical className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end ">
                   <DropdownMenuItem onClick={() => onDetails?.(file)}>
-                    <Info className="mr-2 h-4 w-4" />
+                    <Info className="mr-2 h-4 w-4 " />
                     Details
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onOpen?.(file)}>
@@ -83,33 +83,33 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
             </div>
           </div>
 
-          <div className="mb-3">
-            <h3 className="font-medium text-sm truncate mb-1">{file.name}</h3>
-            <Badge variant="secondary" className="text-xs">
+          <div className="mb-2.5">
+            <h3 className="mb-1 truncate text-[15px] font-semibold leading-tight">{file.name}</h3>
+            <Badge variant="outline" className="border-primary/25 bg-secondary/50 text-[11px] text-primary">
               {file.extension || 'File'}
             </Badge>
           </div>
 
           {/* Always visible action buttons */}
-          <div className="flex gap-2 pt-2 border-t">
+          <div className="flex gap-1.5 border-t border-border/70 pt-2">
             {isPreviewable && (
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 h-8 text-xs"
+                className="h-7.5 flex-1 rounded-lg border-border/80 text-[11px]"
                 onClick={() => onPreview?.(file)}
               >
-                <Eye className="h-3 w-3 mr-1" />
+                <Eye className="mr-1 h-3 w-3" />
                 Preview
               </Button>
             )}
             <Button
               variant={isPreviewable ? "secondary" : "outline"}
               size="sm"
-              className={`${isPreviewable ? 'flex-1' : 'w-full'} h-8 text-xs`}
+              className={`${isPreviewable ? 'flex-1' : 'w-full'} h-7.5 rounded-lg text-[11px]`}
               onClick={() => onDownload?.(file)}
             >
-              <Download className="h-3 w-3 mr-1" />
+              <Download className="mr-1 h-3 w-3" />
               Download
             </Button>
           </div>

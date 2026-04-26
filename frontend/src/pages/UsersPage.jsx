@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, LogOut, Trash2, Loader2, UserCircle, Shield, UserCog, RefreshCw, AlertTriangle, RotateCcw, Trash, Crown, FolderOpen, HardDrive } from 'lucide-react'
+import { Users, LogOut, Trash2, Loader2, UserCircle, Shield, UserCog, RefreshCw, AlertTriangle, RotateCcw, Trash, Crown, FolderOpen } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -454,6 +454,171 @@ export default function UsersPage() {
         </TableRow>
     )
 
+    const renderUserCard = (user, isDeleted = false) => (
+        <Card key={user._id} className={`rounded-2xl border ${isCurrentUser(user._id) || isDeleted ? 'bg-primary/5' : 'bg-card/90'}`}>
+            <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="h-10 w-10">
+                            {user.picture && (
+                                <AvatarImage src={user.picture} alt={user.name} referrerPolicy="no-referrer" />
+                            )}
+                            <AvatarFallback className={`bg-linear-to-br ${isDeleted ? 'from-red-400 to-red-600' : 'from-[#13315c] to-[#397bd6]'} text-white text-sm`}>
+                                {user.name?.charAt(0).toUpperCase() || 'U'}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-semibold truncate">{user.name}</span>
+                                {isCurrentUser(user._id) && <Badge variant="outline" className="text-[10px]">You</Badge>}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        </div>
+                    </div>
+                    <div>{!isDeleted && canChangeRole(user) ? null : getRoleBadge(user.role)}</div>
+                </div>
+
+                {!isDeleted && canChangeRole(user) && (
+                    <div className="space-y-1">
+                        <p className="text-[11px] text-muted-foreground">Role</p>
+                        <Select
+                            value={user.role}
+                            onValueChange={(value) => openRoleChangeDialog(user, value)}
+                            disabled={actionLoading[`role-${user._id}`]}
+                        >
+                            <SelectTrigger className="h-9 text-xs">
+                                {actionLoading[`role-${user._id}`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <SelectValue />}
+                            </SelectTrigger>
+                            <SelectContent>
+                                {getAvailableRoles(user).map((role) => (
+                                    <SelectItem key={role} value={role}>
+                                        <div className="flex items-center gap-1 text-xs">
+                                            {role === 'owner' && <Crown className="w-3 h-3 text-yellow-600" />}
+                                            {role === 'admin' && <Shield className="w-3 h-3 text-red-600" />}
+                                            {role === 'manager' && <UserCog className="w-3 h-3 text-blue-600" />}
+                                            {role === 'user' && <UserCircle className="w-3 h-3 text-gray-600" />}
+                                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+
+                <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-muted-foreground">Storage</span>
+                        <span className="text-muted-foreground">{formatStorage(user.storageUsed || 0)} / {formatStorage(STORAGE_LIMIT)}</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                        <div
+                            className={`h-1.5 rounded-full transition-all ${getStorageColor(user.storageUsed || 0)}`}
+                            style={{ width: `${Math.min(((user.storageUsed || 0) / STORAGE_LIMIT) * 100, 100)}%` }}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                    {isDeleted ? (
+                        <>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openConfirmDialog('recover', user)}
+                                disabled={actionLoading[`recover-${user._id}`]}
+                                className="h-8 text-xs text-green-600 border-green-200 hover:bg-green-50"
+                            >
+                                {actionLoading[`recover-${user._id}`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <><RotateCcw className="w-3 h-3 mr-1" /> Recover</>}
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => openConfirmDialog('hardDelete', user)}
+                                disabled={actionLoading[`hardDelete-${user._id}`]}
+                                className="h-8 text-xs"
+                            >
+                                {actionLoading[`hardDelete-${user._id}`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Trash className="w-3 h-3 mr-1" /> Delete</>}
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openConfirmDialog('logout', user)}
+                                disabled={!user.isLoggedIn || actionLoading[`logout-${user._id}`] || !canLogoutUser(user)}
+                                className="h-8 text-xs"
+                            >
+                                {actionLoading[`logout-${user._id}`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <><LogOut className="w-3 h-3 mr-1" /> Logout</>}
+                            </Button>
+
+                            {(isOwner || isAdmin) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => navigate(`/admin/files/${user._id}?name=${encodeURIComponent(user.name)}`)}
+                                    className="h-8 text-xs"
+                                >
+                                    <FolderOpen className="w-3 h-3 mr-1" /> Files
+                                </Button>
+                            )}
+
+                            {canDelete() && (
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteClick(user)}
+                                    disabled={isCurrentUser(user._id) || actionLoading[`delete-${user._id}`] || !canModifyUser(user)}
+                                    className="h-8 text-xs"
+                                >
+                                    {actionLoading[`delete-${user._id}`] ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Trash2 className="w-3 h-3 mr-1" /> Delete</>}
+                                </Button>
+                            )}
+                        </>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    )
+
+    const renderUserList = (list, isDeleted = false, emptyMessage = 'No users found') => (
+        <>
+            <div className="space-y-3 md:hidden">
+                {list.map((user) => renderUserCard(user, isDeleted))}
+                {list.length === 0 && (
+                    <Card>
+                        <CardContent className="py-8 text-center text-sm text-muted-foreground">{emptyMessage}</CardContent>
+                    </Card>
+                )}
+            </div>
+
+            <div className="hidden md:block rounded-md border overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-62.5">User</TableHead>
+                            <TableHead className="w-25">Status</TableHead>
+                            <TableHead className="w-37.5">Storage</TableHead>
+                            <TableHead className="w-32.5">Role</TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {list.map((user) => renderUserRow(user, isDeleted))}
+                        {list.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                    {emptyMessage}
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+        </>
+    )
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-100">
@@ -464,7 +629,7 @@ export default function UsersPage() {
 
     return (
         <>
-            <div className="p-6 max-w-7xl mx-auto">
+            <div className="mx-auto max-w-7xl p-3 sm:p-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -491,40 +656,18 @@ export default function UsersPage() {
                         <CardContent>
                             {isOwner ? (
                                 <Tabs defaultValue="active" className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2 mb-4">
-                                        <TabsTrigger value="active" className="flex items-center gap-2">
+                                    <TabsList className="mb-4 grid w-full grid-cols-2">
+                                        <TabsTrigger value="active" className="flex items-center gap-1.5 text-xs sm:text-sm">
                                             <Users className="w-4 h-4" />
                                             Active Users ({users.length})
                                         </TabsTrigger>
-                                        <TabsTrigger value="deleted" className="flex items-center gap-2">
+                                        <TabsTrigger value="deleted" className="flex items-center gap-1.5 text-xs sm:text-sm">
                                             <Trash2 className="w-4 h-4" />
                                             Deleted Users ({deletedUsers.length})
                                         </TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="active">
-                                        <div className="rounded-md border overflow-x-auto">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead className="w-62.5">User</TableHead>
-                                                        <TableHead className="w-25">Status</TableHead>
-                                                        <TableHead className="w-37.5">Storage</TableHead>
-                                                        <TableHead className="w-32.5">Role</TableHead>
-                                                        <TableHead>Actions</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {users.map((user) => renderUserRow(user, false))}
-                                                    {users.length === 0 && (
-                                                        <TableRow>
-                                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                                                No active users found
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
+                                        {renderUserList(users, false, 'No active users found')}
                                     </TabsContent>
                                     <TabsContent value="deleted">
                                         {deletedLoading ? (
@@ -532,56 +675,12 @@ export default function UsersPage() {
                                                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                             </div>
                                         ) : (
-                                            <div className="rounded-md border overflow-x-auto">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead className="w-62.5">User</TableHead>
-                                                            <TableHead className="w-25">Status</TableHead>
-                                                            <TableHead className="w-37.5">Storage</TableHead>
-                                                            <TableHead className="w-32.5">Role</TableHead>
-                                                            <TableHead>Actions</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {deletedUsers.map((user) => renderUserRow(user, true))}
-                                                        {deletedUsers.length === 0 && (
-                                                            <TableRow>
-                                                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                                                    No deleted users found
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        )}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
+                                            renderUserList(deletedUsers, true, 'No deleted users found')
                                         )}
                                     </TabsContent>
                                 </Tabs>
                             ) : (
-                                <div className="rounded-md border overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="w-62.5">User</TableHead>
-                                                <TableHead className="w-25">Status</TableHead>
-                                                <TableHead className="w-37.5">Storage</TableHead>
-                                                <TableHead className="w-32.5">Role</TableHead>
-                                                <TableHead>Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {users.map((user) => renderUserRow(user, false))}
-                                            {users.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                                        No users found
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                renderUserList(users, false, 'No users found')
                             )}
                         </CardContent>
                     </Card>

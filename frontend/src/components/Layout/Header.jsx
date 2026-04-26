@@ -1,4 +1,4 @@
-import { Moon, Sun, User, LogOut, Cloud, LogOutIcon, Menu } from 'lucide-react'
+import { Moon, Sun, LogOut, LogOutIcon, Menu, ChevronRight, House } from 'lucide-react'
 import { useState } from 'react'
 import { useTheme } from '@/components/ThemeProvider'
 import { Button } from '@/components/ui/button'
@@ -19,17 +19,35 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { userAPI } from '@/lib/api'
 import { useSidebar } from '@/components/ui/sidebar'
 
 export default function Header({ user }) {
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const [logoutMode, setLogoutMode] = useState('current') // 'current' or 'all'
   const [loading, setLoading] = useState(false)
   const { toggleSidebar, open, isMobile, setOpenMobile } = useSidebar()
+
+  const routeLabelMap = {
+    dashboard: 'Storage',
+    files: 'Files',
+    'shared-with-me': 'Shared with Me',
+    'shared-by-me': 'Shared by Me',
+    'my-public-shares': 'Public Shares',
+    'google-drive': 'Google Drive',
+    users: 'Users',
+    profile: 'Profile',
+    admin: 'Admin',
+  }
+
+  const pathItems = location.pathname
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => routeLabelMap[segment] || segment.replace(/-/g, ' '))
 
   const handleLogout = async (logoutAll = false) => {
     setLoading(true)
@@ -60,34 +78,50 @@ export default function Header({ user }) {
   const showMenuButton = isMobile || !open
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-50 w-full px-2 py-2 sm:px-4 sm:py-3">
+      <div className="glass-navy mx-auto flex h-17 w-full items-center justify-between gap-2 rounded-2xl px-3 sm:h-18 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {/* Hamburger menu button - shows when sidebar is closed */}
           {showMenuButton && (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleOpenSidebar}
-              className="h-10 w-10 cursor-pointer hover:bg-accent rounded-lg"
+              className="h-9 w-9 cursor-pointer rounded-xl hover:bg-accent sm:h-10 sm:w-10"
             >
               <Menu className="h-5 w-5" />
               <span className="sr-only">Open Sidebar</span>
             </Button>
           )}
 
-          <div className="flex items-center gap-2 font-semibold">
+          <div className="flex items-center gap-2 font-display font-semibold">
             <img src="/logo.png" alt="Storix" className="h-8 w-8 rounded-lg" />
-            <span className="hidden sm:inline-block">Storix</span>
+            <span className="hidden text-lg sm:inline-block">Storix</span>
+          </div>
+
+          <div className="hidden min-w-0 items-center gap-1.5 rounded-2xl border border-border/70 bg-muted/55 px-4 py-2 md:flex">
+            <House className="h-4.5 w-4.5 shrink-0 text-muted-foreground" />
+            {pathItems.length === 0 ? (
+              <span className="text-base text-muted-foreground">home</span>
+            ) : (
+              pathItems.map((item, index) => (
+                <div key={`${item}-${index}`} className="flex min-w-0 items-center gap-1.5">
+                  {index > 0 && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/80" />}
+                  <span className={`truncate text-base ${index === pathItems.length - 1 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                    {item}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            className="rounded-full cursor-pointer hover:bg-accent hover:scale-105 transition-transform"
+            className="h-9 w-9 cursor-pointer rounded-xl transition-transform hover:scale-105 hover:bg-accent sm:h-10 sm:w-10"
           >
             <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -96,10 +130,10 @@ export default function Header({ user }) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full cursor-pointer hover:bg-accent hover:scale-105 transition-transform">
+              <Button variant="ghost" className="relative h-9 w-9 cursor-pointer rounded-xl transition-transform hover:scale-105 hover:bg-accent sm:h-10 sm:w-10">
                 <Avatar className="h-10 w-10">
                   {user?.picture && <AvatarImage src={user.picture} alt={user?.name} referrerPolicy="no-referrer" />}
-                  <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white">
+                  <AvatarFallback className="bg-linear-to-br from-[#134074] to-[#397bd6] text-white">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>

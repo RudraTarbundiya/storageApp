@@ -3,25 +3,25 @@ import { Button } from '@/components/ui/button'
 
 export default function BreadcrumbNav({ items, onNavigate }) {
   return (
-    <div className="flex items-center gap-1 text-sm overflow-x-auto pb-2">
+    <div className="flex items-center gap-2 text-base overflow-x-auto pb-2">
       <Button
         variant="ghost"
         size="sm"
         onClick={() => onNavigate(null)}
-        className="h-8 px-2 hover:bg-accent flex items-center gap-1"
+        className="h-10 px-3 hover:bg-accent rounded-xl flex items-center gap-2 font-medium"
       >
-        <Home className="h-4 w-4" />
+        <Home className="h-5 w-5" />
         <span>Root</span>
       </Button>
 
       {items.map((item, index) => (
-        <div key={item.id} className="flex items-center gap-1">
-          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+        <div key={item.id} className="flex items-center gap-2">
+          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onNavigate(item.id)}
-            className="h-8 px-2 hover:bg-accent whitespace-nowrap"
+            className="h-10 px-3 hover:bg-accent rounded-xl whitespace-nowrap font-medium text-base"
           >
             {item.name}
           </Button>

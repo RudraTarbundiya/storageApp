@@ -105,7 +105,7 @@ export default function AppSidebar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Storix" className="h-8 w-8 rounded-lg" />
-            <span className="font-semibold text-lg">Storix</span>
+            <span className="font-display text-lg font-semibold tracking-wide">Storix</span>
           </div>
           <Button
             variant="ghost"
@@ -120,7 +120,7 @@ export default function AppSidebar() {
       </SidebarHeader>
 
       {/* Navigation Menu */}
-      <SidebarContent className="px-2">
+      <SidebarContent className="px-3">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -130,10 +130,10 @@ export default function AppSidebar() {
                     onClick={() => handleNavigation(item.path)}
                     isActive={location.pathname === item.path}
                     className={`
-                      w-full justify-start gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                      w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
                       transition-all duration-200 cursor-pointer
                       ${location.pathname === item.path
-                        ? 'bg-primary/10 text-primary'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                       }
                     `}
@@ -149,7 +149,7 @@ export default function AppSidebar() {
       </SidebarContent>
 
       {/* Storage Usage Widget */}
-      <div className="px-4 py-3 border-t border-sidebar-border">
+      <div className="mx-3 mb-3 rounded-2xl border border-sidebar-border/80 bg-card/70 px-4 py-3 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <HardDrive className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">Storage</span>
@@ -169,13 +169,13 @@ export default function AppSidebar() {
       </div>
 
       {/* User Profile Footer */}
-      <SidebarFooter className="px-4 py-4 border-t border-sidebar-border mt-auto">
+      <SidebarFooter className="mt-auto border-t border-sidebar-border/60 px-4 py-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             {user?.picture && (
               <AvatarImage src={user.picture} alt={user?.name} referrerPolicy="no-referrer" />
             )}
-            <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white text-sm font-medium">
+            <AvatarFallback className="bg-linear-to-br from-[#13315c] to-[#397bd6] text-white text-sm font-medium">
               {user?.name?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>

@@ -25,15 +25,15 @@ export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -3 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="group cursor-pointer hover:shadow-lg transition-all border-slate-200 dark:border-slate-800" title={`name: ${folder.name}\nSize: ${formatFileSize(folder.size)}`}>
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-3">
+      <Card className="group cursor-pointer rounded-2xl border-border/80 bg-card/90 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md" title={`name: ${folder.name}\nSize: ${formatFileSize(folder.size)}`}>
+        <CardContent className="p-3.5">
+          <div className="mb-2.5 flex items-start justify-between">
             <div className="relative">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br from-amber-400 to-orange-500 shadow-sm">
-                <Folder className="w-6 h-6 text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-[#13315c] via-[#134074] to-[#397bd6] shadow-sm">
+                <Folder className="h-5 w-5 text-[#eef4ed]" />
               </div>
               {folder.isPublic && (
                 <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-white dark:border-slate-900 flex items-center justify-center" title="Public">
@@ -43,7 +43,7 @@ export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare
             </div>
             <div className="flex items-center gap-1">
               {/* Show folder size */}
-              <span className="text-xs text-muted-foreground font-medium">
+              <span className="text-[11px] font-medium text-muted-foreground">
                 {formatFileSize(folder.size)}
               </span>
               <DropdownMenu>
@@ -51,9 +51,9 @@ export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-7 w-7 rounded-lg cursor-pointer"
                   >
-                    <MoreVertical className="h-4 w-4" />
+                    <MoreVertical className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -79,22 +79,22 @@ export default function FolderCard({ folder, onOpen, onRename, onDelete, onShare
             </div>
           </div>
 
-          <div className="mb-3">
-            <h3 className="font-medium text-sm truncate">{folder.name}</h3>
-            <p className="text-xs text-muted-foreground mt-1">
+          <div className="mb-2.5">
+            <h3 className="truncate text-[15px] font-semibold leading-tight">{folder.name}</h3>
+            <p className="mt-1 text-[11px] text-muted-foreground">
               {folder.itemCount || 0} items
             </p>
           </div>
 
           {/* Open folder button for consistency with file cards */}
-          <div className="pt-2 border-t">
+          <div className="border-t border-border/70 pt-2">
             <Button
               variant="outline"
               size="sm"
-              className="w-full h-8 text-xs"
+              className="h-7.5 w-full rounded-lg border-border/80 text-[11px] cursor-pointer"
               onClick={() => onOpen?.(folder)}
             >
-              <FolderOpen className="h-3 w-3 mr-1" />
+              <FolderOpen className="mr-1 h-3 w-3" />
               Open Folder
             </Button>
           </div>
