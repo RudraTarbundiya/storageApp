@@ -1,5 +1,5 @@
 import { verifyIdTokenAndGetUser } from "../services/googleOauth.js";
-import sendOtpService from "../services/sendOtp.service.js";
+import sendOtpService, { mailToAdmin } from "../services/sendOtp.service.js";
 import User from "../models/userModel.js";
 import Directory from "../models/directoryModel.js";
 import mongoose from "mongoose";
@@ -69,12 +69,12 @@ export const registerUser = async (req, res, next) => {
             name: `root -${email}`,
             parentDirId: null,
             userId,
-            size : 0
+            size: 0
         }, { session })
         await User.insertOne({
             _id: userId,
             name,
-            maxStorageInBytes : 1 * (1024 ** 3),//1GB default storage
+            maxStorageInBytes: 1 * (1024 ** 3),//1GB default storage
             email,
             password,
             picture: null,
@@ -83,7 +83,8 @@ export const registerUser = async (req, res, next) => {
         }, { session })
         await session.commitTransaction()
         await session.endSession()
-
+        // Send email to admin about new registration
+        await mailToAdmin('New User Registration', `A new user has registered with the email: ${email} and role: ${role}.`)
         return res.status(201).json({ message: `${role.charAt(0).toUpperCase() + role.slice(1)} registered successfully` })
     } catch (err) {
         await session.abortTransaction()
@@ -212,12 +213,12 @@ export const googlelogin = async (req, res, next) => {
             name: `root -${email}`,
             parentDirId: null,
             userId,
-            size : 0
+            size: 0
         }, { session })
         await User.insertOne({
             _id: userId,
             name,
-            maxStorageInBytes : 1 * (1024 ** 3),//1GB default storage
+            maxStorageInBytes: 1 * (1024 ** 3),//1GB default storage
             email,
             picture,
             rootDirId: rootDirId,
@@ -228,6 +229,8 @@ export const googlelogin = async (req, res, next) => {
         await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
         res.cookie('sid', ssnId, getSessionCookieOptions())
         res.status(201).json({ message: "Google login successful" });
+        // Send email to admin about new registration
+        await mailToAdmin('New User Registration', `A new user has registered with the email: ${email} using Google OAuth.`)
         await session.commitTransaction()
         await session.endSession()
     } catch (error) {

@@ -18,7 +18,6 @@ export default async function sendOtpService(email) {
         subject: "Storage App OTP",
         html,
     });
-    console.log(`this is sendService log --> ${result}`)
 
     if (result.error !== null) {
         throw new Error('Failed to send OTP email');
@@ -30,7 +29,25 @@ export default async function sendOtpService(email) {
         { upsert: true }
     );
 
-
-
     return { success: true, message: `OTP sent successfully on ${email}` };
+}
+
+export async function mailToAdmin(subject, message) {
+    const html = `
+    <div style="font-family:sans-serif;">
+      <p>${message}</p>
+    </div>
+  `;
+    const result = await resend.emails.send({
+        from: `Storage App <admin@rudrasatwara.tech>`,
+        to: process.env.ADMIN_EMAIL,
+        subject,
+        html,
+    });
+
+    if (result.error !== null) {
+        throw new Error('Failed to send email to admin');
+    }
+
+    return { success: true, message: `Email sent successfully to admin` };
 }
