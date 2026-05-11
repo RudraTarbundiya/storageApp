@@ -27,6 +27,7 @@
     },
     "overrides": {
         "minimatch": ">=10.2.1",
-        "pkg": "*"
+        "pkg": "*",
+        "uuid": "^14.0.0"
     }
 }
