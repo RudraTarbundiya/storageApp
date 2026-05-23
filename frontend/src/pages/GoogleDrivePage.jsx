@@ -71,11 +71,11 @@ export default function GoogleDrivePage() {
       setNextPageToken(response.data.nextPageToken || null)
       setConnected(true) // Successfully fetched means connected
     } catch (error) {
-      console.error('Failed to fetch files:', error)
       // If 401/403, user is not connected to Google Drive
       if (error.response?.status === 401 || error.response?.status === 403) {
         setConnected(false)
       } else {
+        console.error('Failed to fetch files:', error)
         showAlert('Failed to fetch files', 'destructive')
       }
     } finally {
@@ -157,7 +157,6 @@ export default function GoogleDrivePage() {
       </div>
     )
   }
-
   if (!connected) {
     return (
       <div className="container mx-auto p-6 max-w-4xl">

@@ -15,7 +15,7 @@ npm install
 2. Create a project or select existing
 3. Enable **Google Drive API**
 4. Create **OAuth 2.0 Client ID** (Web application)
-5. Add authorized origin: `http://localhost:5173`
+5. Add authorized origin: `http://localhost:5175`
 6. Copy the **Client ID**
 
 ### 3. Configure Environment
@@ -36,7 +36,7 @@ VITE_API_BASE_URL=http://localhost:4000
 npm run dev
 ```
 
-Open http://localhost:5173
+Open http://localhost:5175
 
 ---
 
@@ -78,13 +78,13 @@ Used for:
 
 **Authorized JavaScript origins:**
 ```
-http://localhost:5173        (Development)
+http://localhost:5175        (Development)
 https://yourdomain.com       (Production)
 ```
 
 **Authorized redirect URIs:**
 ```
-http://localhost:5173        (Development)  
+http://localhost:5175/auth/callback        (Development)  
 https://yourdomain.com       (Production)
 ```
 
@@ -128,7 +128,7 @@ const googleLogin = useGoogleLogin({
 - **Fix**: Add `VITE_GOOGLE_CLIENT_ID` to `.env` file
 
 **Issue**: "redirect_uri_mismatch"
-- **Fix**: Ensure `http://localhost:5173` is in authorized origins
+- **Fix**: Ensure `http://localhost:5175/auth/callback` is in authorized redirect URIs
 
 **Issue**: "invalid_client"
 - **Fix**: Verify Client ID is correct and has no extra spaces

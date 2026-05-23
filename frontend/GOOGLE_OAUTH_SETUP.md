@@ -58,7 +58,7 @@ This guide will help you configure Google OAuth for the Storix application.
 4. Enter a name (e.g., "Storix Web Client")
 5. Add **Authorized JavaScript origins**:
    ```
-   http://localhost:5173
+   http://localhost:5175
    ```
    For production, also add:
    ```
@@ -66,7 +66,7 @@ This guide will help you configure Google OAuth for the Storix application.
    ```
 6. Add **Authorized redirect URIs**:
    ```
-   http://localhost:5173
+   http://localhost:5175/auth/callback
    ```
    For production, also add:
    ```
@@ -110,7 +110,7 @@ You can find the **Client Secret** in the same credentials page where you got th
    npm run dev
    ```
 
-2. Navigate to http://localhost:5173/login
+2. Navigate to http://localhost:5175/login
 
 3. Click "Sign in with Google" button
 
@@ -128,7 +128,7 @@ You can find the **Client Secret** in the same credentials page where you got th
 
 **Solution**:
 - Ensure the redirect URI in Google Cloud Console matches exactly
-- For development: `http://localhost:5173`
+- For development: `http://localhost:5175/auth/callback`
 - Check for trailing slashes - they must match exactly
 
 ### "invalid_client" Error

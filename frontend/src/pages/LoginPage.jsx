@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { motion } from 'framer-motion'
-import { Cloud, Mail } from 'lucide-react'
+import { Cloud, Mail, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,6 +33,10 @@ export default function LoginPage() {
       [e.target.name]: e.target.value
     }))
   }
+
+  const [showPassword, setShowPassword] = useState(false)
+
+  const toggleShowPassword = () => setShowPassword(v => !v)
 
   const handleEmailLogin = async (e) => {
     e.preventDefault()
@@ -122,16 +126,26 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="h-11"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Your password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleShowPassword}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute inset-y-0 right-2 flex items-center px-2 text-muted-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign In'}

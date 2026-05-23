@@ -17,8 +17,8 @@ export default function RegisterPage() {
     name: '',
     email: '',
     otp: '',
-    password: 'password123',
-    confirmPassword: 'password123',
+    password: '',
+    confirmPassword: '',
     role: 'user',
     secretKey: '',
   })

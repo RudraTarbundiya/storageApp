@@ -34,8 +34,7 @@ export const codeToToken = async (req, res, next) => {
         await fetchToken(code, userId)
         return res.status(200).json({ message: "Token fetched and stored successfully" })
     } catch (error) {
-        res.status(200).json(error)
-        // next(error)
+        return next(error)
     }
 }
 

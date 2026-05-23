@@ -57,7 +57,7 @@ export default function Header({ user }) {
       } else {
         await userAPI.logout()
       }
-      navigate('/login')
+      window.location.reload()
     } catch (error) {
       console.error('Logout failed:', error)
     } finally {

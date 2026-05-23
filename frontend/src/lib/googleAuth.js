@@ -35,6 +35,8 @@ export const GOOGLE_DRIVE_SCOPES = [
 export const googleLoginConfig = {
   scope: GOOGLE_DRIVE_SCOPES,
   flow: 'auth-code', // Use authorization code flow for server-side token exchange
+  access_type: 'offline',
+  prompt: 'consent',
 }
 
 // Extract authorization code from redirect URL

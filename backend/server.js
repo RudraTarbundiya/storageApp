@@ -5,8 +5,7 @@ import cookieParser from 'cookie-parser'
 import connectDB from './config/db.js'
 import {
     authLimiter,
-    // authThrottle,
-    generalLimiter,
+    // authThrottle,,
     // generalThrottle,
     publicLimiter,
     // publicThrottle,
@@ -84,13 +83,13 @@ app.use(cors({
 }))//enable CORS
 
 // Apply rate limiters to routes
-app.use('/auth', authLimiter, authRoutes) // Strict rate limiting for auth
-app.use('/admin', checkAuth, generalLimiter, adminRoutes) //admin,owner only to show files
-app.use('/users', checkAuth, generalLimiter, usersRouteres) //manager,admin,owner only
-app.use('/directory', checkAuth, generalLimiter, directoryRoutes)
+app.use('/auth', authRoutes) // Strict rate limiting for auth
+app.use('/admin', checkAuth, adminRoutes) //admin,owner only to show files
+app.use('/users', checkAuth, usersRouteres) //manager,admin,owner only
+app.use('/directory', checkAuth, directoryRoutes)
 app.use('/file', checkAuth, uploadLimiter, filesRoutes) // Stricter for file operations
-app.use('/gd', checkAuth, generalLimiter, gdRoutes)
-app.use('/shared', checkAuth, generalLimiter, sharedRoutes)
+app.use('/gd', checkAuth, gdRoutes)
+app.use('/shared', checkAuth, sharedRoutes)
 app.use('/public', publicLimiter, publicRoutes) // Relaxed for public routes
 
 //this is global middleware for eroor handling

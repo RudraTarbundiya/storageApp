@@ -22,13 +22,14 @@ export default async function fetchToken(code, userId) {
     const client = new google.auth.OAuth2({
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        redirectUri: process.env.GOOGLE_REDIRECT_URI
+        redirectUri: 'postmessage'
     });
 
     const { tokens } = await client.getToken(code)
     client.setCredentials(tokens);
-    const userData = await verifyIdTokenAndGetUser(tokens.id_token);
-
+    const oauth2 = google.oauth2({ version: 'v2', auth: client });
+    const { data: userData } = await oauth2.userinfo.get();
+    console.log("Google user data:", userData);
     if (!userId) {
         throw new Error("Authenticated user ID is required to store Google tokens");
     }
@@ -37,13 +38,22 @@ export default async function fetchToken(code, userId) {
     if (!user) {
         throw new Error("User not found");
     }
+    
+    const refreshToken = tokens.refresh_token || user.googleTokens?.refreshToken;
+    if (!refreshToken) {
+        const error = new Error("Google did not return a refresh token. Please reconnect and grant offline access.");
+        error.status = 400;
+        throw error;
+    }
+    
+    console.log(refreshToken)
     const newUser =await User.findByIdAndUpdate(
         userId,
         {
             $set: {
                 googleTokens: {
-                    sub: userData.sub,
-                    refreshToken: tokens.refresh_token,
+                    sub: userData.id,
+                    refreshToken,
                     accessToken: tokens.access_token,
                     expiryDate: tokens.expiry_date,
                 }
@@ -59,7 +69,9 @@ export async function getDriveClient(userId) {
         .select("+googleTokens");
 
     if (!user || !user.googleTokens) {
-        throw new Error("Google Drive not authorized");
+        const error = new Error("Google Drive not authorized");
+        error.status = 401;
+        throw error;
     }
 
     const { refreshToken, accessToken, expiryDate } = user.googleTokens;
