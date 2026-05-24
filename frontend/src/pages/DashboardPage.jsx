@@ -2,7 +2,7 @@ import React from 'react'
 import { Upload, FolderPlus, Search, Download, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import FileCard from '@/components/FileCard'
 import FolderCard from '@/components/FolderCard'
@@ -30,6 +30,8 @@ function DashboardContent() {
     uploadFiles,
     uploadProgress,
     isUploading,
+    isRenaming,
+    isDeleting,
     newFolderName,
     renameItem,
     newName,
@@ -191,6 +193,9 @@ function DashboardContent() {
         <DialogContent className="w-[94vw] sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Upload File</DialogTitle>
+            <DialogDescription>
+              Choose a single file to upload to the current folder.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -304,6 +309,9 @@ function DashboardContent() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Folder</DialogTitle>
+            <DialogDescription>
+              Add a new folder to organize your files.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -325,10 +333,13 @@ function DashboardContent() {
       </Dialog>
 
       {/* Rename Dialog */}
-      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+      <Dialog open={showRenameDialog} onOpenChange={(open) => { if (!isRenaming) setShowRenameDialog(open) }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename {renameItem?.type === 'folder' ? 'Folder' : 'File'}</DialogTitle>
+            <DialogDescription>
+              Enter the new name and confirm the rename.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -339,28 +350,59 @@ function DashboardContent() {
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Enter new name"
                 className="mt-2"
+                disabled={isRenaming}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>Cancel</Button>
-            <Button onClick={handleRename}>Rename</Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowRenameDialog(false)}
+              disabled={isRenaming}
+              className="cursor-pointer disabled:cursor-not-allowed"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRename}
+              disabled={isRenaming}
+              className="cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isRenaming ? 'Renaming...' : 'Rename'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <Dialog open={showDeleteDialog} onOpenChange={(open) => { if (!isDeleting) setShowDeleteDialog(open) }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete {deleteItem?.type === 'folder' ? 'Folder' : 'File'}?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone.
+            </DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Are you sure you want to delete "{deleteItem?.name}"? This action cannot be undone.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+              className="cursor-pointer disabled:cursor-not-allowed"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

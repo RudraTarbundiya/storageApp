@@ -17,7 +17,7 @@ export default function FilePreviewModal({ onDownload }) {
     const fileType = getFileType(previewFile.extension)
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        <div className="fixed inset-0 z-100 flex items-center justify-center">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closePreview} />
 
@@ -53,7 +53,7 @@ export default function FilePreviewModal({ onDownload }) {
                 </div>
 
                 {/* Preview content */}
-                <div className="flex flex-col items-center justify-center bg-slate-950 min-h-[300px] md:min-h-[400px] flex-1 overflow-auto">
+                <div className="flex flex-col items-center justify-center bg-slate-950 min-h-75 md:min-h-100 flex-1 overflow-auto">
                     {fileType === 'image' && previewUrl && (
                         <img src={previewUrl} alt={previewFile.name} className="max-w-full max-h-[70vh] object-contain" />
                     )}

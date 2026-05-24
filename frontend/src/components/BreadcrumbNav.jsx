@@ -8,7 +8,7 @@ export default function BreadcrumbNav({ items, onNavigate }) {
         variant="ghost"
         size="sm"
         onClick={() => onNavigate(null)}
-        className="h-10 px-3 hover:bg-accent rounded-xl flex items-center gap-2 font-medium"
+        className="h-10 px-3 hover:bg-accent rounded-xl flex items-center gap-2 font-medium cursor-pointer"
       >
         <Home className="h-5 w-5" />
         <span>Root</span>
@@ -21,7 +21,7 @@ export default function BreadcrumbNav({ items, onNavigate }) {
             variant="ghost"
             size="sm"
             onClick={() => onNavigate(item.id)}
-            className="h-10 px-3 hover:bg-accent rounded-xl whitespace-nowrap font-medium text-base"
+            className="h-10 px-3 hover:bg-accent rounded-xl whitespace-nowrap font-medium text-base cursor-pointer"
           >
             {item.name}
           </Button>

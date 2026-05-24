@@ -23,7 +23,7 @@ export default function ConfirmDialog({
 }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-106.25">
                 <DialogHeader>
                     <div className="flex items-center gap-3">
                         {Icon && (
@@ -52,6 +52,7 @@ export default function ConfirmDialog({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={isLoading}
+                        className="cursor-pointer"
                     >
                         {cancelText}
                     </Button>
@@ -62,6 +63,7 @@ export default function ConfirmDialog({
                             onOpenChange(false)
                         }}
                         disabled={isLoading}
+                        className="cursor-pointer"
                     >
                         {isLoading && (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />

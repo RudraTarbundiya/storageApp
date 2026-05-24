@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { getFileType, getFileIcon, formatFileSize } from '@/lib/fileUtils'
+import { getFileType, getFileIcon, getGradient, formatFileSize } from '@/lib/fileUtils'
 
 
 export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare, onPreview, onDetails }) {
@@ -33,8 +33,8 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
         <CardContent className="p-3.5">
           <div className="mb-2.5 flex items-start justify-between">
             <div className="relative">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-[#13315c] via-[#134074] to-[#397bd6] shadow-sm">
-                <IconComponent className="h-5 w-5 text-[#eef4ed]" />
+              <div className={`flex items-center justify-center w-12 h-12 rounded-xl bg-linear-to-br ${getGradient(file.extension)} shadow-sm`}>
+                <IconComponent className="h-6 w-6 text-white" />
               </div>
               {file.isPublic && (
                 <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-white dark:border-slate-900 flex items-center justify-center" title="Public">

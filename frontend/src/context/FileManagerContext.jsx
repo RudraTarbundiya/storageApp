@@ -21,6 +21,8 @@ const FileManagerContext = createContext({
     uploadFiles: [],
     uploadProgress: {},
     isUploading: false,
+    isRenaming: false,
+    isDeleting: false,
     newFolderName: '',
     renameItem: null,
     newName: '',
@@ -77,6 +79,8 @@ export function FileManagerProvider({ children }) {
     const [uploadFiles, setUploadFiles] = useState([])
     const [uploadProgress, setUploadProgress] = useState({})
     const [isUploading, setIsUploading] = useState(false)
+    const [isRenaming, setIsRenaming] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [newFolderName, setNewFolderName] = useState('')
     const [renameItem, setRenameItem] = useState(null)
     const [newName, setNewName] = useState('')
@@ -241,6 +245,7 @@ export function FileManagerProvider({ children }) {
         const safeNewName = sanitizeInput(newName).trim()
         if (!safeNewName) return
 
+        setIsRenaming(true)
         try {
             if (renameItem.type === 'folder') {
                 await directoryAPI.rename(renameItem._id, safeNewName)
@@ -254,10 +259,13 @@ export function FileManagerProvider({ children }) {
             fetchDirectory()
         } catch (error) {
             showAlert('Rename failed', 'destructive')
+        } finally {
+            setIsRenaming(false)
         }
     }, [renameItem, newName, showAlert, fetchDirectory])
 
     const handleDelete = useCallback(async () => {
+        setIsDeleting(true)
         try {
             if (deleteItem.type === 'folder') {
                 await directoryAPI.delete(deleteItem._id)
@@ -270,6 +278,8 @@ export function FileManagerProvider({ children }) {
             fetchDirectory()
         } catch (error) {
             showAlert('Delete failed', 'destructive')
+        } finally {
+            setIsDeleting(false)
         }
     }, [deleteItem, showAlert, fetchDirectory])
 
@@ -310,6 +320,8 @@ export function FileManagerProvider({ children }) {
         uploadFiles,
         uploadProgress,
         isUploading,
+        isRenaming,
+        isDeleting,
         newFolderName,
         renameItem,
         newName,
