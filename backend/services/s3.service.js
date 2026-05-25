@@ -44,6 +44,22 @@ export const getFileMetadata = async (key) => {
     return metadata
 }
 
+export const getS3ObjectBuffer = async (key) => {
+    const command = new GetObjectCommand({
+        Bucket: bktName,
+        Key: key
+    })
+
+    const response = await s3Client.send(command)
+    const chunks = []
+
+    for await (const chunk of response.Body) {
+        chunks.push(chunk)
+    }
+
+    return Buffer.concat(chunks)
+}
+
 export const deleteS3File = async (key) =>{
     const command = new DeleteObjectCommand({
         Bucket: bktName,

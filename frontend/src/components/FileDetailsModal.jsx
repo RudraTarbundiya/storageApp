@@ -1,5 +1,5 @@
 import React from 'react'
-import { X, File as FileIcon, Calendar, HardDrive, Globe, Lock, Users, FolderOpen, Hash } from 'lucide-react'
+import { X, File as FileIcon, Calendar, HardDrive, Globe, Lock, Users, FolderOpen, Hash, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getFileIcon, getFileType, getGradient, formatFileSize } from '@/lib/fileUtils'
@@ -24,6 +24,8 @@ export default function FileDetailsModal({ file, open, onClose }) {
     const IconComponent = getFileIcon(file.extension)
     const fileType = getFileType(file.extension)
     const gradient = getGradient(file.extension)
+    const summaryPoints = Array.isArray(file.summaryPoints) ? file.summaryPoints : []
+    const summaryTags = Array.isArray(file.summaryTags) ? file.summaryTags : []
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '—'
@@ -81,6 +83,41 @@ export default function FileDetailsModal({ file, open, onClose }) {
                                 )}
                             </div>
                         </DetailRow>
+
+                        {(summaryPoints.length > 0 || summaryTags.length > 0) && (
+                            <div className="py-3 border-b last:border-b-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-emerald-500/10 shrink-0">
+                                        <Sparkles className="h-4 w-4 text-emerald-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">AI Summary</p>
+                                        <p className="text-sm font-medium text-foreground">Generated from the uploaded content</p>
+                                    </div>
+                                </div>
+
+                                {summaryPoints.length > 0 && (
+                                    <ul className="space-y-2 pl-1 text-sm text-foreground">
+                                        {summaryPoints.map((point, index) => (
+                                            <li key={`${point}-${index}`} className="flex gap-2 leading-6">
+                                                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                                <span className="wrap-break-words">{point}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+
+                                {summaryTags.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-1.5">
+                                        {summaryTags.map((tag, index) => (
+                                            <Badge key={`${tag}-${index}`} variant="outline" className="border-emerald-500/20 bg-emerald-500/5 text-[11px] text-emerald-700 dark:text-emerald-300">
+                                                {tag}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {file.sharedWith && (
                             <DetailRow icon={Users} label="Shared With">

@@ -4,6 +4,7 @@ import Directory from "../models/directoryModel.js"
 import path from 'path'
 import mime from 'mime-types'
 import { deleteS3File ,  uploadToS3 } from "../services/s3.service.js"
+import { generateAndStoreFileSummary } from '../services/fileSummary.service.js'
 
 const streamToBuffer = async (stream) => {
     const chunks = [];
@@ -142,6 +143,7 @@ export const importFromGoogleDrive = async (req, res, next) => {
         const fileRecord = await File.create({
             name: originalFileName,
             extension: extension,
+            mimeType: fileMimeType,
             parentDirId: targetGoogleDriveFolder._id,
             userId: userId,
             size: fileSize,
@@ -230,6 +232,7 @@ export const importFromGoogleDrive = async (req, res, next) => {
             }
             fileRecord.isUploading = false;
             await fileRecord.save();
+            await generateAndStoreFileSummary(fileRecord)
 
             return res.status(201).json({
                 message: 'File imported successfully from Google Drive',

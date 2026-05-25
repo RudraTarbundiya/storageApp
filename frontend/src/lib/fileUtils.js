@@ -1,5 +1,11 @@
 import { Image as ImageIcon, Video, FileText, Music, FileCode, FileSpreadsheet, Presentation, File as FileIcon } from 'lucide-react'
 
+const SUMMARY_EXTENSIONS = new Set([
+    'txt', 'md', 'markdown', 'csv', 'json', 'xml', 'html', 'htm', 'log', 'rtf', 'yaml', 'yml',
+    'js', 'jsx', 'ts', 'tsx', 'css', 'scss', 'sass', 'less', 'sql', 'py', 'java', 'c', 'cpp', 'h',
+    'hpp', 'go', 'rb', 'php', 'sh', 'bat', 'ps1', 'ini', 'toml', 'env', 'pdf'
+])
+
 export const getFileType = (extension) => {
     const ext = (extension || '').toLowerCase().replace('.', '')
     const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
@@ -48,6 +54,11 @@ export const getGradient = (extension) => {
         case 'document': return 'from-amber-500 to-orange-600'
         default: return 'from-slate-500 to-slate-600'
     }
+}
+
+export const isSummarySupportedFile = (extension) => {
+    const ext = (extension || '').toLowerCase().replace('.', '')
+    return SUMMARY_EXTENSIONS.has(ext)
 }
 
 export const formatFileSize = (bytes) => {

@@ -16,6 +16,10 @@ const fileSchema = new Schema({
         type: Number,
         default: 0
     },
+    mimeType: {
+        type: String,
+        default: null
+    },
     parentDirId: {
         type: Schema.Types.ObjectId,
         required: true,
@@ -36,9 +40,22 @@ const fileSchema = new Schema({
     isPublic: {
         type: Boolean,
         default: false
-    },isUploading: {
+    },
+    isUploading: {
         type: Boolean,
         default: true
+    },
+    summaryPoints: {
+        type: [String],
+        default: []
+    },
+    summaryTags: {
+        type: [String],
+        default: []
+    },
+    summaryGeneratedAt: {
+        type: Date,
+        default: null
     }
 }, {
     strict: 'throw',

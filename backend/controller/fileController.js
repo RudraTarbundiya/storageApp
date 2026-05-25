@@ -6,6 +6,7 @@ import Directory from '../models/directoryModel.js'
 import { sanitizeString } from '../utils/sanitizeInput.js'
 import { updateParentDirectorySize } from '../utils/changeDirectorySize.js'
 import { deleteS3File, getFileMetadata, makeSignedUrl } from '../services/s3.service.js'
+import { generateAndStoreFileSummary } from '../services/fileSummary.service.js'
 
 
 export const sendFile = async (req, res, next) => {
@@ -91,6 +92,7 @@ export const initateUpload = async (req, res, next) => {
             name: filename,
             extension,
             size: filesize,
+            mimeType: filetype,
             parentDirId: pid,
             userId: req.user._id,
             isUploading: true
@@ -117,6 +119,7 @@ export const completeUpload = async (req, res, next) => {
         file.isUploading = false
         await file.save()
         await updateParentDirectorySize(file.parentDirId, file.size)
+        await generateAndStoreFileSummary(file)
         res.status(200).json({ message: "Upload completed" })
     } catch (err) {
         await File.deleteOne({ _id: fileId, userId: req.user._id })

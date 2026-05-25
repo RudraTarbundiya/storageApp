@@ -187,6 +187,9 @@ try {
           size: {
             bsonType: ['int', 'long', 'double']
           },
+          mimeType: {
+            bsonType: ['string', 'null']
+          },
           parentDirId: {
             bsonType: 'objectId'
           },
@@ -229,6 +232,21 @@ try {
           },
           isUploading: {
             bsonType: 'bool'
+          },
+          summaryPoints: {
+            bsonType: 'array',
+            items: {
+              bsonType: 'string'
+            }
+          },
+          summaryTags: {
+            bsonType: 'array',
+            items: {
+              bsonType: 'string'
+            }
+          },
+          summaryGeneratedAt: {
+            bsonType: ['date', 'null']
           },
           __v: {
             bsonType: 'int'

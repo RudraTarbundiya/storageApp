@@ -173,6 +173,7 @@ function DashboardContent() {
                 onDownload={handleDownload}
                 onOpen={handleOpenFile}
                 onPreview={handlePreviewFile}
+                onSummary={handleShowDetails}
                 onRename={(f) => { setRenameItem({ ...f, type: 'file' }); setNewName(f.name); setShowRenameDialog(true) }}
                 onDelete={(f) => { setDeleteItem({ ...f, type: 'file' }); setShowDeleteDialog(true) }}
                 onShare={(f) => handleShare(f, 'file')}

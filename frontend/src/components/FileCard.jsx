@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { MoreVertical, Download, Edit2, Trash2, ExternalLink, Link2, Eye, Info } from 'lucide-react'
+import { MoreVertical, Download, Edit2, Trash2, ExternalLink, Link2, Eye, Info, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,13 +10,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { getFileType, getFileIcon, getGradient, formatFileSize } from '@/lib/fileUtils'
+import { getFileType, getFileIcon, getGradient, formatFileSize, isSummarySupportedFile } from '@/lib/fileUtils'
 
 
-export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare, onPreview, onDetails }) {
+export default function FileCard({ file, onRename, onDelete, onDownload, onOpen, onShare, onPreview, onDetails, onSummary }) {
   const IconComponent = getFileIcon(file.extension)
   const fileType = getFileType(file.extension)
   const isPreviewable = ['image', 'video', 'audio', 'pdf'].includes(fileType)
+  const summaryPoints = Array.isArray(file.summaryPoints) ? file.summaryPoints : []
+  const summaryTags = Array.isArray(file.summaryTags) ? file.summaryTags : []
+  const canShowSummaryAction = isSummarySupportedFile(file.extension)
+  const hasSummary = summaryPoints.length > 0 || summaryTags.length > 0
 
   return (
     <motion.div
@@ -27,7 +31,7 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
       transition={{ duration: 0.2 }}
     >
       <Card
-        className="group cursor-pointer rounded-2xl border-border/80 bg-card/90 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+        className="group  rounded-2xl border-border/80 bg-card/90 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
         title={`name: ${file.name}\nSize: ${formatFileSize(file.size)}`}
       >
         <CardContent className="p-3.5">
@@ -85,18 +89,49 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
 
           <div className="mb-2.5">
             <h3 className="mb-1 truncate text-[15px] font-semibold leading-tight">{file.name}</h3>
-            <Badge variant="outline" className="border-primary/25 bg-secondary/50 text-[11px] text-primary">
-              {file.extension || 'File'}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge variant="outline" className="border-primary/25 bg-secondary/50 text-[11px] text-primary">
+                {file.extension || 'File'}
+              </Badge>
+              {hasSummary && (
+                <Badge variant="secondary" className=" border-emerald-500/20 bg-emerald-500/10 text-[11px] text-emerald-700 dark:text-emerald-300">
+                  AI Summary
+                </Badge>
+              )}
+            </div>
+            {summaryTags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {summaryTags.map((tag, index) => (
+                  <Badge
+                    key={`${tag}-${index}`}
+                    variant="outline"
+                    className="max-w-full border-border/80 bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  >
+                    <span className="truncate">{tag}</span>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Always visible action buttons */}
-          <div className="flex gap-1.5 border-t border-border/70 pt-2">
+          <div className="flex flex-wrap gap-1.5 border-t border-border/70 pt-2">
+            {canShowSummaryAction && (
+              <Button
+                variant="outline"
+                size="sm"
+                className={`${isPreviewable ? 'flex-1' : 'flex-1'} cursor-pointer min-w-24 rounded-lg border-border/80 text-[11px]`}
+                onClick={() => onSummary?.(file)}
+              >
+                <Sparkles className="mr-1 h-3 w-3" />
+                Summary
+              </Button>
+            )}
             {isPreviewable && (
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7.5 flex-1 rounded-lg border-border/80 text-[11px]"
+                className="cursor-pointer h-7.5 flex-1 rounded-lg border-border/80 text-[11px]"
                 onClick={() => onPreview?.(file)}
               >
                 <Eye className="mr-1 h-3 w-3" />
@@ -106,7 +141,7 @@ export default function FileCard({ file, onRename, onDelete, onDownload, onOpen,
             <Button
               variant={isPreviewable ? "secondary" : "outline"}
               size="sm"
-              className={`${isPreviewable ? 'flex-1' : 'w-full'} h-7.5 rounded-lg text-[11px]`}
+              className={`${isPreviewable || canShowSummaryAction ? 'flex-1' : 'w-full'} cursor-pointer min-w-24 rounded-lg text-[11px]`}
               onClick={() => onDownload?.(file)}
             >
               <Download className="mr-1 h-3 w-3" />

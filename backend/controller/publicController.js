@@ -119,7 +119,10 @@ export const sendPublicFile = async (req, res, next) => {
                 size: fileobj.size,
                 parentDirId: fileobj.parentDirId,
                 userId: fileobj.userId,
-                isPublic: fileobj.isPublic
+                isPublic: fileobj.isPublic,
+                summaryPoints: fileobj.summaryPoints || [],
+                summaryTags: fileobj.summaryTags || [],
+                summaryGeneratedAt: fileobj.summaryGeneratedAt || null
             })
         }
         let signUrl
