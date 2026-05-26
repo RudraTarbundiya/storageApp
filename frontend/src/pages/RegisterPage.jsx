@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+// role selection removed - only user registration allowed
 import { userAPI, authAPI } from '@/lib/api'
 import { useAuth, useAlert } from '@/context'
 import { sanitizeInput } from '@/lib/utils'
@@ -18,9 +18,7 @@ export default function RegisterPage() {
     email: '',
     otp: '',
     password: '',
-    confirmPassword: '',
-    role: 'user',
-    secretKey: '',
+    confirmPassword: ''
   })
   const [loading, setLoading] = useState(false)
   const [otpSending, setOtpSending] = useState(false)
@@ -100,18 +98,11 @@ export default function RegisterPage() {
       const safeName = sanitizeInput(formData.name).trim()
       const safeEmail = sanitizeInput(formData.email).trim()
       const safeOtp = sanitizeInput(formData.otp).trim()
-      const safeRole = sanitizeInput(formData.role).trim()
-      const safeSecretKey = sanitizeInput(formData.secretKey).trim()
       const registrationData = {
         name: safeName,
         email: safeEmail,
         otp: safeOtp,
-        password: safePassword,
-        role: safeRole,
-      }
-      // Include secretKey for admin or manager registration
-      if (safeRole === 'admin' || safeRole === 'manager') {
-        registrationData.secretKey = safeSecretKey
+        password: safePassword
       }
       await userAPI.register(registrationData)
       showAlert('Registration successful. Redirecting to login...', 'success')
@@ -146,17 +137,10 @@ export default function RegisterPage() {
     }))
   }
 
-  const handleRoleChange = (value) => {
-    setFormData(prev => ({
-      ...prev,
-      role: value,
-      secretKey: value === 'user' ? '' : prev.secretKey // Clear secretKey if user role
-    }))
-  }
 
   const goBack = () => {
     setStep(1)
-    setFormData(prev => ({ ...prev, otp: '', password: '', confirmPassword: '', secretKey: '' }))
+    setFormData(prev => ({ ...prev, otp: '', password: '', confirmPassword: '' }))
   }
 
   return (
@@ -176,7 +160,7 @@ export default function RegisterPage() {
           >
             <img src="/logo.png" alt="Storix" className="w-16 h-16 rounded-2xl shadow-lg" />
           </motion.div>
-          <h1 className="text-3xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-linear-to-r from-blue-900 to-blue-800 bg-clip-text text-transparent">
             Join Storix
           </h1>
           <p className="text-muted-foreground mt-2">Create your account and start organizing</p>
@@ -254,59 +238,6 @@ export default function RegisterPage() {
                       className="h-11"
                     />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Register as</Label>
-                    <Select value={formData.role} onValueChange={handleRoleChange}>
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            User
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="manager">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            Manager
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="admin">
-                          <div className="flex items-center gap-2">
-                            <Shield className="w-4 h-4" />
-                            Admin
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {(formData.role === 'admin' || formData.role === 'manager') && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-2"
-                    >
-                      <Label htmlFor="secretKey">{formData.role === 'admin' ? 'Admin' : 'Manager'} Secret Key</Label>
-                      <Input
-                        id="secretKey"
-                        name="secretKey"
-                        type="password"
-                        placeholder={`Enter ${formData.role} secret key`}
-                        value={formData.secretKey}
-                        onChange={handleChange}
-                        required
-                        className="h-11"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Contact system administrator for the {formData.role} secret key
-                      </p>
-                    </motion.div>
-                  )}
 
                   <Button type="submit" className="w-full h-11" disabled={otpSending}>
                     {otpSending ? (

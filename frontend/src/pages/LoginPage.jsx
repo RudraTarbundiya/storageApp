@@ -92,7 +92,7 @@ export default function LoginPage() {
           >
             <img src="/logo.png" alt="Storix" className="w-16 h-16 rounded-2xl shadow-lg" />
           </motion.div>
-          <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-linear-to-r from-yellow-300 to-gray-600 bg-clip-text text-transparent">
             Storix
           </h1>
           <p className="text-muted-foreground mt-2">Secure file management made simple</p>

@@ -95,7 +95,7 @@ export default function Header({ user }) {
           )}
 
           <div className="flex items-center gap-2 font-display font-semibold">
-            <img src="/logo.png" alt="Storix" className="h-8 w-8 rounded-lg" />
+            <img src="/logo.png" alt="Storix" className="h-8 w-8 rounded-none" />
             <span className="hidden text-lg sm:inline-block">Storix</span>
           </div>
 

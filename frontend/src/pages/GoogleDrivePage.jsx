@@ -4,8 +4,8 @@ import { motion } from 'framer-motion'
 import { Cloud, Download, FolderOpen, File as FileIcon, Home, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge' 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter , DialogDescription } from '@/components/ui/dialog'
 import { googleDriveAPI } from '@/lib/api'
 import { googleLoginConfig } from '@/lib/googleAuth'
 import { useAlert } from '@/context'
@@ -295,6 +295,9 @@ export default function GoogleDrivePage() {
           <DialogHeader>
             <DialogTitle>Import File</DialogTitle>
           </DialogHeader>
+          <DialogDescription>
+              You're about to import <strong>{importFile?.name}</strong> from your Google Drive to your Storix. Do you want to proceed?
+            </DialogDescription>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
               Are you sure you want to import this file to your Storix?

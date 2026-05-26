@@ -22,38 +22,16 @@ const getSessionCookieOptions = () => {
 }
 
 export const registerUser = async (req, res, next) => {
-    const { name, otp, email, password, role, secretKey } = req.body;
+    const { name, otp, email, password } = req.body;
+    // Force role to 'user' for all self-registrations
+    const role = 'user'
     const { success, error } = registerSchema.safeParse({ name, otp, email, password })
     if (!success) {
         return res.status(400).json({ error: error.flatten().fieldErrors })
     }
     const session = await mongoose.startSession()
     try {
-        // Validate role
-        const validRoles = ['user', 'admin', 'manager'];
-        if (!validRoles.includes(role)) {
-            return res.status(400).json({ error: 'Invalid role. Must be user, admin, or manager.' });
-        }
-
-        // Validate admin secret key
-        if (role === 'admin') {
-            if (!secretKey) {
-                return res.status(400).json({ error: 'Secret key is required for admin registration.' });
-            }
-            if (secretKey !== process.env.ADMIN_SECRET_KEY) {
-                return res.status(403).json({ error: 'Invalid admin secret key.' });
-            }
-        }
-
-        // Validate manager secret key
-        if (role === 'manager') {
-            if (!secretKey) {
-                return res.status(400).json({ error: 'Secret key is required for manager registration.' });
-            }
-            if (secretKey !== process.env.MANAGER_SECRET_KEY) {
-                return res.status(403).json({ error: 'Invalid manager secret key.' });
-            }
-        }
+        // Self-registration only allowed for regular users; role forced above
 
         const findOtp = await OTP.findOne({ email, otp })
         if (!findOtp) {
@@ -79,13 +57,13 @@ export const registerUser = async (req, res, next) => {
             password,
             picture: null,
             rootDirId: rootDirId,
-            role,
+            role: 'user',
         }, { session })
         await session.commitTransaction()
         await session.endSession()
         // Send email to admin about new registration
-        await mailToAdmin('New User Registration', `A new user has registered with the email: ${email} and role: ${role}.`)
-        return res.status(201).json({ message: `${role.charAt(0).toUpperCase() + role.slice(1)} registered successfully` })
+        await mailToAdmin('New User Registration', `A new user has registered with the email: ${email}.`)
+        return res.status(201).json({ message: `User registered successfully` })
     } catch (err) {
         await session.abortTransaction()
 

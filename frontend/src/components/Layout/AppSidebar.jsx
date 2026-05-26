@@ -104,7 +104,7 @@ export default function AppSidebar() {
       <SidebarHeader className="px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Storix" className="h-8 w-8 rounded-lg" />
+            <img src="/logo.png" alt="Storix" className="h-8 w-8 rounded-none" />
             <span className="font-display text-lg font-semibold tracking-wide">Storix</span>
           </div>
           <Button

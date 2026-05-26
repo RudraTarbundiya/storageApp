@@ -1,11 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
 /* Local Roboto Mono variable font (place the WOFF2 at /fonts/RobotoMono-VariableFont_wght.woff2 in the frontend/public folder) */
 @font-face {
   font-family: 'Roboto Mono Local';
-  src: url('/fonts/RobotoMono-VariableFont_wght.woff2') format('woff2');
+  src: url('/fonts/Rubik-VariableFont_wght.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
