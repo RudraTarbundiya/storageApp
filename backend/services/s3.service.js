@@ -24,7 +24,7 @@ export const makeSignedUrl = async ({ key, filetype, method, name, download = fa
             ContentType: filetype,
             StorageClass: 'INTELLIGENT_TIERING'
         })
-    } else if (method === 'get') {
+    } else if (method === 'get') { // for get file we ues cloudfront signed url with content disposition for download or inline for preview
         command = new GetObjectCommand({
             Bucket: bktName,
             Key: key,

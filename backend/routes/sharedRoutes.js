@@ -26,7 +26,7 @@ router.get('/by-me', getMySharedItems)
 // Get items shared with me
 router.get('/with-me', getSharedWithMe)
 
-//share Files and Directory
+//send Files and Directory
 router.get('/file/:id', checkFileShare, sendPublicFile)
 router.get('/dir/:id', checkDirectoryShare, getPublicDirData)
 

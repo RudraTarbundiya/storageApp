@@ -1,6 +1,6 @@
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
-import { makeSignedUrl } from "../services/s3.service.js";
+import { getCloudFrontSignedUrl } from "../services/cloudFront.js";
 
 // Get all public items owned by the current user
 // Returns directories first (top-level public dirs), then standalone public files
@@ -127,10 +127,10 @@ export const sendPublicFile = async (req, res, next) => {
         }
         let signUrl
         if (req.query.action === 'download') {
-            signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name, download: true })
+            signUrl =  getCloudFrontSignedUrl({ s3ObjectKey: id + fileobj.extension , name: fileobj.name, download: true })
             return res.status(302).redirect(signUrl)
         }
-        signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name })
+        signUrl =  getCloudFrontSignedUrl({ s3ObjectKey: id + fileobj.extension, name: fileobj.name })
         // For previews/streaming, redirect to S3
         return res.status(302).redirect(signUrl)
     } catch (err) {

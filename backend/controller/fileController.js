@@ -7,6 +7,7 @@ import { sanitizeString } from '../utils/sanitizeInput.js'
 import { updateParentDirectorySize } from '../utils/changeDirectorySize.js'
 import { deleteS3File, getFileMetadata, makeSignedUrl } from '../services/s3.service.js'
 import { generateAndStoreFileSummary } from '../services/fileSummary.service.js'
+import {getCloudFrontSignedUrl} from '../services/cloudFront.js'
 
 
 export const sendFile = async (req, res, next) => {
@@ -18,11 +19,11 @@ export const sendFile = async (req, res, next) => {
         let signUrl
 
         if (req.query.action === 'download') {
-            signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name , download: true })
+            signUrl = getCloudFrontSignedUrl({ s3ObjectKey: id + fileobj.extension , name: fileobj.name, download: true })
             return res.status(302).redirect(signUrl)
         }
-        signUrl = await makeSignedUrl({ key: id + fileobj.extension, method: 'get', name: fileobj.name })
-        // For previews/streaming, redirect to S3
+        signUrl =  getCloudFrontSignedUrl({ s3ObjectKey: id + fileobj.extension, name: fileobj.name })
+        // For previews/streaming, redirect to cloudfront
         return res.status(302).redirect(signUrl)
     } catch (err) {
         next(err)
@@ -111,7 +112,7 @@ export const completeUpload = async (req, res, next) => {
         const file = await File.findOne({ _id: fileId, userId: req.user._id })
         if (!file) return res.status(404).json({ error: "File not found!" })
         const metadata = await getFileMetadata(fileId + file.extension)
-        if(file.size !== metadata.ContentLength){
+        if (file.size !== metadata.ContentLength) {
             // File size mismatch, delete the incomplete upload
             await file.deleteOne()
             return res.status(400).json({ error: "Uploaded file size does not match the expected size. Please try uploading again." })
