@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Upload, FolderPlus, Search, Download, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -61,7 +61,14 @@ function DashboardContent() {
     handleOpenFile,
     // Cancel functions
     cancelFileUpload,
+    // Lazy initialization
+    ensureInitialized,
   } = useFileManager()
+
+  // Trigger lazy initialization of file manager data on mount
+  useEffect(() => {
+    ensureInitialized()
+  }, [ensureInitialized])
 
   // Calculate available storage
   const maxStorage = user?.maxStorage || 3 * 1024 * 1024 * 1024 // Default 3GB

@@ -4,6 +4,7 @@ import File from "../models/fileModel.js";
 import { rm } from "fs/promises";
 import path from "path";
 import { deleteAllSession } from "../utils/deleteSessions.js";
+import { invalidateUserCache } from "../middleware/authMiddlwWare.js";
 import redisClient from "../config/redis.js";
 
 //admin only
@@ -32,17 +33,15 @@ export const getUsers = async (req, res, next) => {
             }
         ]);
 
-        // Determine login state from Redis for each user (sessions are stored in Redis)
-        for (const u of users) {
-            try {
-                const ssnSearch = await redisClient.ft.search('sessionIdx', `@userId:{${u._id.toString()}}`, {
-                    RETURN: [],
-                });
-                u.isLoggedIn = ssnSearch.total > 0;
-            } catch (e) {
-                u.isLoggedIn = false;
-            }
-        }
+        // Determine login state from Redis for all users concurrently (batch instead of N+1)
+        const loginChecks = await Promise.all(
+            users.map(u =>
+                redisClient.ft.search('sessionIdx', `@userId:{${u._id.toString()}}`, { RETURN: [] })
+                    .then(result => result.total > 0)
+                    .catch(() => false)
+            )
+        );
+        users.forEach((u, i) => { u.isLoggedIn = loginChecks[i]; });
         res.status(200).json(users);
     } catch (error) {
         next(error);
@@ -102,6 +101,7 @@ export const deleteByUserId = async (req, res, next) => {
         // Soft delete the user
         user.isDelete = true;
         await user.save();
+        await invalidateUserCache(userId);
         await deleteAllSession(userId);
 
         return res.status(200).json({ message: 'User and all associated data deleted successfully', });
@@ -135,16 +135,15 @@ export const getDeletedUsers = async (req, res, next) => {
             }
         ]);
 
-        for (const u of users) {
-            try {
-                const ssnSearch = await redisClient.ft.search('sessionIdx', `@userId:{${u._id.toString()}}`, {
-                    RETURN: [],
-                });
-                u.isLoggedIn = ssnSearch.total > 0;
-            } catch (e) {
-                u.isLoggedIn = false;
-            }
-        }
+        // Determine login state from Redis for all users concurrently (batch instead of N+1)
+        const loginChecks = await Promise.all(
+            users.map(u =>
+                redisClient.ft.search('sessionIdx', `@userId:{${u._id.toString()}}`, { RETURN: [] })
+                    .then(result => result.total > 0)
+                    .catch(() => false)
+            )
+        );
+        users.forEach((u, i) => { u.isLoggedIn = loginChecks[i]; });
         res.status(200).json(users);
     } catch (error) {
         next(error);
@@ -199,6 +198,7 @@ export const changeUserRole = async (req, res, next) => {
 
         targetUser.role = newRole;
         await targetUser.save();
+        await invalidateUserCache(userId);
         return res.status(200).json({ message: 'User role updated successfully.' });
     } catch (error) {
         next(error);

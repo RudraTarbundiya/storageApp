@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import OTP from "../models/otpModel.js";
 import redisClient from "../config/redis.js";
 import { deleteAllSession } from "../utils/deleteSessions.js";
+import { invalidateUserCache } from "../middleware/authMiddlwWare.js";
 import { changeProfileSchema, loginSchema, registerSchema } from "../validator/authSchema.js";
 
 const sessionMaxAge = 60 * 60 * 1000 * 24 * 7 // 1 week
@@ -246,6 +247,7 @@ export const changeProfile = async (req, res, next) => {
         }
 
         await user.save();
+        await invalidateUserCache(user._id.toString());
         res.status(200).json({ message: 'Profile updated successfully.' });
     } catch (error) {
         next(error);

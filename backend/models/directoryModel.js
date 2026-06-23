@@ -36,6 +36,12 @@ const directorySchema = new Schema({
     timestamps: true
 })
 
+// Indexes for query performance
+directorySchema.index({ parentDirId: 1 })          // getDirectoryById, deleteDirectory
+directorySchema.index({ userId: 1 })               // hard delete, ownership queries
+directorySchema.index({ 'sharedWith.user': 1 })    // getSharedWithMe
+directorySchema.index({ userId: 1, isPublic: 1 })  // getMyPublicItems
+
 const Directory = model('Directory', directorySchema)
 
 export default Directory

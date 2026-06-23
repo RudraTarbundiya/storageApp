@@ -37,7 +37,7 @@ export const renameFile = async (req, res, next) => {
     if (!fileobj) return res.status(404).json({ error: 'File not found or you do not have access to it!' })
 
     try {
-        fileobj.name = req.body.newFileName
+        fileobj.name = req.body.newFileName + fileObj.extension
         await fileobj.save()
         return res.status(200).json({ message: 'File renamed', newName: req.body.newFileName })
     } catch (err) {

@@ -85,6 +85,8 @@ export function FileManagerProvider({ children }) {
     const [renameItem, setRenameItem] = useState(null)
     const [newName, setNewName] = useState('')
     const [deleteItem, setDeleteItem] = useState(null)
+    // Lazy initialization - don't fetch until a page that needs file data requests it
+    const [initialized, setInitialized] = useState(false)
 
     const fetchDirectory = useCallback(async () => {
         setLoading(true)
@@ -107,10 +109,20 @@ export function FileManagerProvider({ children }) {
         }
     }, [currentFolder, showAlert])
 
-    // Fetch directory when currentFolder changes
+    // Only fetch when initialized (a page that needs file data has requested it)
+    // or when currentFolder changes after initialization
     useEffect(() => {
-        fetchDirectory()
-    }, [fetchDirectory])
+        if (initialized) {
+            fetchDirectory()
+        }
+    }, [initialized, fetchDirectory])
+
+    // Pages call this to trigger the first data load
+    const ensureInitialized = useCallback(() => {
+        if (!initialized) {
+            setInitialized(true)
+        }
+    }, [initialized])
 
     const handleOpenFolder = useCallback((folder) => {
         setBreadcrumbs(prev => [...prev, { id: folder._id, name: folder.name }])
@@ -353,6 +365,8 @@ export function FileManagerProvider({ children }) {
         handleOpenFile,
         // Upload cancel functions
         cancelFileUpload,
+        // Lazy initialization
+        ensureInitialized,
     }
 
     return (

@@ -62,6 +62,12 @@ const fileSchema = new Schema({
     timestamps: true
 })
 
+// Indexes for query performance
+fileSchema.index({ parentDirId: 1 })          // getDirectoryById, deleteDirectory, share operations
+fileSchema.index({ userId: 1 })               // getUsers aggregate (storage calc), hard delete
+fileSchema.index({ 'sharedWith.user': 1 })    // getSharedWithMe
+fileSchema.index({ userId: 1, isPublic: 1 })  // getMyPublicItems
+
 const File = model('File', fileSchema)
 
 export default File

@@ -88,10 +88,11 @@ export default function UsersPage() {
     }
 
     useEffect(() => {
-        fetchUsers()
-        if (isOwner) {
-            fetchDeletedUsers()
-        }
+        // Run both fetches in parallel instead of sequentially
+        Promise.all([
+            fetchUsers(),
+            isOwner ? fetchDeletedUsers() : Promise.resolve()
+        ])
     }, [isOwner])
 
     const openConfirmDialog = (type, user) => {
