@@ -7,9 +7,9 @@ const USER_CACHE_TTL_MS = 5 * 60 * 1000;
 // Middleware to check if user is authenticated with valid session and not soft-deleted
 // Uses Redis-cached user data to avoid hitting MongoDB on every request
 export default async function checkAuth(req, res, next) {
-    const {sid}= req.signedCookies
-    if(!sid){
-        return  res.status(401).json({ error: "Not logged!" });
+    const { sid } = req.signedCookies
+    if (!sid) {
+        return res.status(401).json({ error: "Not logged!" });
     }
     const ssn = await redisClient.hGetAll(`session:${sid}`)
     if (!ssn || !ssn.userId) {
@@ -39,7 +39,7 @@ export default async function checkAuth(req, res, next) {
         redisClient.hSet(`session:${sid}`, {
             userData: JSON.stringify(user),
             userCachedAt: Date.now().toString()
-        }).catch(() => {}); // Silently ignore cache write errors
+        }).catch(() => { }); // Silently ignore cache write errors
     }
 
     // Check if user is soft-deleted
@@ -63,7 +63,7 @@ export async function invalidateUserCache(userId) {
         if (ssnSearch.total > 0) {
             await Promise.all(
                 ssnSearch.documents.map(doc =>
-                    redisClient.hDel(doc.id, ['userData', 'userCachedAt']).catch(() => {})
+                    redisClient.hDel(doc.id, ['userData', 'userCachedAt']).catch(() => { })
                 )
             );
         }

@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import OTP from "../models/otpModel.js";
 import redisClient from "../config/redis.js";
 import { deleteAllSession } from "../utils/deleteSessions.js";
+import { parseUserAgent } from "../utils/parseUserAgent.js";
 import { invalidateUserCache } from "../middleware/authMiddlwWare.js";
 import { changeProfileSchema, loginSchema, registerSchema } from "../validator/authSchema.js";
 
@@ -105,13 +106,24 @@ export const loginUser = async (req, res, next) => {
             return res.status(401).json({ error: 'Invalid email or password !' })
         }
         const allSessions = await redisClient.ft.search('sessionIdx', `@userId:{${user._id.toString()}}`, {
-            RETURN: [],
+            RETURN: ['createdAt'],
         })
-        if (allSessions.total >= 2) {//max 2 sessions allowed
-            await redisClient.del(allSessions.documents[0].id)//deleting oldest session
+        if (allSessions.total >= 3) {//max 3 sessions allowed
+            // Sort by createdAt ascending and delete the oldest
+            const sorted = [...allSessions.documents].sort((a, b) => {
+                const aTime = parseInt(a.value?.createdAt || '0')
+                const bTime = parseInt(b.value?.createdAt || '0')
+                return aTime - bTime
+            })
+            await redisClient.del(sorted[0].id)
         }
         const ssnId = crypto.randomUUID()
-        await redisClient.hSet(`session:${ssnId}`, { userId: user._id.toString() })
+        const userAgent = req.headers['user-agent'] || 'Unknown'
+        await redisClient.hSet(`session:${ssnId}`, {
+            userId: user._id.toString(),
+            userAgent,
+            createdAt: Date.now().toString()
+        })
         await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
         res.cookie('sid', ssnId, getSessionCookieOptions())
         return res.status(200).json({ message: 'Login successful', userId: user._id.toString() })
@@ -181,7 +193,24 @@ export const googlelogin = async (req, res, next) => {
             }
             //create session and set cookie
             const ssnId = crypto.randomUUID()
-            await redisClient.hSet(`session:${ssnId}`, { userId: findUser._id.toString() })
+            const userAgent = req.headers['user-agent'] || 'Unknown'
+            // Enforce max 3 sessions
+            const existingSessions = await redisClient.ft.search('sessionIdx', `@userId:{${findUser._id.toString()}}`, {
+                RETURN: ['createdAt'],
+            })
+            if (existingSessions.total >= 3) {
+                const sorted = [...existingSessions.documents].sort((a, b) => {
+                    const aTime = parseInt(a.value?.createdAt || '0')
+                    const bTime = parseInt(b.value?.createdAt || '0')
+                    return aTime - bTime
+                })
+                await redisClient.del(sorted[0].id)
+            }
+            await redisClient.hSet(`session:${ssnId}`, {
+                userId: findUser._id.toString(),
+                userAgent,
+                createdAt: Date.now().toString()
+            })
             await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
             res.cookie('sid', ssnId, getSessionCookieOptions())
             return res.status(200).json({ message: "User already exists" })
@@ -204,7 +233,12 @@ export const googlelogin = async (req, res, next) => {
         }, { session })
         //create session and set cookie
         const ssnId = crypto.randomUUID()
-        await redisClient.hSet(`session:${ssnId}`, { userId: userId.toString() })
+        const userAgent = req.headers['user-agent'] || 'Unknown'
+        await redisClient.hSet(`session:${ssnId}`, {
+            userId: userId.toString(),
+            userAgent,
+            createdAt: Date.now().toString()
+        })
         await redisClient.expire(`session:${ssnId}`, 60 * 60 * 24 * 7) // 1 week expiration
         res.cookie('sid', ssnId, getSessionCookieOptions())
         res.status(201).json({ message: "Google login successful" });
@@ -251,5 +285,68 @@ export const changeProfile = async (req, res, next) => {
         res.status(200).json({ message: 'Profile updated successfully.' });
     } catch (error) {
         next(error);
+    }
+}
+
+export const getSessions = async (req, res, next) => {
+    try {
+        const userId = req.user._id.toString()
+        const currentSid = req.signedCookies.sid
+        const allSessions = await redisClient.ft.search('sessionIdx', `@userId:{${userId}}`, {
+            RETURN: [],
+        })
+
+        // Fetch full hash data for each session (FT.SEARCH RETURN doesn't reliably return non-indexed fields)
+        const sessions = await Promise.all(
+            allSessions.documents.map(async (doc) => {
+                const sessionId = doc.id.replace('session:', '')
+                const sessionData = await redisClient.hGetAll(doc.id)
+                const ua = sessionData?.userAgent || 'Unknown'
+                const parsed = parseUserAgent(ua)
+                return {
+                    sessionId,
+                    browser: parsed.browser,
+                    os: parsed.os,
+                    deviceType: parsed.deviceType,
+                    createdAt: sessionData?.createdAt ? parseInt(sessionData.createdAt) : null,
+                    isCurrent: sessionId === currentSid
+                }
+            })
+        )
+
+        // Sort: current session first, then by createdAt descending
+        sessions.sort((a, b) => {
+            if (a.isCurrent) return -1
+            if (b.isCurrent) return 1
+            return (b.createdAt || 0) - (a.createdAt || 0)
+        })
+
+        return res.status(200).json({ sessions })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const logoutSession = async (req, res, next) => {
+    try {
+        const { sessionId } = req.params
+        const userId = req.user._id.toString()
+
+        // Verify the session belongs to this user
+        const ssn = await redisClient.hGetAll(`session:${sessionId}`)
+        if (!ssn || ssn.userId !== userId) {
+            return res.status(404).json({ error: 'Session not found' })
+        }
+
+        await redisClient.del(`session:${sessionId}`)
+
+        // If user is logging out their own current session, clear the cookie
+        if (sessionId === req.signedCookies.sid) {
+            res.clearCookie('sid')
+        }
+
+        return res.status(200).json({ message: 'Session terminated' })
+    } catch (error) {
+        next(error)
     }
 }

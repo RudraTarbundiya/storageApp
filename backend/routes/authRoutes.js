@@ -1,5 +1,5 @@
 import express from 'express'
-import { changeProfile, generateOTP, getUserProfile, googlelogin, loginUser, logoutAllDevice, logoutUser, registerUser } from '../controller/authController.js'
+import { changeProfile, generateOTP, getUserProfile, getSessions, googlelogin, loginUser, logoutAllDevice, logoutSession, logoutUser, registerUser } from '../controller/authController.js'
 import checkAuth from '../middleware/authMiddlwWare.js'
 const router = express.Router()
 //this auth routes are handle single user not multiple users like usersRoutes.js
@@ -12,6 +12,10 @@ router.post('/logout', checkAuth, logoutUser)//logout current user
 router.post('/logoutall', checkAuth, logoutAllDevice)//logout from all devices
 
 router.get('/profile', checkAuth, getUserProfile)//get user profile
+
+router.get('/sessions', checkAuth, getSessions)//get all active sessions
+
+router.delete('/sessions/:sessionId', checkAuth, logoutSession)//logout a specific session
 
 router.post('/send-otp', generateOTP)
 
