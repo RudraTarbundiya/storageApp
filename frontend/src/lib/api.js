@@ -22,6 +22,8 @@ export const userAPI = {
   logout: () => api.post('/auth/logout'),
   logoutAll: () => api.post('/auth/logoutall'),
   updateProfile: (data) => api.post('/auth/change-profile', data),
+  getSessions: () => api.get('/auth/sessions'),
+  deleteSession: (sessionId) => api.delete(`/auth/sessions/${sessionId}`),
 }
 
 // Admin API (admin-only endpoints)

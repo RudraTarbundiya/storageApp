@@ -1,5 +1,5 @@
 import React from 'react'
-import { X, Download, FileText, Music, Terminal } from 'lucide-react'
+import { X, Download, FileText, Music, Terminal, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePreview } from '@/context'
 import { getFileType, getFileIcon, formatFileSize } from '@/lib/fileUtils'
@@ -9,6 +9,7 @@ export default function FilePreviewModal({ onDownload }) {
         previewOpen,
         previewFile,
         previewUrl,
+        previewLoading,
         closePreview
     } = usePreview();
 
@@ -54,11 +55,31 @@ export default function FilePreviewModal({ onDownload }) {
 
                 {/* Preview content */}
                 <div className="flex flex-col items-center justify-center bg-slate-950 min-h-75 md:min-h-100 flex-1 overflow-auto">
-                    {fileType === 'image' && previewUrl && (
+                    {/* Loading Animation */}
+                    {previewLoading && (
+                        <div className="flex flex-col items-center justify-center gap-4 p-8">
+                            <div className="relative">
+                                <div className="h-16 w-16 rounded-full border-4 border-muted/30 border-t-blue-500 animate-spin" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Loader2 className="h-6 w-6 text-blue-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                                </div>
+                            </div>
+                            <div className="text-center space-y-2">
+                                <p className="text-sm text-slate-300 font-medium">Loading preview...</p>
+                                <div className="flex gap-1 justify-center">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {!previewLoading && fileType === 'image' && previewUrl && (
                         <img src={previewUrl} alt={previewFile.name} className="max-w-full max-h-[70vh] object-contain" />
                     )}
 
-                    {fileType === 'video' && previewUrl && (
+                    {!previewLoading && fileType === 'video' && previewUrl && (
                         <video
                             src={previewUrl}
                             controls
@@ -68,7 +89,7 @@ export default function FilePreviewModal({ onDownload }) {
                         />
                     )}
 
-                    {fileType === 'audio' && previewUrl && (
+                    {!previewLoading && fileType === 'audio' && previewUrl && (
                         <div className="p-8 md:p-12 text-center w-full">
                             <div className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center mx-auto mb-6 shadow-2xl">
                                 <Music className="h-10 w-10 md:h-12 md:w-12 text-white" />
@@ -84,7 +105,7 @@ export default function FilePreviewModal({ onDownload }) {
                         </div>
                     )}
 
-                    {(fileType === 'pdf' || fileType === 'document') && previewUrl && (
+                    {!previewLoading && (fileType === 'pdf' || fileType === 'document') && previewUrl && (
                         <iframe
                             src={previewUrl}
                             className="w-full h-[70vh]"

@@ -93,6 +93,7 @@ export function PreviewProvider({ children }) {
         previewOpen,
         previewFile,
         previewUrl,
+        previewLoading,
         handlePreview,
         closePreview
     };

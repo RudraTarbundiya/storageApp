@@ -264,9 +264,11 @@ export default function PublicSharePage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading shared content...</p>
+                <div className="text-center space-y-3">
+                    <div className="relative flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-full border-4 border-muted/30 border-t-blue-500 animate-spin" />
+                    </div>
+                    <p className="text-sm text-muted-foreground font-medium">Loading shared content...</p>
                 </div>
             </div>
         )

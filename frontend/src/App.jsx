@@ -6,7 +6,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import GoogleDrivePage from '@/pages/GoogleDrivePage'
 import UsersPage from '@/pages/UsersPage'
-import ProfilePage from '@/pages/ProfilePage'
+import SettingsPage from '@/pages/SettingsPage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import PublicSharePage from '@/pages/PublicSharePage'
 import SharedWithMePage from '@/pages/SharedWithMePage'
@@ -39,7 +39,7 @@ function App() {
                   <Route path="/my-public-shares" element={<MyPublicSharesPage />} />
                   <Route path="/google-drive" element={<GoogleDrivePage />} />
                   <Route path="/users" element={<UsersPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/admin/files/:userId" element={<AdminFileBrowserPage />} />
                 </Route>
               </Routes>

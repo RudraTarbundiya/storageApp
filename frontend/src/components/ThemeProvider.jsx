@@ -12,9 +12,24 @@ export function ThemeProvider({ children, defaultTheme = 'light', ...props }) {
 
   useEffect(() => {
     const root = window.document.documentElement
-    root.classList.remove('light', 'dark')
-    root.classList.add(theme)
-    localStorage.setItem('theme', theme)
+
+    const applyTheme = (resolvedTheme) => {
+      root.classList.remove('light', 'dark')
+      root.classList.add(resolvedTheme)
+    }
+
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      applyTheme(mediaQuery.matches ? 'dark' : 'light')
+
+      const handler = (e) => applyTheme(e.matches ? 'dark' : 'light')
+      mediaQuery.addEventListener('change', handler)
+      localStorage.setItem('theme', theme)
+      return () => mediaQuery.removeEventListener('change', handler)
+    } else {
+      applyTheme(theme)
+      localStorage.setItem('theme', theme)
+    }
   }, [theme])
 
   return (

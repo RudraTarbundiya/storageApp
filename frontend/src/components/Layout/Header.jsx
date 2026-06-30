@@ -40,7 +40,8 @@ export default function Header({ user }) {
     'my-public-shares': 'Public Shares',
     'google-drive': 'Google Drive',
     users: 'Users',
-    profile: 'Profile',
+    profile: 'Settings',
+    settings: 'Settings',
     admin: 'Admin',
   }
 

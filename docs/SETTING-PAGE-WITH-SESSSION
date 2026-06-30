@@ -1,0 +1,67 @@
+# Walkthrough: Settings Page Redesign + File Preview Loading
+
+## Changes Made
+
+### 1. Backend — Session Enrichment & APIs
+
+#### [NEW] [parseUserAgent.js](file:///c:/Users/rudra/Desktop/storageApp/backend/utils/parseUserAgent.js)
+- Simple UA parser that extracts browser name, OS, and device type (desktop/mobile/tablet) without external libraries.
+
+#### [MODIFY] [authController.js](file:///c:/Users/rudra/Desktop/storageApp/backend/controller/authController.js)
+- **Session data enrichment**: All session creation points (login, Google login for existing users, Google login for new users) now store `userAgent` and `createdAt` timestamp alongside `userId` in the Redis hash.
+- **Session limit increased**: Max concurrent sessions changed from 2 → 3, with proper oldest-session eviction based on `createdAt`.
+- **`getSessions`**: New controller that returns all active sessions for the current user with parsed device info.
+- **`logoutSession`**: New controller that terminates a specific session (verifies it belongs to the requesting user).
+
+#### [MODIFY] [authRoutes.js](file:///c:/Users/rudra/Desktop/storageApp/backend/routes/authRoutes.js)
+- Added `GET /auth/sessions` and `DELETE /auth/sessions/:sessionId` routes.
+
+---
+
+### 2. Frontend — Settings Page (replaces Profile)
+
+#### [NEW] [SettingsPage.jsx](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/pages/SettingsPage.jsx)
+New tabbed Settings page with sidebar navigation:
+- **Profile tab**: User avatar, name/email info, storage usage, profile picture URL update
+- **Security tab**: Password change flow with OTP verification
+- **Sessions tab**: Lists all active sessions with browser/OS/device info, current session badge, individual session termination, logout current/all buttons
+- **Appearance tab**: Theme selector cards (Light, Dark, System) with visual previews
+
+#### [MODIFY] [App.jsx](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/App.jsx)
+- Route changed from `/profile` → `/settings`, imports `SettingsPage` instead of `ProfilePage`.
+
+#### [MODIFY] [AppSidebar.jsx](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/components/Layout/AppSidebar.jsx)
+- Menu item changed from "Profile" (UserCircle icon) → "Settings" (Settings icon), path → `/settings`.
+
+#### [MODIFY] [Header.jsx](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/components/Layout/Header.jsx)
+- Breadcrumb label updated: both `profile` and `settings` routes map to "Settings".
+
+#### [MODIFY] [api.js](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/lib/api.js)
+- Added `userAPI.getSessions()` and `userAPI.deleteSession(sessionId)`.
+
+---
+
+### 3. Theme System Enhancement
+
+#### [MODIFY] [ThemeProvider.jsx](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/components/ThemeProvider.jsx)
+- Added `"system"` theme support: listens to `prefers-color-scheme` media query and auto-switches. Cleans up listener on unmount.
+
+---
+
+### 4. File Preview Loading Animation
+
+#### [MODIFY] [PreviewContext.jsx](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/context/PreviewContext.jsx)
+- Exposed `previewLoading` in context value (was already tracked as state but not returned).
+
+#### [MODIFY] [FilePreviewModal.jsx](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/components/FilePreviewModal.jsx)
+- Added a dual-spinner + bouncing dots loading animation shown while `previewLoading` is true. Content only renders when loading is complete.
+
+---
+
+## Validation
+
+- ✅ Frontend build passes (`npm run build` — 0 errors)
+- The old [ProfilePage.jsx](file:///c:/Users/rudra/Desktop/storageApp/frontend/src/pages/ProfilePage.jsx) file is no longer imported but still exists — you can safely delete it.
+
+## Notes
+- Existing sessions in Redis won't have `userAgent`/`createdAt` fields. The Sessions tab will show "Unknown" for the browser/OS of these older sessions, and "Unknown" for the date. New sessions created after this update will have full device info.

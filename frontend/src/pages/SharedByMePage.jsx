@@ -386,8 +386,11 @@ export default function SharedByMePage() {
 
                 {/* Content */}
                 {loading ? (
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-muted-foreground">Loading...</div>
+                    <div className="flex flex-col items-center justify-center gap-3 py-16">
+                        <div className="relative flex items-center justify-center">
+                            <div className="h-10 w-10 rounded-full border-4 border-muted/30 border-t-blue-500 animate-spin" />
+                        </div>
+                        <p className="text-sm text-muted-foreground font-medium">Loading items...</p>
                     </div>
                 ) : (
                     <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' : 'flex flex-col gap-2'}>
