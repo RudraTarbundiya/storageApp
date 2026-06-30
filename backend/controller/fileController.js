@@ -7,7 +7,7 @@ import { sanitizeString } from '../utils/sanitizeInput.js'
 import { updateParentDirectorySize } from '../utils/changeDirectorySize.js'
 import { deleteS3File, getFileMetadata, makeSignedUrl } from '../services/s3.service.js'
 import { generateAndStoreFileSummary } from '../services/fileSummary.service.js'
-import {getCloudFrontSignedUrl} from '../services/cloudFront.js'
+import { getCloudFrontSignedUrl } from '../services/cloudFront.js'
 
 
 export const sendFile = async (req, res, next) => {
@@ -32,12 +32,10 @@ export const sendFile = async (req, res, next) => {
 
 export const renameFile = async (req, res, next) => {
     const id = req.params.id
-
-    const fileobj = await File.findOne({ _id: new ObjectId(id), userId: req.user._id })
-    if (!fileobj) return res.status(404).json({ error: 'File not found or you do not have access to it!' })
-
     try {
-        fileobj.name = req.body.newFileName + fileObj.extension
+        const fileobj = await File.findOne({ _id: new ObjectId(id), userId: req.user._id })
+        if (!fileobj) return res.status(404).json({ error: 'File not found or you do not have access to it!' })
+        fileobj.name = req.body.newFileName + fileobj.extension
         await fileobj.save()
         return res.status(200).json({ message: 'File renamed', newName: req.body.newFileName })
     } catch (err) {

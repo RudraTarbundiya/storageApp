@@ -111,6 +111,15 @@ function DashboardContent() {
     handlePreview(file)
   }
 
+  const getNameWithoutExtension = (file) => {
+    const extension = file.extension || ''
+    if (!extension || !file.name?.toLowerCase().endsWith(extension.toLowerCase())) {
+      return file.name || ''
+    }
+
+    return file.name.slice(0, -extension.length)
+  }
+
   const filteredFolders = folders.filter(f =>
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -184,7 +193,7 @@ function DashboardContent() {
                 onOpen={handleOpenFile}
                 onPreview={handlePreviewFile}
                 onSummary={handleShowDetails}
-                onRename={(f) => { setRenameItem({ ...f, type: 'file' }); setNewName(f.name); setShowRenameDialog(true) }}
+                onRename={(f) => { setRenameItem({ ...f, type: 'file' }); setNewName(getNameWithoutExtension(f)); setShowRenameDialog(true) }}
                 onDelete={(f) => { setDeleteItem({ ...f, type: 'file' }); setShowDeleteDialog(true) }}
                 onShare={(f) => handleShare(f, 'file')}
                 onDetails={handleShowDetails}
@@ -355,14 +364,33 @@ function DashboardContent() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="newname">New Name</Label>
-              <Input
-                id="newname"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Enter new name"
-                className="mt-2"
-                disabled={isRenaming}
-              />
+              {renameItem?.type === 'file' ? (
+                <div className="mt-2 flex rounded-md border border-input bg-background shadow-xs focus-within:ring-[3px] focus-within:ring-ring/50 focus-within:border-ring">
+                  <Input
+                    id="newname"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Enter new name"
+                    className="h-9 min-w-0 flex-1 border-0 shadow-none focus-visible:ring-0"
+                    disabled={isRenaming}
+                  />
+                  <span
+                    className="flex h-9 max-w-[40%] shrink-0 items-center truncate border-l bg-muted px-3 text-sm text-muted-foreground"
+                    title={renameItem.extension}
+                  >
+                    {renameItem.extension}
+                  </span>
+                </div>
+              ) : (
+                <Input
+                  id="newname"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Enter new name"
+                  className="mt-2"
+                  disabled={isRenaming}
+                />
+              )}
             </div>
           </div>
           <DialogFooter>
