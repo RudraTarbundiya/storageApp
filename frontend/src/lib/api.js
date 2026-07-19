@@ -28,7 +28,7 @@ export const userAPI = {
 
 // Admin API (admin-only endpoints)
 export const adminAPI = {
-  getUsers: () => api.get('/users'),
+  getUsers: (page = 1) => api.get('/users', { params: { page } }),
   logoutUser: (userId) => api.post(`/users/${userId}/logout`),
   deleteUser: (userId) => api.delete(`/users/${userId}/delete`),
   changeUserRole: (userId, newRole) => api.post(`/users/${userId}/role`, { newRole }),
@@ -48,8 +48,8 @@ export const ownerAPI = {
 
 // Directory API
 export const directoryAPI = {
-  getRoot: () => api.get('/directory'),
-  getById: (id) => api.get(`/directory/${id}`),
+  getRoot: (page = 1) => api.get('/directory', { params: { page } }),
+  getById: (id, page = 1) => api.get(`/directory/${id}`, { params: { page } }),
   create: (dirname, parentId = null) =>
     api.post(parentId ? `/directory/${parentId}` : '/directory', { dirname }),
   rename: (id, newDirName) => api.patch(`/directory/${id}`, { newDirName }),

@@ -13,6 +13,8 @@ const FileManagerContext = createContext({
     loading: false,
     searchQuery: '',
     viewMode: 'grid',
+    hasMore: false,
+    isFetchingMore: false,
     // Dialog states
     showUploadDialog: false,
     showCreateFolderDialog: false,
@@ -29,6 +31,7 @@ const FileManagerContext = createContext({
     deleteItem: null,
     // Actions
     fetchDirectory: async () => { },
+    loadMore: async () => { },
     setCurrentFolder: () => { },
     setBreadcrumbs: () => { },
     setSearchQuery: () => { },
@@ -68,6 +71,9 @@ export function FileManagerProvider({ children }) {
     const [searchQuery, setSearchQuery] = useState('')
     const [viewMode, setViewMode] = useState('grid')
     const [totalStorageUsed, setTotalStorageUsed] = useState(0)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [hasMore, setHasMore] = useState(false)
+    const [isFetchingMore, setIsFetchingMore] = useState(false)
 
     // Dialog states
     const [showUploadDialog, setShowUploadDialog] = useState(false)
@@ -88,15 +94,31 @@ export function FileManagerProvider({ children }) {
     // Lazy initialization - don't fetch until a page that needs file data requests it
     const [initialized, setInitialized] = useState(false)
 
-    const fetchDirectory = useCallback(async () => {
-        setLoading(true)
+    const fetchDirectory = useCallback(async ({ page = 1, append = false } = {}) => {
+        if (append) {
+            setIsFetchingMore(true)
+        } else {
+            setLoading(true)
+        }
         try {
             const response = currentFolder
-                ? await directoryAPI.getById(currentFolder)
-                : await directoryAPI.getRoot()
+                ? await directoryAPI.getById(currentFolder, page)
+                : await directoryAPI.getRoot(page)
 
-            setFolders(response.data.directories || [])
-            setFiles(response.data.files || [])
+            const newFolders = response.data.directories || []
+            const newFiles = response.data.files || []
+            const pagination = response.data.pagination || {}
+
+            if (append) {
+                setFolders(prev => [...prev, ...newFolders])
+                setFiles(prev => [...prev, ...newFiles])
+            } else {
+                setFolders(newFolders)
+                setFiles(newFiles)
+            }
+
+            setCurrentPage(page)
+            setHasMore(pagination.hasMore || false)
 
             // Use the root directory's size from the API response directly
             if (!currentFolder) {
@@ -106,14 +128,26 @@ export function FileManagerProvider({ children }) {
             showAlert('Failed to load directory', 'destructive')
         } finally {
             setLoading(false)
+            setIsFetchingMore(false)
         }
     }, [currentFolder, showAlert])
+
+    const loadMore = useCallback(() => {
+        if (!hasMore || isFetchingMore) return
+        fetchDirectory({ page: currentPage + 1, append: true })
+    }, [hasMore, isFetchingMore, currentPage, fetchDirectory])
+
+    // Reset pagination when the folder changes
+    useEffect(() => {
+        setCurrentPage(1)
+        setHasMore(false)
+    }, [currentFolder])
 
     // Only fetch when initialized (a page that needs file data has requested it)
     // or when currentFolder changes after initialization
     useEffect(() => {
         if (initialized) {
-            fetchDirectory()
+            fetchDirectory({ page: 1, append: false })
         }
     }, [initialized, fetchDirectory])
 
@@ -324,6 +358,8 @@ export function FileManagerProvider({ children }) {
         searchQuery,
         viewMode,
         totalStorageUsed,
+        hasMore,
+        isFetchingMore,
         // Dialog states
         showUploadDialog,
         showCreateFolderDialog,
@@ -340,6 +376,7 @@ export function FileManagerProvider({ children }) {
         deleteItem,
         // Actions
         fetchDirectory,
+        loadMore,
         setCurrentFolder,
         setBreadcrumbs,
         setSearchQuery,

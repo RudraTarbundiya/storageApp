@@ -6,20 +6,57 @@ import { deleteS3Files } from '../services/s3.service.js';
 export const getDirectoryById = async (req, res, next) => {
 
     const _id = req.params.id || req.user.rootDirId.toString()
+    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const limit = Math.max(1, Math.min(50, parseInt(req.query.limit) || 10))
+
     try {
         const directoryData = await Directory.findOne({ _id, userId: req.user._id })
             .populate('sharedWith.user', 'name email picture')
             .lean()
         if (!directoryData) return res.status(404).json({ error: "Directory not found or you do not have access to it!" });
-        const files = await File.find({ parentDirId: _id }, { '__v': 0 })
-            .populate('sharedWith.user', 'name email picture')
-            .lean()
-        const directories = await Directory.find({ parentDirId: _id }, { '__v': 0 })
-            .populate('sharedWith.user', 'name email picture')
-            .lean()
-         
+
+        // Count totals (cheap — no document fetch)
+        const totalFolders = await Directory.countDocuments({ parentDirId: _id })
+        const totalFiles = await File.countDocuments({ parentDirId: _id })
+
+        // --- Compute per-collection skip/take for this page (folders first) ---
+        const globalStart = (page - 1) * limit  // 0-indexed first item of this page
+
+        let folderSkip, folderTake, fileSkip, fileTake
+
+        if (globalStart >= totalFolders) {
+            // This page is entirely inside the files range
+            folderSkip = 0; folderTake = 0
+            fileSkip = globalStart - totalFolders
+            fileTake = limit
+        } else {
+            // This page starts in the folders range
+            folderSkip = globalStart
+            folderTake = Math.min(limit, totalFolders - globalStart)
+            fileSkip = 0
+            fileTake = limit - folderTake
+        }
+
+        // Fetch paginated folders
+        const directoriesRaw = folderTake > 0
+            ? await Directory.find({ parentDirId: _id }, { '__v': 0 })
+                .populate('sharedWith.user', 'name email picture')
+                .skip(folderSkip)
+                .limit(folderTake)
+                .lean()
+            : []
+
+        // Fetch paginated files
+        const files = fileTake > 0
+            ? await File.find({ parentDirId: _id }, { '__v': 0 })
+                .populate('sharedWith.user', 'name email picture')
+                .skip(fileSkip)
+                .limit(fileTake)
+                .lean()
+            : []
+
         // Compute child counts for each Subdirectory (files + subdirectories)
-        const dirIds = directories.map(d => d._id)
+        const dirIds = directoriesRaw.map(d => d._id)
         let fileCounts = []
         let dirCounts = []
 
@@ -40,16 +77,20 @@ export const getDirectoryById = async (req, res, next) => {
         dirCounts.forEach(dc => dirCountMap.set(dc._id.toString(), (dirCountMap.get(dc._id.toString()) || 0) + dc.count))
 
         // Add item count and id to directories (size is already stored in MongoDB)
-        const directoriesWithCounts = directories.map(d => ({
+        const directories = directoriesRaw.map(d => ({
             id: d._id,
             ...d,
             itemCount: dirCountMap.get(d._id.toString()) || 0
-        }));
+        }))
+
+        const itemsFetchedSoFar = page * limit
+        const hasMore = itemsFetchedSoFar < (totalFolders + totalFiles)
 
         return res.status(200).json({
             ...directoryData,
             files,
-            directories: directoriesWithCounts
+            directories,
+            pagination: { page, limit, totalFolders, totalFiles, hasMore }
         })
     } catch (err) {
         next(err)

@@ -9,9 +9,18 @@ import redisClient from "../config/redis.js";
 
 //admin only
 export const getUsers = async (req, res, next) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 10))
+    const skip = (page - 1) * limit
+
     try {
+        // Count total matching users (cheap — no field projection)
+        const total = await User.countDocuments({ isDelete: false })
+
         const users = await User.aggregate([
             { $match: { isDelete: false } },
+            { $skip: skip },
+            { $limit: limit },
             {
                 // Lookup files to calculate storage
                 $lookup: {
@@ -42,7 +51,7 @@ export const getUsers = async (req, res, next) => {
             )
         );
         users.forEach((u, i) => { u.isLoggedIn = loginChecks[i]; });
-        res.status(200).json(users);
+        res.status(200).json({ users, pagination: { page, limit, total, hasMore: page * limit < total } });
     } catch (error) {
         next(error);
     }

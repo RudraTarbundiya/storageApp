@@ -12,7 +12,7 @@ export default function AppLayout() {
   useEffect(() => {
     // Redirect to login if not authenticated and not loading
     if (!loading && !isAuthenticated) {
-      navigate('/login', { replace: true })
+      navigate('/', { replace: true })
     }
   }, [loading, isAuthenticated, navigate])
 

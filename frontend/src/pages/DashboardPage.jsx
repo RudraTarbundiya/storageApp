@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'
-import { Upload, FolderPlus, Search, Download, X } from 'lucide-react'
+﻿import React, { useEffect } from 'react'
+import { Upload, FolderPlus, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -22,6 +22,9 @@ function DashboardContent() {
     breadcrumbs,
     loading,
     searchQuery,
+    hasMore,
+    isFetchingMore,
+    loadMore,
     // Dialog states
     showUploadDialog,
     showCreateFolderDialog,
@@ -116,7 +119,6 @@ function DashboardContent() {
     if (!extension || !file.name?.toLowerCase().endsWith(extension.toLowerCase())) {
       return file.name || ''
     }
-
     return file.name.slice(0, -extension.length)
   }
 
@@ -140,7 +142,7 @@ function DashboardContent() {
               <FolderPlus className="h-4 w-4 mr-2" />
               New Folder
             </Button>
-            <Button 
+            <Button
               onClick={() => setShowUploadDialog(true)}
               disabled={hasNoStorage}
               title={hasNoStorage ? 'No storage space available' : 'Upload file'}
@@ -173,38 +175,59 @@ function DashboardContent() {
             <p className="text-sm text-muted-foreground font-medium">Loading items...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredFolders.map(folder => (
-              <FolderCard
-                key={folder._id}
-                folder={folder}
-                onOpen={handleOpenFolder}
-                onRename={(f) => { setRenameItem({ ...f, type: 'folder' }); setNewName(f.name); setShowRenameDialog(true) }}
-                onDelete={(f) => { setDeleteItem({ ...f, type: 'folder' }); setShowDeleteDialog(true) }}
-                onShare={(f) => handleShare(f, 'folder')}
-                onDetails={handleShowFolderDetails}
-              />
-            ))}
-            {filteredFiles.map(file => (
-              <FileCard
-                key={file._id}
-                file={file}
-                onDownload={handleDownload}
-                onOpen={handleOpenFile}
-                onPreview={handlePreviewFile}
-                onSummary={handleShowDetails}
-                onRename={(f) => { setRenameItem({ ...f, type: 'file' }); setNewName(getNameWithoutExtension(f)); setShowRenameDialog(true) }}
-                onDelete={(f) => { setDeleteItem({ ...f, type: 'file' }); setShowDeleteDialog(true) }}
-                onShare={(f) => handleShare(f, 'file')}
-                onDetails={handleShowDetails}
-              />
-            ))}
-            {filteredFolders.length === 0 && filteredFiles.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center h-64 text-muted-foreground">
-                <p>No files or folders found</p>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredFolders.map(folder => (
+                <FolderCard
+                  key={folder._id}
+                  folder={folder}
+                  onOpen={handleOpenFolder}
+                  onRename={(f) => { setRenameItem({ ...f, type: 'folder' }); setNewName(f.name); setShowRenameDialog(true) }}
+                  onDelete={(f) => { setDeleteItem({ ...f, type: 'folder' }); setShowDeleteDialog(true) }}
+                  onShare={(f) => handleShare(f, 'folder')}
+                  onDetails={handleShowFolderDetails}
+                />
+              ))}
+              {filteredFiles.map(file => (
+                <FileCard
+                  key={file._id}
+                  file={file}
+                  onDownload={handleDownload}
+                  onOpen={handleOpenFile}
+                  onPreview={handlePreviewFile}
+                  onSummary={handleShowDetails}
+                  onRename={(f) => { setRenameItem({ ...f, type: 'file' }); setNewName(getNameWithoutExtension(f)); setShowRenameDialog(true) }}
+                  onDelete={(f) => { setDeleteItem({ ...f, type: 'file' }); setShowDeleteDialog(true) }}
+                  onShare={(f) => handleShare(f, 'file')}
+                  onDetails={handleShowDetails}
+                />
+              ))}
+              {filteredFolders.length === 0 && filteredFiles.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center h-64 text-muted-foreground">
+                  <p>No files or folders found</p>
+                </div>
+              )}
+            </div>
+
+            {/* Load More */}
+            {hasMore && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={isFetchingMore}
+                  className="min-w-36"
+                >
+                  {isFetchingMore ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 rounded-full border-2 border-muted/40 border-t-foreground animate-spin" />
+                      Loading...
+                    </span>
+                  ) : 'Load More'}
+                </Button>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
@@ -284,8 +307,8 @@ function DashboardContent() {
                                   'text-muted-foreground'
                             }`}>
                             {status === 'uploading' ? `${percent}%` :
-                              status === 'completed' ? '✓' :
-                                status === 'failed' ? '✗' :
+                              status === 'completed' ? 'done' :
+                                status === 'failed' ? 'failed' :
                                   status === 'cancelled' ? 'Cancelled' :
                                     'Pending'}
                           </span>

@@ -54,6 +54,10 @@ export default function UsersPage() {
     const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null, user: null })
     const [deleteChoiceDialog, setDeleteChoiceDialog] = useState({ open: false, user: null })
     const [roleChangeDialog, setRoleChangeDialog] = useState({ open: false, user: null, newRole: null })
+    const [usersPage, setUsersPage] = useState(1)
+    const [usersTotal, setUsersTotal] = useState(0)
+    const [usersHasMore, setUsersHasMore] = useState(false)
+    const [usersFetchingMore, setUsersFetchingMore] = useState(false)
     const { user: currentUser } = useAuth()
     const { showAlert } = useAlert()
     const navigate = useNavigate()
@@ -62,16 +66,34 @@ export default function UsersPage() {
     const isAdmin = currentUser?.role === 'admin'
     const isManager = currentUser?.role === 'manager'
 
-    const fetchUsers = async () => {
-        setLoading(true)
+    const fetchUsers = async ({ page = 1, append = false } = {}) => {
+        if (append) {
+            setUsersFetchingMore(true)
+        } else {
+            setLoading(true)
+        }
         try {
-            const response = await adminAPI.getUsers()
-            setUsers(response.data)
+            const response = await adminAPI.getUsers(page)
+            const { users: newUsers, pagination } = response.data
+            if (append) {
+                setUsers(prev => [...prev, ...newUsers])
+            } else {
+                setUsers(newUsers)
+            }
+            setUsersPage(page)
+            setUsersTotal(pagination?.total ?? 0)
+            setUsersHasMore(pagination?.hasMore ?? false)
         } catch (err) {
             showAlert(err.response?.data?.error || 'Failed to fetch users', 'destructive')
         } finally {
             setLoading(false)
+            setUsersFetchingMore(false)
         }
+    }
+
+    const loadMoreUsers = () => {
+        if (!usersHasMore || usersFetchingMore) return
+        fetchUsers({ page: usersPage + 1, append: true })
     }
 
     const fetchDeletedUsers = async () => {
@@ -141,7 +163,7 @@ export default function UsersPage() {
         try {
             await adminAPI.logoutUser(userId)
             showAlert(`${userName} has been logged out successfully`, 'default')
-            await fetchUsers()
+            await fetchUsers({ page: 1 })
         } catch (err) {
             showAlert(err.response?.data?.error || `Failed to logout ${userName}`, 'destructive')
         } finally {
@@ -154,6 +176,7 @@ export default function UsersPage() {
         try {
             await adminAPI.deleteUser(userId)
             setUsers(prev => prev.filter(u => u._id !== userId))
+            setUsersTotal(prev => Math.max(0, prev - 1))
             showAlert(`${userName} has been deleted successfully`, 'default')
             if (isOwner) {
                 await fetchDeletedUsers()
@@ -185,7 +208,7 @@ export default function UsersPage() {
             await ownerAPI.recoverUser(userId)
             setDeletedUsers(prev => prev.filter(u => u._id !== userId))
             showAlert(`${userName} has been recovered successfully`, 'default')
-            await fetchUsers()
+            await fetchUsers({ page: 1 })
         } catch (err) {
             showAlert(err.response?.data?.error || `Failed to recover ${userName}`, 'destructive')
         } finally {
@@ -583,7 +606,7 @@ export default function UsersPage() {
         </Card>
     )
 
-    const renderUserList = (list, isDeleted = false, emptyMessage = 'No users found') => (
+    const renderUserList = (list, isDeleted = false, emptyMessage = 'No users found', showLoadMore = false) => (
         <>
             <div className="space-y-3 md:hidden">
                 {list.map((user) => renderUserCard(user, isDeleted))}
@@ -617,6 +640,25 @@ export default function UsersPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Load More button — shown only for the active users list */}
+            {showLoadMore && usersHasMore && (
+                <div className="flex justify-center pt-3">
+                    <Button
+                        variant="outline"
+                        onClick={loadMoreUsers}
+                        disabled={usersFetchingMore}
+                        className="min-w-36"
+                    >
+                        {usersFetchingMore ? (
+                            <span className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Loading...
+                            </span>
+                        ) : `Load More (${usersTotal - users.length} remaining)`}
+                    </Button>
+                </div>
+            )}
         </>
     )
 
@@ -660,7 +702,7 @@ export default function UsersPage() {
                                     <TabsList className="mb-4 grid w-full grid-cols-2">
                                         <TabsTrigger value="active" className="flex items-center gap-1.5 text-xs sm:text-sm">
                                             <Users className="w-4 h-4" />
-                                            Active Users ({users.length})
+                                            Active Users ({usersTotal || users.length})
                                         </TabsTrigger>
                                         <TabsTrigger value="deleted" className="flex items-center gap-1.5 text-xs sm:text-sm">
                                             <Trash2 className="w-4 h-4" />
@@ -668,7 +710,7 @@ export default function UsersPage() {
                                         </TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="active">
-                                        {renderUserList(users, false, 'No active users found')}
+                                        {renderUserList(users, false, 'No active users found', true)}
                                     </TabsContent>
                                     <TabsContent value="deleted">
                                         {deletedLoading ? (
@@ -681,7 +723,7 @@ export default function UsersPage() {
                                     </TabsContent>
                                 </Tabs>
                             ) : (
-                                renderUserList(users, false, 'No users found')
+                                renderUserList(users, false, 'No users found', true)
                             )}
                         </CardContent>
                     </Card>
