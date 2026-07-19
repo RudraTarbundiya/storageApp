@@ -13,12 +13,11 @@ import { changeProfileSchema, loginSchema, registerSchema } from "../validator/a
 const sessionMaxAge = 60 * 60 * 1000 * 24 * 7 // 1 week
 
 const getSessionCookieOptions = () => {
-    const isProd = process.env.NODE_ENV === 'production'
     return {
         httpOnly: true,
         signed: true,
-        sameSite: isProd ? 'none' : 'lax',
-        secure: isProd,
+        sameSite:'none',
+        secure: true,
         maxAge: sessionMaxAge,
     }
 }
