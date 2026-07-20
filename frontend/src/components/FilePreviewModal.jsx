@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { X, Download, FileText, Music, Terminal, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePreview } from '@/context'
@@ -16,6 +16,31 @@ export default function FilePreviewModal({ onDownload }) {
     if (!previewOpen || !previewFile) return null
 
     const fileType = getFileType(previewFile.extension)
+    const canTrackLoad = fileType === 'image' || fileType === 'pdf' || fileType === 'document'
+    const [mediaLoading, setMediaLoading] = useState(false)
+    const [previewError, setPreviewError] = useState('')
+
+    useEffect(() => {
+        if (!previewOpen) {
+            setMediaLoading(false)
+            setPreviewError('')
+            return
+        }
+
+        setPreviewError('')
+        setMediaLoading(Boolean(previewUrl && canTrackLoad))
+    }, [previewOpen, previewUrl, canTrackLoad])
+
+    const handleMediaLoaded = () => {
+        setMediaLoading(false)
+    }
+
+    const handleMediaError = () => {
+        setMediaLoading(false)
+        setPreviewError('Preview could not be loaded. Access may be denied for this file. Please try download.')
+    }
+
+    const showLoader = previewLoading || mediaLoading
 
     return (
         <div className="fixed inset-0 z-100 flex items-center justify-center">
@@ -54,29 +79,42 @@ export default function FilePreviewModal({ onDownload }) {
                 </div>
 
                 {/* Preview content */}
-                <div className="flex flex-col items-center justify-center bg-slate-950 min-h-75 md:min-h-100 flex-1 overflow-auto">
+                <div className="relative flex flex-col items-center justify-center bg-slate-950 min-h-75 md:min-h-100 flex-1 overflow-auto">
                     {/* Loading Animation */}
-                    {previewLoading && (
-                        <div className="flex flex-col items-center justify-center gap-4 p-8">
+                    {showLoader && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 p-8 bg-slate-950/85">
                             <div className="relative">
-                                <div className="h-16 w-16 rounded-full border-4 border-muted/30 border-t-blue-500 animate-spin" />
+                                <div className="h-16 w-16 rounded-full border-4 border-slate-300/20 border-t-cyan-300 animate-spin" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <Loader2 className="h-6 w-6 text-blue-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                                    <Loader2 className="h-6 w-6 text-cyan-200 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
                                 </div>
                             </div>
                             <div className="text-center space-y-2">
-                                <p className="text-sm text-slate-300 font-medium">Loading preview...</p>
+                                <p className="text-sm text-slate-100 font-semibold">Loading preview...</p>
                                 <div className="flex gap-1 justify-center">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 animate-bounce" style={{ animationDelay: '0ms' }} />
+                                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 animate-bounce" style={{ animationDelay: '150ms' }} />
+                                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {!previewLoading && fileType === 'image' && previewUrl && (
-                        <img src={previewUrl} alt={previewFile.name} className="max-w-full max-h-[70vh] object-contain" />
+                    {previewError && !showLoader && (
+                        <div className="max-w-lg mx-6 p-4 rounded-lg border border-red-300/40 bg-red-500/15 text-red-100 shadow-lg">
+                            <p className="font-semibold">Preview unavailable</p>
+                            <p className="text-sm text-red-100/90 mt-1">{previewError}</p>
+                        </div>
+                    )}
+
+                    {!previewLoading && fileType === 'image' && previewUrl && !previewError && (
+                        <img
+                            src={previewUrl}
+                            alt={previewFile.name}
+                            onLoad={handleMediaLoaded}
+                            onError={handleMediaError}
+                            className="max-w-full max-h-[70vh] object-contain"
+                        />
                     )}
 
                     {!previewLoading && fileType === 'video' && previewUrl && (
@@ -105,12 +143,16 @@ export default function FilePreviewModal({ onDownload }) {
                         </div>
                     )}
 
-                    {!previewLoading && (fileType === 'pdf' || fileType === 'document') && previewUrl && (
-                        <iframe
-                            src={previewUrl}
-                            className="w-full h-[70vh]"
-                            title={previewFile.name}
-                        />
+                    {!previewLoading && (fileType === 'pdf' || fileType === 'document') && previewUrl && !previewError && (
+                        <div className="w-full h-[70vh] bg-white">
+                            <iframe
+                                src={previewUrl}
+                                onLoad={handleMediaLoaded}
+                                onError={handleMediaError}
+                                className="w-full h-full bg-white"
+                                title={previewFile.name}
+                            />
+                        </div>
                     )}
                 </div>
             </div>

@@ -1,6 +1,7 @@
 ﻿# Pagination — Developer Reference
 
 This document explains how offset-based pagination is implemented for two API endpoints in this application:
+https://chatgpt.com/c/6a5c3a01-c088-83e8-8c59-83474addb366
 
 1. **Directory Contents** — `GET /directory` / `GET /directory/:id`
 2. **Users List** — `GET /users`
