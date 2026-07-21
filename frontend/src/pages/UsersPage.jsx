@@ -74,7 +74,16 @@ export default function UsersPage() {
         }
         try {
             const response = await adminAPI.getUsers(page)
-            const { users: newUsers, pagination } = response.data
+            const payload = response?.data || {}
+            const newUsers = Array.isArray(payload?.users)
+                ? payload.users
+                : (Array.isArray(payload) ? payload : [])
+            const pagination = payload?.pagination || {}
+
+            if (!Array.isArray(payload?.users) && !Array.isArray(payload)) {
+                console.warn('Unexpected /users response shape:', payload)
+            }
+
             if (append) {
                 setUsers(prev => [...prev, ...newUsers])
             } else {
@@ -101,7 +110,15 @@ export default function UsersPage() {
         setDeletedLoading(true)
         try {
             const response = await ownerAPI.getDeletedUsers()
-            setDeletedUsers(response.data)
+            const data = response?.data
+            if (Array.isArray(data)) {
+                setDeletedUsers(data)
+            } else if (Array.isArray(data?.users)) {
+                setDeletedUsers(data.users)
+            } else {
+                console.warn('Unexpected /users/deleted response shape:', data)
+                setDeletedUsers([])
+            }
         } catch (err) {
             showAlert(err.response?.data?.error || 'Failed to fetch deleted users', 'destructive')
         } finally {
@@ -606,11 +623,14 @@ export default function UsersPage() {
         </Card>
     )
 
-    const renderUserList = (list, isDeleted = false, emptyMessage = 'No users found', showLoadMore = false) => (
+    const renderUserList = (list = [], isDeleted = false, emptyMessage = 'No users found', showLoadMore = false) => {
+        const safeList = Array.isArray(list) ? list : []
+
+        return (
         <>
             <div className="space-y-3 md:hidden">
-                {list.map((user) => renderUserCard(user, isDeleted))}
-                {list.length === 0 && (
+                {safeList.map((user) => renderUserCard(user, isDeleted))}
+                {safeList.length === 0 && (
                     <Card>
                         <CardContent className="py-8 text-center text-sm text-muted-foreground">{emptyMessage}</CardContent>
                     </Card>
@@ -629,8 +649,8 @@ export default function UsersPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {list.map((user) => renderUserRow(user, isDeleted))}
-                        {list.length === 0 && (
+                        {safeList.map((user) => renderUserRow(user, isDeleted))}
+                        {safeList.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                     {emptyMessage}
@@ -655,12 +675,13 @@ export default function UsersPage() {
                                 <Loader2 className="h-4 w-4 animate-spin" />
                                 Loading...
                             </span>
-                        ) : `Load More (${usersTotal - users.length} remaining)`}
+                        ) : `Load More (${Math.max(0, usersTotal - (Array.isArray(users) ? users.length : 0))} remaining)`}
                     </Button>
                 </div>
             )}
         </>
-    )
+        )
+    }
 
     if (loading) {
         return (
@@ -702,11 +723,11 @@ export default function UsersPage() {
                                     <TabsList className="mb-4 grid w-full grid-cols-2">
                                         <TabsTrigger value="active" className="flex items-center gap-1.5 text-xs sm:text-sm">
                                             <Users className="w-4 h-4" />
-                                            Active Users ({usersTotal || users.length})
+                                            Active Users ({usersTotal || (Array.isArray(users) ? users.length : 0)})
                                         </TabsTrigger>
                                         <TabsTrigger value="deleted" className="flex items-center gap-1.5 text-xs sm:text-sm">
                                             <Trash2 className="w-4 h-4" />
-                                            Deleted Users ({deletedUsers.length})
+                                            Deleted Users ({Array.isArray(deletedUsers) ? deletedUsers.length : 0})
                                         </TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="active">

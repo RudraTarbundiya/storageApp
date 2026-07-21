@@ -72,7 +72,7 @@ const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL ||
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true)
+        if (!origin) return callback(null, true)//allow requests with no origin means same-origin (like mobile apps or curl requests)
         const normalizedOrigin = origin.replace(/\/$/, '')
         if (allowedOrigins.includes(normalizedOrigin)) {
             return callback(null, true)
